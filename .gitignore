@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Prisma generated client — build output, never source (TDD §2.6.4)
+packages/core/src/generated/
+
+# Test output
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Environment — every runtime .env is secret (TDD §16, §17)
+.env
+.env.*
+!.env.example
+
+# Supabase local stack
+supabase/.temp/
+supabase/.branches/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

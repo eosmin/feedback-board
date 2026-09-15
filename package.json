@@ -1,0 +1,32 @@
+{
+  "name": "feedback-board",
+  "author": "Erick Monjaras <osminerick@gmail.com>",
+  "version": "0.0.0",
+  "description": "Multi-tenant feedback and feature-voting SaaS with AI classification and Stripe billing",
+  "private": true,
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "typecheck": "pnpm -r --stream typecheck",
+    "lint": "pnpm -r --stream lint",
+    "test": "pnpm -r --stream test",
+    "test:e2e": "pnpm -r --stream test:e2e",
+    "check:deprecations": "bash scripts/check-deprecations.sh",
+    "check:pins": "bash scripts/verify-pins.sh"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "20.2.0",
+    "@commitlint/config-conventional": "20.2.0",
+    "@eslint/js": "10.0.1",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "husky": "9.1.7",
+    "prettier": "3.9.6",
+    "supabase": "2.116.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.69.0"
+  }
+}

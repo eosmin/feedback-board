@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# pnpm defaults this to false, which left the peer discipline of TDD §2.5.2 unenforced:
+# an unsatisfied peer range is only a warning, and --frozen-lockfile never looks at peers.
+# true turns every cross-major combination of §2.5.2 into an install-time failure.
+strictPeerDependencies: true
