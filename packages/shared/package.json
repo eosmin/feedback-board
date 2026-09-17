@@ -1,0 +1,33 @@
+{
+  "name": "@feedback-board/shared",
+  "author": "Erick Monjaras <osminerick@gmail.com>",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure contracts (Zod schemas, inferred types, constants) shared by the API, the worker and the browser",
+  "license": "UNLICENSED",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.0"
+  }
+}
