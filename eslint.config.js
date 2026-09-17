@@ -74,8 +74,14 @@ module.exports = defineConfig(
 
   {
     // TDD §3.2 — PrismaService is the admin client and has exactly five callers. Anything
-    // outside the directories that own those callers must go through TenantPrismaService.
-    files: ['apps/api/src/**/*.ts'],
+    // outside the files that own those callers must go through TenantPrismaService.
+    //
+    // The globs here are deliberately basePath-independent (`**/src/**` rather than
+    // `apps/api/src/**`). A flat-config `files` glob is matched against the path relative to
+    // the config's basePath, so `apps/api/src/**` matches nothing when ESLint runs from inside
+    // apps/api — which is how `pnpm -r lint` invokes it. That spelling left this rule inert
+    // while still reading as correct.
+    files: ['**/src/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -92,12 +98,20 @@ module.exports = defineConfig(
     },
   },
   {
+    // The five callers of §3.2, and nothing else. The two org collection routes are named
+    // file-by-file rather than as `orgs/**`: caller 4 is only POST /orgs and GET /orgs, so
+    // widening this to the whole module would hand the admin client to every tenant-scoped
+    // service that later lands beside them. Likewise caller 3 is org.guard.ts alone — neither
+    // RolesGuard nor PlanGuard may reach the admin client (§3.9 routes PlanGuard's counts
+    // through TenantPrismaService).
     files: [
-      'apps/api/src/database/**/*.ts',
-      'apps/api/src/billing/**/*.ts',
-      'apps/api/src/auth/**/*.ts',
-      'apps/api/src/orgs/guards/**/*.ts',
-      'apps/api/src/public/**/*.ts',
+      '**/src/database/**/*.ts',
+      '**/src/billing/**/*.ts',
+      '**/src/auth/**/*.ts',
+      '**/src/orgs/orgs.service.ts',
+      '**/src/orgs/orgs.controller.ts',
+      '**/src/orgs/guards/org.guard.ts',
+      '**/src/public/**/*.ts',
     ],
     rules: {
       'no-restricted-imports': 'off',
