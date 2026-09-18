@@ -12,7 +12,7 @@
   "scripts": {
     "prepare": "husky",
     "typecheck": "pnpm -r --stream typecheck",
-    "lint": "pnpm -r --stream lint",
+    "lint": "pnpm -r --stream lint && pnpm check:deprecations",
     "test": "pnpm -r --stream test",
     "test:e2e": "pnpm -r --stream test:e2e",
     "check:deprecations": "bash scripts/check-deprecations.sh",
