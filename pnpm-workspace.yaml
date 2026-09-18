@@ -6,3 +6,14 @@ packages:
 # an unsatisfied peer range is only a warning, and --frozen-lockfile never looks at peers.
 # true turns every cross-major combination of §2.5.2 into an install-time failure.
 strictPeerDependencies: true
+
+# pnpm 11+ blocks every dependency's install/postinstall script by default (supply-chain
+# guard) and fails the install until each one is explicitly allowed or denied here. None of
+# these four transitive packages appears in TDD.md §2's pinned tables, so none is something
+# this project's own code depends on a native build for — each has a pure-JS fallback.
+# Denying all four keeps `pnpm install` non-interactive in CI and on a fresh clone.
+allowBuilds:
+  '@parcel/watcher': false
+  '@scarf/scarf': false
+  msgpackr-extract: false
+  unrs-resolver: false
