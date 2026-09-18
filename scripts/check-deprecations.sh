@@ -40,7 +40,7 @@ BANNED=(
   $'ReactDOM\\.(render|hydrate)\tremoved in React 19 — use createRoot/hydrateRoot (§2.3)'
   $'tailwind\\.config\\.js\tTailwind 4 is CSS-first — no JS config file (§2.6.9)'
   $'(queue|worker)\\.client\\b\tremoved from BullMQ 6 high-level classes — use getBackend().client (§2.6.14)'
-  $'@nestjs/bull([^m]|$)\tthe Bull v3 package — use @nestjs/bullmq (§2.6.14)'
+  $'@nestjs/bull([\'"]|$)\tthe Bull v3 package — use @nestjs/bullmq (§2.6.14)'
 )
 
 fail=0
