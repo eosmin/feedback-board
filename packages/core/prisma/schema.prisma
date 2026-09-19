@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma" // -> packages/core/src/generated/prisma, gitignored
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma 7 rejects `url`/`directUrl` here (P1012) — both moved to prisma.config.ts's
+  // `datasource.url`, which `prisma migrate` reads instead (TDD §2.6.4 predates this CLI
+  // change; documented as a deviation in Step 5's response, not invented silently).
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  INCOMPLETE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum PostStatus {
+  OPEN
+  PLANNED
+  IN_PROGRESS
+  DONE
+  CLOSED
+}
+
+enum PostCategory {
+  BUG
+  FEATURE_REQUEST
+  UX
+  OTHER
+}
+
+enum PostPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model User {
+  id          String       @id @db.Uuid // == auth.users.id, populated by trigger (§2.6.5)
+  email       String       @unique
+  name        String?
+  avatarUrl   String?      @map("avatar_url")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  memberships Membership[]
+  posts       Post[]
+  comments    Comment[]
+  votes       Vote[]
+
+  @@map("users")
+}
+
+model Org {
+  id                String            @id @default(uuid()) @db.Uuid
+  name              String
+  slug              String            @unique
+  plan              Plan              @default(FREE)
+  stripeCustomerId  String?           @unique @map("stripe_customer_id")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  memberships       Membership[]
+  boards            Board[]
+  posts             Post[]
+  votes             Vote[]
+  comments          Comment[]
+  webhooks          Webhook[]
+  webhookDeliveries WebhookDelivery[]
+  subscription      Subscription?
+
+  @@map("orgs")
+}
+
+model Membership {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  role      Role
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+  org       Org      @relation(fields: [orgId], references: [id])
+
+  @@unique([userId, orgId])
+  @@map("memberships")
+}
+
+model Board {
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  name      String
+  slug      String
+  isPublic  Boolean  @default(true) @map("is_public")
+  createdAt DateTime @default(now()) @map("created_at")
+  org       Org      @relation(fields: [orgId], references: [id])
+  posts     Post[]
+
+  @@unique([orgId, slug]) // also serves as the org_id index — org_id is the leading column
+  @@map("boards")
+}
+
+model Post {
+  id         String        @id @default(uuid()) @db.Uuid
+  boardId    String        @map("board_id") @db.Uuid
+  orgId      String        @map("org_id") @db.Uuid
+  authorId   String        @map("author_id") @db.Uuid
+  title      String
+  body       String
+  status     PostStatus    @default(OPEN)
+  voteCount  Int           @default(0) @map("vote_count")
+  aiCategory PostCategory? @map("ai_category")
+  aiPriority PostPriority? @map("ai_priority")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  org        Org           @relation(fields: [orgId], references: [id])
+  board      Board         @relation(fields: [boardId], references: [id])
+  author     User          @relation(fields: [authorId], references: [id])
+  votes      Vote[]
+  comments   Comment[]
+
+  @@index([boardId, status])
+  @@index([orgId])
+  @@map("posts")
+}
+
+model Vote {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  org       Org      @relation(fields: [orgId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+  @@index([orgId])
+  @@map("votes")
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  org       Org      @relation(fields: [orgId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([orgId])
+  @@index([postId])
+  @@map("comments")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid()) @db.Uuid
+  orgId                String             @unique @map("org_id") @db.Uuid
+  stripeSubscriptionId String             @unique @map("stripe_subscription_id")
+  stripePriceId        String             @map("stripe_price_id")
+  status               SubscriptionStatus
+  currentPeriodEnd     DateTime           @map("current_period_end") // subscription.items.data[0], §2.6.7
+  org                  Org                @relation(fields: [orgId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model StripeEvent {
+  id          String   @id // Stripe event id, e.g. "evt_..."
+  type        String
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("stripe_events")
+}
+
+model Webhook {
+  id         String            @id @default(uuid()) @db.Uuid
+  orgId      String            @map("org_id") @db.Uuid
+  targetUrl  String            @map("target_url")
+  secret     String
+  events     String[]
+  isActive   Boolean           @default(true) @map("is_active")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  org        Org               @relation(fields: [orgId], references: [id])
+  deliveries WebhookDelivery[]
+
+  @@index([orgId])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id             String   @id @default(uuid()) @db.Uuid
+  webhookId      String   @map("webhook_id") @db.Uuid
+  orgId          String   @map("org_id") @db.Uuid
+  event          String
+  payload        Json
+  responseStatus Int?     @map("response_status")
+  attempt        Int      @default(1) // one row PER ATTEMPT, never updated in place (§3.7)
+  createdAt      DateTime @default(now()) @map("created_at")
+  org            Org      @relation(fields: [orgId], references: [id])
+  webhook        Webhook  @relation(fields: [webhookId], references: [id])
+
+  @@index([orgId])
+  @@index([webhookId, createdAt])
+  @@map("webhook_deliveries")
+}

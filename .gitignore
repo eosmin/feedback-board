@@ -25,6 +25,7 @@ test-results/
 # Supabase local stack
 supabase/.temp/
 supabase/.branches/
+supabase/snippets/
 
 # Editor / OS
 .DS_Store
