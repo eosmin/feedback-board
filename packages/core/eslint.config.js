@@ -8,8 +8,8 @@ const root = require('../../eslint.config.js');
  * package only (§7.2/§7.6 do not require it project-wide — see the Step 5 "Open follow-up").
  * `@typescript-eslint/no-deprecated` catches deprecations in *third-party* dependencies that
  * the static grep list in `scripts/check-deprecations.sh` can never anticipate — exactly the
- * class of bug Prisma 7 produces on every major/minor bump (e.g. the `prisma-client-js`
- * generator, or `url`/`directUrl` in `datasource`, both deprecated mid-major).
+ * class of bug Prisma 7 produces on every major/minor bump (e.g. a generator option or a
+ * datasource field marked deprecated mid-major, the way §2.6.4 documents happened here).
  *
  * `recommendedTypeChecked` (not just the single rule) is pulled in because `no-deprecated`
  * requires the type-aware parser service either way, and the preset is the maintained,
