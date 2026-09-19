@@ -8,12 +8,19 @@ packages:
 strictPeerDependencies: true
 
 # pnpm 11+ blocks every dependency's install/postinstall script by default (supply-chain
-# guard) and fails the install until each one is explicitly allowed or denied here. None of
-# these four transitive packages appears in TDD.md §2's pinned tables, so none is something
-# this project's own code depends on a native build for — each has a pure-JS fallback.
-# Denying all four keeps `pnpm install` non-interactive in CI and on a fresh clone.
+# guard) and fails the install until each one is explicitly allowed or denied here.
+# '@parcel/watcher', '@scarf/scarf', msgpackr-extract and unrs-resolver never appear in
+# TDD.md §2's pinned tables, so none is something this project's own code depends on a native
+# build for — each has a pure-JS fallback, and all four are denied to keep `pnpm install`
+# non-interactive in CI and on a fresh clone.
+# '@prisma/engines' and 'prisma' are allowed: they are TDD §2.2a's pinned CLI/engine downloader,
+# and without their install/preinstall scripts `prisma generate` (the root postinstall, §2.6.4)
+# has no engine binary to run against and fails outright — this is not a supply-chain exception,
+# it is the one native build this project's own code actually needs.
 allowBuilds:
   '@parcel/watcher': false
   '@scarf/scarf': false
   msgpackr-extract: false
   unrs-resolver: false
+  '@prisma/engines': true
+  prisma: true

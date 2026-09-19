@@ -11,6 +11,7 @@
   },
   "scripts": {
     "prepare": "husky",
+    "postinstall": "pnpm --filter @feedback-board/core exec prisma generate",
     "typecheck": "pnpm -r --stream typecheck",
     "lint": "pnpm -r --stream lint && pnpm check:deprecations",
     "test": "pnpm -r --stream test",
