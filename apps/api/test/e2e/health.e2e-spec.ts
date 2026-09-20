@@ -4,6 +4,7 @@ import request from 'supertest';
 
 import { AppModule } from '../../src/app.module';
 import { validationExceptionFactory } from '../../src/common/validation-exception.factory';
+import { closeTestApp } from '../fixtures/close-test-app';
 
 describe('health (e2e)', () => {
   let app: INestApplication;
@@ -24,7 +25,9 @@ describe('health (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    // AppModule imports OrgsModule as of Step 8, which registers redisConnectionProvider — see
+    // closeTestApp's own doc comment for why app.close() alone is not enough here.
+    await closeTestApp(app);
   });
 
   it('GET /health returns 200', async () => {
