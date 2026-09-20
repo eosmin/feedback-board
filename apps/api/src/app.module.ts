@@ -10,6 +10,7 @@ import { validateEnv } from './config/env.schema';
 import type { Env } from './config/env.schema';
 import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
+import { OrgsModule } from './orgs/orgs.module';
 
 // Importing ConfigModule (above) triggers config.module.ts's own module-load-time call to
 // NestConfigModule.forRoot(...), which loads the root .env file synchronously as a side effect
@@ -50,6 +51,7 @@ const env = validateEnv(process.env);
       adminDatabaseUrl: env.ADMIN_DATABASE_URL,
     }),
     AuthModule,
+    OrgsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],

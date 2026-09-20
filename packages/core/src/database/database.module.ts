@@ -21,6 +21,14 @@ export interface DatabaseModuleRootOptions extends DatabaseModuleTenantOptions {
  * - `forRoot()` — `apps/api`. Registers both clients; `PrismaService` stays reachable only by
  *   the five callers enumerated in §3.2, enforced by the ESLint `no-restricted-imports` rule.
  *
+ * `global: true` on both: `AppModule`/the worker's root module register this exactly once with
+ * the real connection strings, and every feature module needs the same singleton connections —
+ * `OrgGuard` and `PlanGuard` (apps/api/src/orgs/guards) inject `PrismaService`/`TenantRunner`
+ * from `OrgsModule`, a sibling of the module that calls `forRoot()`. Without `global: true`,
+ * Nest's module encapsulation would make those providers invisible outside `AppModule` itself,
+ * and re-importing `forRoot()`/`forTenant()` a second time to work around that would construct
+ * a second `AppPrismaClient`/`PrismaService` — a second connection pool, not a shared one.
+ *
  * `APP_PRISMA_CLIENT` is aliased to the same `AppPrismaClient` provider in both registrations —
  * `TenantRunner` depends on the token, not the class, so both containers resolve it to the one
  * instance already registered (see `tenant-runner.service.ts` for why the token exists).
@@ -29,6 +37,7 @@ export interface DatabaseModuleRootOptions extends DatabaseModuleTenantOptions {
 export class DatabaseModule {
   static forTenant(options: DatabaseModuleTenantOptions): DynamicModule {
     return {
+      global: true,
       module: DatabaseModule,
       providers: [
         { provide: DATABASE_URL, useValue: options.databaseUrl },
@@ -42,6 +51,7 @@ export class DatabaseModule {
 
   static forRoot(options: DatabaseModuleRootOptions): DynamicModule {
     return {
+      global: true,
       module: DatabaseModule,
       providers: [
         { provide: DATABASE_URL, useValue: options.databaseUrl },

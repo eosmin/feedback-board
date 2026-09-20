@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
+import { requireEnv } from './require-env';
+
 /**
  * Real sign-in for e2e tests (TDD decision D8, §14): there is no password flow and the
  * service-role key is banned from this repository outright, so the only legitimate way to
@@ -25,14 +27,15 @@ import { createClient } from '@supabase/supabase-js';
  *
  * `SUPABASE_INBUCKET_URL` (kept under its historical name — it is what §16 and the rest of this
  * codebase call the mail-catcher URL) and `TEST_SUPABASE_ANON_KEY` belong to no runtime env
- * schema (§16) — both are read directly from `process.env` here because this file exists only
- * inside the test suite, never inside a booted app. `TEST_SUPABASE_ANON_KEY` is deliberately not
- * named `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the name `apps/web` consumes): `apps/api`'s env schema
- * actively rejects any `NEXT_PUBLIC_` prefix present in `process.env` at boot (§16), so if this
- * fixture and `AppModule` ever share a Jest process — which `test:e2e` does, since its
- * `--testPathPatterns test/e2e` glob always includes every `*.e2e-spec.ts` file regardless of
- * the `-- auth` filter argument — exporting the browser's variable name into the shell would
- * fail every other e2e suite's boot, not just skip this one test.
+ * schema (§16) — both are read directly from `process.env` via `requireEnv` (`./require-env`)
+ * because this file exists only inside the test suite, never inside a booted app.
+ * `TEST_SUPABASE_ANON_KEY` is deliberately not named `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the name
+ * `apps/web` consumes): `apps/api`'s env schema actively rejects any `NEXT_PUBLIC_` prefix
+ * present in `process.env` at boot (§16), so if this fixture and `AppModule` ever share a Jest
+ * process — which `test:e2e` does, since its `--testPathPatterns test/e2e` glob always includes
+ * every `*.e2e-spec.ts` file regardless of the `-- auth` filter argument — exporting the
+ * browser's variable name into the shell would fail every other e2e suite's boot, not just
+ * skip this one test.
  */
 
 interface MailpitMessageSummary {
@@ -45,14 +48,6 @@ interface MailpitSearchResult {
 
 interface MailpitMessage {
   readonly Text: string;
-}
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (value === undefined || value === '') {
-    throw new Error(`sign-in fixture: missing required env var ${name}`);
-  }
-  return value;
 }
 
 /**
