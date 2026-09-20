@@ -53,8 +53,7 @@ module.exports = defineConfig(
 
   {
     // Root-level tooling configs (this file, commitlint.config.js) are plain Node CommonJS
-    // scripts loaded directly by their tools, not part of any package's TypeScript program —
-    // require()/module.exports here is correct, not a stray CommonJS import (TDD §7.1: no
+    // scripts loaded directly by their tools, not part of any package's TypeSc/module.exports here is correct, not a stray CommonJS import (TDD §7.1: no
     // "just in case" abstraction, so this stays a plain languageOptions override rather than
     // pulling in the unpinned 'globals' package for four identifiers).
     files: ['*.config.js'],
@@ -104,6 +103,14 @@ module.exports = defineConfig(
     // service that later lands beside them. Likewise caller 3 is org.guard.ts alone — neither
     // RolesGuard nor PlanGuard may reach the admin client (§3.9 routes PlanGuard's counts
     // through TenantPrismaService).
+    //
+    // `src/index.ts` is also exempt, package-wide: it is each package's public barrel, and
+    // re-exporting `PrismaService` from `packages/core`'s barrel is not itself a sixth caller —
+    // it only makes the class importable as `@feedback-board/core`. The five-caller boundary is
+    // still enforced where it matters: at each *consumer* of that export, none of which is a
+    // package or app entry point, so every import of `PrismaService` from outside this list
+    // still trips the restriction. `packages/shared/src/index.ts` never imports it at all, so
+    // widening the glob here does not open anything there.
     files: [
       '**/src/database/**/*.ts',
       '**/src/billing/**/*.ts',
@@ -112,6 +119,7 @@ module.exports = defineConfig(
       '**/src/orgs/orgs.controller.ts',
       '**/src/orgs/guards/org.guard.ts',
       '**/src/public/**/*.ts',
+      '**/src/index.ts',
     ],
     rules: {
       'no-restricted-imports': 'off',

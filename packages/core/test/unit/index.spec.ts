@@ -18,4 +18,15 @@ describe('package entry point', () => {
   it('re-exports the AI classification schema', () => {
     expect(core.postClassificationSchema).toBeDefined();
   });
+
+  it('re-exports the database providers and module', () => {
+    expect(core.PrismaService).toBeDefined();
+    expect(core.AppPrismaClient).toBeDefined();
+    expect(core.TenantRunner).toBeDefined();
+    expect(core.DatabaseModule).toBeDefined();
+  });
+
+  it('re-exports the shared uuid guard used by both TenantRunner and apps/api', () => {
+    expect(core.isUuid).toBeDefined();
+  });
 });

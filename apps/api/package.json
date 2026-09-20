@@ -19,6 +19,7 @@
     "@bull-board/api": "9.8.0",
     "@bull-board/express": "9.8.0",
     "@bull-board/nestjs": "9.8.0",
+    "@feedback-board/core": "workspace:*",
     "@feedback-board/shared": "workspace:*",
     "@nestjs/bull-shared": "12.0.0",
     "@nestjs/bullmq": "12.0.0",
@@ -44,6 +45,8 @@
   "devDependencies": {
     "@nestjs/cli": "12.0.0",
     "@nestjs/testing": "12.0.1",
+    "@supabase/supabase-js": "2.115.0",
+    "@types/express": "5.0.6",
     "@types/jest": "30.x",
     "@types/node": "24.x",
     "@types/supertest": "6.x",
