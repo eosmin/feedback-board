@@ -10,6 +10,15 @@ const config: Config = {
   testEnvironment: 'node',
   testMatch: ['<rootDir>/test/**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
+  // Prisma's generated client (src/generated/prisma/**, §2.6.4) is authored NodeNext-style,
+  // with explicit .js extensions on its own relative imports (e.g. `from "./internal/class.js"`)
+  // — correct for `tsc`, which resolves a .js specifier against the sibling .ts source, but
+  // Jest's CommonJS-era resolver takes the extension literally and looks for a file that was
+  // never emitted (there is no build step here; ts-jest compiles in memory). Only the generated
+  // tree needs the rewrite: every hand-written import in this package already omits extensions.
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }],
   },

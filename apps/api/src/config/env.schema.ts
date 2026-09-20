@@ -72,5 +72,13 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     throw new Error(`Invalid environment for apps/api: ${details}`);
   }
 
-  return result.data;
+  // NestJS's ConfigModule writes this function's return value straight into process.env
+  // (config.module.js's `validate` branch — unlike its own `validationSchema` branch, it does
+  // NOT merge back the keys a schema doesn't declare). Zod's object mode strips unknown keys by
+  // default, so returning `result.data` alone would silently drop any variable this schema
+  // doesn't name — including test-only ones like `TEST_SUPABASE_ANON_KEY` that legitimately
+  // belong in `apps/api/.env` (§16) but have no runtime schema entry. Spreading `raw` first
+  // preserves them; the validated, coerced/defaulted fields from `result.data` still win for
+  // every key this schema does declare.
+  return { ...raw, ...result.data };
 }
