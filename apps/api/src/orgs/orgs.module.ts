@@ -16,8 +16,10 @@ import { OrgsService } from './orgs.service';
  * `PlanGuard` resolve the same singleton instances by type without this module importing
  * `DatabaseModule` again — doing so would construct a second connection pool.
  *
- * Guards are exported so `BoardsModule`/`PostsModule` (Step 9) can reuse the same instances
- * rather than duplicating guard classes across modules (TDD §7.1).
+ * Guards and `TenantPrismaService` are exported so `BoardsModule`/`PostsModule` (Step 9) can
+ * reuse the same instances rather than duplicating guard classes or a second tenant-scoped
+ * client across modules (TDD §7.1) — `BoardsService` injects `TenantPrismaService` directly,
+ * the same way `OrgsService` and `PlanGuard` already do here.
  */
 @Module({
   controllers: [OrgsController],
@@ -31,6 +33,6 @@ import { OrgsService } from './orgs.service';
     PlanGuard,
     OrgRateLimitGuard,
   ],
-  exports: [OrgGuard, RolesGuard, PlanGuard, OrgRateLimitGuard],
+  exports: [TenantPrismaService, OrgGuard, RolesGuard, PlanGuard, OrgRateLimitGuard],
 })
 export class OrgsModule {}
