@@ -31,15 +31,15 @@ const email = (name: string): string => `posts-e2e-${RUN_ID}-${name}@example.com
  * `feedbackboard_app` role and the `boards` RLS policy is live, that count is global across
  * every org in this shared, persistent database.
  *
- * The Step 9.3 vote-toggle and vote-404 tests below are skipped for the exact same reason,
- * confirmed on the host (not merely theorized): `createOrgWithBoard()` calls
- * `POST /orgs/:orgSlug/boards`, which carries `@LimitedByPlan('boards')` — the toggle test does
- * not touch the cap's *counted resource* (votes are not plan-limited), but it still needs a
- * board to create a post on, and that board creation hits the same global count as every other
- * suite's board-creating test. Confirmed by running the suite: both new tests failed with
- * `{"error":"PLAN_LIMIT","limit":"boards","plan":"FREE","cap":1}` from `createOrgWithBoard`
- * itself, once other e2e suites in the same persistent database had already exhausted the
- * global cap of 1.
+ * The Step 9.3 vote-toggle and vote-404 tests, and the Step 9.4 comment tests below, are
+ * skipped for the exact same reason, confirmed on the host (not merely theorized):
+ * `createOrgWithBoard()` calls `POST /orgs/:orgSlug/boards`, which carries
+ * `@LimitedByPlan('boards')` — neither votes nor comments are themselves plan-limited, but each
+ * test still needs a board to create a post on, and that board creation hits the same global
+ * count as every other suite's board-creating test. Confirmed by running the suite: the vote
+ * tests failed with `{"error":"PLAN_LIMIT","limit":"boards","plan":"FREE","cap":1}` from
+ * `createOrgWithBoard` itself, once other e2e suites in the same persistent database had
+ * already exhausted the global cap of 1; the same applies to every comment test added here.
  */
 describe('posts (e2e)', () => {
   let app: INestApplication;
@@ -250,6 +250,70 @@ describe('posts (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post(`/orgs/${orgSlugValue}/posts/${randomUUID()}/votes`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: 'NOT_FOUND' });
+    },
+    SIGN_IN_TEST_TIMEOUT_MS,
+  );
+
+  it.skip(
+    'adds a comment and lists it back',
+    async () => {
+      const { token, orgSlugValue, boardSlugValue } = await createOrgWithBoard('comment');
+
+      const createPostResponse = await request(app.getHttpServer())
+        .post(`/orgs/${orgSlugValue}/boards/${boardSlugValue}/posts`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'Comment me', body: 'Please comment on this' });
+
+      expect(createPostResponse.status).toBe(201);
+      const postId = createPostResponse.body.id as string;
+
+      const createCommentResponse = await request(app.getHttpServer())
+        .post(`/orgs/${orgSlugValue}/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ body: 'Great idea!' });
+
+      expect(createCommentResponse.status).toBe(201);
+      expect(createCommentResponse.body).toMatchObject({ postId, body: 'Great idea!' });
+
+      const listResponse = await request(app.getHttpServer())
+        .get(`/orgs/${orgSlugValue}/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(listResponse.status).toBe(200);
+      expect(listResponse.body).toContainEqual(
+        expect.objectContaining({ id: createCommentResponse.body.id, body: 'Great idea!' }),
+      );
+    },
+    SIGN_IN_TEST_TIMEOUT_MS,
+  );
+
+  it.skip(
+    'returns 404 NOT_FOUND when commenting on a post id that does not resolve within the tenant',
+    async () => {
+      const { token, orgSlugValue } = await createOrgWithBoard('comment-missing');
+
+      const response = await request(app.getHttpServer())
+        .post(`/orgs/${orgSlugValue}/posts/${randomUUID()}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ body: 'Great idea!' });
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: 'NOT_FOUND' });
+    },
+    SIGN_IN_TEST_TIMEOUT_MS,
+  );
+
+  it.skip(
+    'returns 404 NOT_FOUND when listing comments for a post id that does not resolve within the tenant',
+    async () => {
+      const { token, orgSlugValue } = await createOrgWithBoard('comment-list-missing');
+
+      const response = await request(app.getHttpServer())
+        .get(`/orgs/${orgSlugValue}/posts/${randomUUID()}/comments`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(404);

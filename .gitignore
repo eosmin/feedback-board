@@ -27,6 +27,9 @@ supabase/.temp/
 supabase/.branches/
 supabase/snippets/
 
+# Redis local persistence — created wherever redis-server's cwd happens to be; never source
+*.rdb
+
 # Editor / OS
 .DS_Store
 Thumbs.db
