@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { Comment } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import { assertPostExists } from './assert-post-exists';
 import type { CreateCommentDto } from './dto/create-comment.dto';
 
 /**
@@ -22,11 +23,7 @@ export class CommentsService {
     dto: CreateCommentDto,
   ): Promise<Comment> {
     return this.tenantPrisma.run(async (tx) => {
-      const post = await tx.post.findFirst({ where: { id: postId }, select: { id: true } });
-
-      if (post === null) {
-        throw new NotFoundException({ error: 'NOT_FOUND' });
-      }
+      await assertPostExists(tx, postId);
 
       const comment = await tx.comment.create({
         data: { orgId, postId, authorId, body: dto.body },
@@ -39,11 +36,7 @@ export class CommentsService {
   /** `GET /orgs/:orgSlug/posts/:postId/comments` — oldest first, matching a conversation thread. */
   async listForPost(postId: string): Promise<Comment[]> {
     return this.tenantPrisma.run(async (tx) => {
-      const post = await tx.post.findFirst({ where: { id: postId }, select: { id: true } });
-
-      if (post === null) {
-        throw new NotFoundException({ error: 'NOT_FOUND' });
-      }
+      await assertPostExists(tx, postId);
 
       const comments = await tx.comment.findMany({
         where: { postId },

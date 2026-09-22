@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { VoteToggleResult } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import { assertPostExists } from './assert-post-exists';
 
 /**
  * Toggle semantics (TDD §11): a first call by a given user on a given post inserts a `Vote`
@@ -16,11 +17,7 @@ export class VotesService {
 
   async toggle(orgId: string, postId: string, userId: string): Promise<VoteToggleResult> {
     return this.tenantPrisma.run(async (tx) => {
-      const post = await tx.post.findFirst({ where: { id: postId }, select: { id: true } });
-
-      if (post === null) {
-        throw new NotFoundException({ error: 'NOT_FOUND' });
-      }
+      await assertPostExists(tx, postId);
 
       const existingVote = await tx.vote.findUnique({
         where: { postId_userId: { postId, userId } },
