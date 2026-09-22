@@ -6,12 +6,22 @@ import type { Config } from 'jest';
  * module and its threshold must move in the same commit.
  *
  * `*.module.ts` is excluded, so no security decision may live in a module file (§14.1).
+ *
+ * `testMatch` covers only `test/unit/**` now — `test/e2e/**` moved to its own
+ * `jest.e2e.config.ts`. Splitting the two configs, rather than keeping one `testMatch` covering
+ * both and filtering with a fixed `--testPathPatterns test/e2e` flag on the `test:e2e` script,
+ * is what lets a trailing `pnpm --filter api test:e2e -- posts` argument work as a genuine
+ * single-file filter: Jest's own CLI already treats a bare positional argument as a test-path
+ * pattern (`jest posts` — no flag needed), but that pattern is OR-combined with any pattern the
+ * script itself already passes via `--testPathPatterns`, so a script that hardcodes
+ * `test/e2e` there always matches the whole directory regardless of what a caller appends.
+ * Scoping the directory in `testMatch` instead removes the need for that flag entirely.
  */
 const config: Config = {
   rootDir: '.',
   roots: ['<rootDir>/src', '<rootDir>/test'],
   testEnvironment: 'node',
-  testMatch: ['<rootDir>/test/**/*.spec.ts', '<rootDir>/test/**/*.e2e-spec.ts'],
+  testMatch: ['<rootDir>/test/unit/**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }],
