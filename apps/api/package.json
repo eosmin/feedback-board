@@ -11,9 +11,9 @@
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
-    "test": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest --testPathPatterns test/unit",
-    "test:cov": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest --testPathPatterns test/unit --coverage",
-    "test:e2e": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest --testPathPatterns test/e2e --runInBand --forceExit"
+    "test": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest",
+    "test:cov": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest --coverage",
+    "test:e2e": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest --config jest.e2e.config.ts --runInBand --forceExit"
   },
   "dependencies": {
     "@bull-board/api": "9.8.0",
