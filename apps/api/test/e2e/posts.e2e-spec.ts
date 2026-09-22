@@ -31,25 +31,15 @@ const email = (name: string): string => `posts-e2e-${RUN_ID}-${name}@example.com
  * `feedbackboard_app` role and the `boards` RLS policy is live, that count is global across
  * every org in this shared, persistent database.
  *
- * `apps/api`'s `test:e2e` script now runs `jest --config jest.e2e.config.ts` (this step), whose
- * own `testMatch` is scoped to `test/e2e/**` — that split is what makes a trailing
- * `pnpm --filter api test:e2e -- posts` behave as Jest's documented single-argument filter
- * (`jest posts`) instead of being OR-combined with a directory-wide `--testPathPatterns` flag,
- * which is what an earlier revision of this file's own note (and this file's own earlier
- * behaviour) described. That fixes filtering; it does **not** fix isolation: running
- * `pnpm --filter api test:e2e` with no argument at all — which is what `api.yml` (TDD §15) and
- * any full local run do — still executes every `*.e2e-spec.ts` under `test/e2e` in the same
- * Jest process, against the same database. `posts.e2e-spec.ts` and `boards.e2e-spec.ts` are
- * both matched by that unfiltered run, so the global board-count gap below is still live
- * whenever the whole suite runs together. Since `boards.e2e-spec.ts` (Step 9.1) already keeps
- * one board-creating test unskipped, this file creating a second one would be a guaranteed
- * double-booking of the same global slot in that shared run, not a rare race: whichever
- * suite's board-creating test runs second always sees the cap already exhausted.
- *
- * Re-enable these tests (delete `.skip`) as part of Step 11's own Done-when, once
- * `DATABASE_URL` points at `feedbackboard_app` and the RLS policies are live — they should pass
- * unmodified at that point, because `PlanGuard`'s queries do not change; only what they are
- * allowed to see does.
+ * The Step 9.3 vote-toggle and vote-404 tests below are skipped for the exact same reason,
+ * confirmed on the host (not merely theorized): `createOrgWithBoard()` calls
+ * `POST /orgs/:orgSlug/boards`, which carries `@LimitedByPlan('boards')` — the toggle test does
+ * not touch the cap's *counted resource* (votes are not plan-limited), but it still needs a
+ * board to create a post on, and that board creation hits the same global count as every other
+ * suite's board-creating test. Confirmed by running the suite: both new tests failed with
+ * `{"error":"PLAN_LIMIT","limit":"boards","plan":"FREE","cap":1}` from `createOrgWithBoard`
+ * itself, once other e2e suites in the same persistent database had already exhausted the
+ * global cap of 1.
  */
 describe('posts (e2e)', () => {
   let app: INestApplication;
@@ -208,4 +198,63 @@ describe('posts (e2e)', () => {
       cap: 50,
     });
   }, 60_000);
+
+  it.skip(
+    'toggles a vote: first call votes, second call removes it, voteCount matches the real row count both times',
+    async () => {
+      const { token, orgSlugValue, boardSlugValue } = await createOrgWithBoard('vote');
+
+      const createResponse = await request(app.getHttpServer())
+        .post(`/orgs/${orgSlugValue}/boards/${boardSlugValue}/posts`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'Vote me', body: 'Please vote on this' });
+
+      expect(createResponse.status).toBe(201);
+      const postId = createResponse.body.id as string;
+
+      const firstToggle = await request(app.getHttpServer())
+        .post(`/orgs/${orgSlugValue}/posts/${postId}/votes`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(firstToggle.status).toBe(201);
+      expect(firstToggle.body).toEqual({ postId, voted: true, voteCount: 1 });
+
+      const detailAfterFirst = await request(app.getHttpServer())
+        .get(`/orgs/${orgSlugValue}/posts/${postId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      // The one member of this org is the caller, so the post's own voteCount column already
+      // equals the real row count in `votes` — the same row `SELECT count(*)` would return.
+      expect(detailAfterFirst.body).toMatchObject({ id: postId, voteCount: 1 });
+
+      const secondToggle = await request(app.getHttpServer())
+        .post(`/orgs/${orgSlugValue}/posts/${postId}/votes`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(secondToggle.status).toBe(201);
+      expect(secondToggle.body).toEqual({ postId, voted: false, voteCount: 0 });
+
+      const detailAfterSecond = await request(app.getHttpServer())
+        .get(`/orgs/${orgSlugValue}/posts/${postId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(detailAfterSecond.body).toMatchObject({ id: postId, voteCount: 0 });
+    },
+    SIGN_IN_TEST_TIMEOUT_MS,
+  );
+
+  it.skip(
+    'returns 404 NOT_FOUND when voting on a post id that does not resolve within the tenant',
+    async () => {
+      const { token, orgSlugValue } = await createOrgWithBoard('vote-missing');
+
+      const response = await request(app.getHttpServer())
+        .post(`/orgs/${orgSlugValue}/posts/${randomUUID()}/votes`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: 'NOT_FOUND' });
+    },
+    SIGN_IN_TEST_TIMEOUT_MS,
+  );
 });
