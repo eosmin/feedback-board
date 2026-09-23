@@ -29,4 +29,16 @@ describe('package entry point', () => {
   it('re-exports the shared uuid guard used by both TenantRunner and apps/api', () => {
     expect(core.isUuid).toBeDefined();
   });
+
+  it('re-exports the AI transport resolver, service and module', () => {
+    expect(core.resolveModel).toBeDefined();
+    expect(core.AiService).toBeDefined();
+    expect(core.AiModule).toBeDefined();
+  });
+
+  it("re-exports the shared LoggerModule and nestjs-pino's own Logger/PinoLogger classes", () => {
+    expect(core.LoggerModule).toBeDefined();
+    expect(core.Logger).toBeDefined();
+    expect(core.PinoLogger).toBeDefined();
+  });
 });

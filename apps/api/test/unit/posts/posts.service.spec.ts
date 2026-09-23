@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import type { Queue } from 'bullmq';
 
 import { PostsService } from '../../../src/posts/posts.service';
 import type { TenantPrismaService } from '../../../src/database/tenant-prisma.service';
@@ -52,10 +53,16 @@ function buildTenantPrisma(overrides: {
   return { run } as unknown as TenantPrismaService;
 }
 
+function buildQueue(): { queue: Queue; add: jest.Mock } {
+  const add = jest.fn().mockResolvedValue(undefined);
+  return { queue: { add } as unknown as Queue, add };
+}
+
 describe('PostsService', () => {
   it('resolves a board slug to its id within the tenant', async () => {
     const findFirstBoard = jest.fn().mockResolvedValue({ id: BOARD_ID });
-    const service = new PostsService(buildTenantPrisma({ findFirstBoard }));
+    const { queue } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ findFirstBoard }), queue);
 
     const result = await service.resolveBoardId('roadmap');
 
@@ -68,14 +75,16 @@ describe('PostsService', () => {
 
   it('throws 404 NOT_FOUND when the board slug does not resolve within the tenant', async () => {
     const findFirstBoard = jest.fn().mockResolvedValue(null);
-    const service = new PostsService(buildTenantPrisma({ findFirstBoard }));
+    const { queue } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ findFirstBoard }), queue);
 
     await expect(service.resolveBoardId('missing')).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('creates a post scoped to the given org and board, with orgId set explicitly on the insert', async () => {
     const create = jest.fn().mockResolvedValue(buildPostRow());
-    const service = new PostsService(buildTenantPrisma({ create }));
+    const { queue } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ create }), queue);
     const dto: CreatePostDto = { title: 'Add dark mode', body: 'Please add a dark theme' };
 
     const result = await service.create(ORG_ID, BOARD_ID, AUTHOR_ID, dto);
@@ -106,10 +115,28 @@ describe('PostsService', () => {
     });
   });
 
+  it('enqueues an ai-classify job with ids only, after the insert', async () => {
+    const create = jest.fn().mockResolvedValue(buildPostRow());
+    const { queue, add } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ create }), queue);
+    const dto: CreatePostDto = { title: 'Add dark mode', body: 'Please add a dark theme' };
+
+    await service.create(ORG_ID, BOARD_ID, AUTHOR_ID, dto);
+
+    // Ids only — never title/body (TDD §3.10): a payload sitting in Redis must carry no
+    // tenant content.
+    expect(add).toHaveBeenCalledWith(
+      'classify',
+      { orgId: ORG_ID, postId: POST_ID },
+      { attempts: 3, backoff: { type: 'exponential', delay: 2_000, jitter: 0.5 } },
+    );
+  });
+
   it('lists posts for a resolved board, most recent first', async () => {
     const findFirstBoard = jest.fn().mockResolvedValue({ id: BOARD_ID });
     const findMany = jest.fn().mockResolvedValue([buildPostRow()]);
-    const service = new PostsService(buildTenantPrisma({ findFirstBoard, findMany }));
+    const { queue } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ findFirstBoard, findMany }), queue);
 
     const result = await service.listForBoard('roadmap');
 
@@ -122,7 +149,8 @@ describe('PostsService', () => {
 
   it('returns a single post by id', async () => {
     const findFirstPost = jest.fn().mockResolvedValue(buildPostRow());
-    const service = new PostsService(buildTenantPrisma({ findFirstPost }));
+    const { queue } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ findFirstPost }), queue);
 
     const result = await service.getById(POST_ID);
 
@@ -132,7 +160,8 @@ describe('PostsService', () => {
 
   it('throws 404 NOT_FOUND when the post id does not resolve within the tenant', async () => {
     const findFirstPost = jest.fn().mockResolvedValue(null);
-    const service = new PostsService(buildTenantPrisma({ findFirstPost }));
+    const { queue } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ findFirstPost }), queue);
 
     await expect(service.getById('missing')).rejects.toBeInstanceOf(NotFoundException);
   });
@@ -140,7 +169,8 @@ describe('PostsService', () => {
   it('updates a post status', async () => {
     const findFirstPost = jest.fn().mockResolvedValue(buildPostRow());
     const update = jest.fn().mockResolvedValue(buildPostRow({ status: 'PLANNED' }));
-    const service = new PostsService(buildTenantPrisma({ findFirstPost, update }));
+    const { queue } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ findFirstPost, update }), queue);
     const dto: UpdatePostStatusDto = { status: 'PLANNED' };
 
     const result = await service.updateStatus(POST_ID, dto);
@@ -151,7 +181,8 @@ describe('PostsService', () => {
 
   it('throws 404 NOT_FOUND when updating the status of a post that does not resolve within the tenant', async () => {
     const findFirstPost = jest.fn().mockResolvedValue(null);
-    const service = new PostsService(buildTenantPrisma({ findFirstPost }));
+    const { queue } = buildQueue();
+    const service = new PostsService(buildTenantPrisma({ findFirstPost }), queue);
 
     await expect(service.updateStatus('missing', { status: 'PLANNED' })).rejects.toBeInstanceOf(
       NotFoundException,

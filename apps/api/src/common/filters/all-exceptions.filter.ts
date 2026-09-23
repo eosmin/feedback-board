@@ -1,7 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ERROR_CODES, type ErrorCode } from '@feedback-board/shared';
-import { Logger } from 'nestjs-pino';
+import { Logger } from '@feedback-board/core';
 
 const KNOWN_ERROR_CODES: ReadonlySet<string> = new Set(Object.values(ERROR_CODES));
 

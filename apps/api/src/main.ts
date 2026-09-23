@@ -2,8 +2,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from '@feedback-board/core';
 import helmet from 'helmet';
-import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
 import { validationExceptionFactory } from './common/validation-exception.factory';
