@@ -1,13 +1,21 @@
 import { Test } from '@nestjs/testing';
 import { DatabaseModule } from '@feedback-board/core';
+import type { TestingModule } from '@nestjs/testing';
 
 import { PostsModule } from '../../../src/posts/posts.module';
 import { PostsController } from '../../../src/posts/posts.controller';
 import { REDIS_CONNECTION } from '../../../src/queue/redis.connection';
+import { closeTestingModule } from '../../fixtures/close-testing-module';
 
 describe('PostsModule', () => {
+  let moduleRef: TestingModule | undefined;
+
+  afterEach(async () => {
+    await closeTestingModule(moduleRef);
+  });
+
   it('compiles and resolves PostsController', async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         DatabaseModule.forRoot({
           databaseUrl: 'postgresql://app:pw@localhost:5432/postgres',
@@ -17,7 +25,9 @@ describe('PostsModule', () => {
       ],
     })
       // Same override as boards.module.spec.ts (Step 9.1): this test only cares that DI wiring
-      // resolves, not that a real Redis connection opens.
+      // resolves, not that a real Redis connection opens — QueueModule's BullModule.forRootAsync
+      // needs REDIS_CONNECTION to be resolvable, and swapping it for a stub keeps this test from
+      // requiring a live Redis instance.
       .overrideProvider(REDIS_CONNECTION)
       .useValue({})
       .compile();

@@ -1,15 +1,23 @@
 import { Test } from '@nestjs/testing';
 import { DatabaseModule } from '@feedback-board/core';
+import type { TestingModule } from '@nestjs/testing';
 
 import { OrgsModule } from '../../../src/orgs/orgs.module';
 import { OrgsController } from '../../../src/orgs/orgs.controller';
 import { OrgGuard } from '../../../src/orgs/guards/org.guard';
 import { PlanGuard } from '../../../src/orgs/guards/plan.guard';
 import { REDIS_CONNECTION } from '../../../src/queue/redis.connection';
+import { closeTestingModule } from '../../fixtures/close-testing-module';
 
 describe('OrgsModule', () => {
+  let moduleRef: TestingModule | undefined;
+
+  afterEach(async () => {
+    await closeTestingModule(moduleRef);
+  });
+
   it('compiles and resolves OrgsController and the exported guards', async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         DatabaseModule.forRoot({
           databaseUrl: 'postgresql://app:pw@localhost:5432/postgres',

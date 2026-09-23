@@ -1,21 +1,18 @@
 import { randomUUID } from 'node:crypto';
 
-import { Controller, Get, INestApplication, UseGuards, ValidationPipe } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { DatabaseModule, PrismaService } from '@feedback-board/core';
+import { PrismaService } from '@feedback-board/core';
 import { createClient } from '@supabase/supabase-js';
-import { LoggerModule } from 'nestjs-pino';
 import request from 'supertest';
 
-import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.filter';
-import { validationExceptionFactory } from '../../src/common/validation-exception.factory';
-import { ConfigModule } from '../../src/config/config.module';
 import { AuthModule } from '../../src/auth/auth.module';
 import { OrgsModule } from '../../src/orgs/orgs.module';
 import { OrgGuard } from '../../src/orgs/guards/org.guard';
 import { RolesGuard } from '../../src/orgs/guards/roles.guard';
 import { Roles } from '../../src/orgs/roles.decorator';
+import { bootstrapTestApp } from '../fixtures/bootstrap-test-app';
+import { buildTestModuleMetadata } from '../fixtures/build-test-module-metadata';
 import { closeTestApp } from '../fixtures/close-test-app';
 import { requireEnv } from '../fixtures/require-env';
 import { signInAs } from '../fixtures/sign-in';
@@ -54,43 +51,14 @@ describe('orgs (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
+    const base = buildTestModuleMetadata();
     const moduleRef = await Test.createTestingModule({
-      imports: [
-        ConfigModule,
-        // Mirrors AppModule's redact list (TDD §16) — without it this suite's request logs
-        // print the raw bearer token to the test runner's stdout.
-        LoggerModule.forRoot({
-          pinoHttp: {
-            redact: [
-              'req.headers.authorization',
-              'req.headers.cookie',
-              'req.headers["stripe-signature"]',
-            ],
-          },
-        }),
-        DatabaseModule.forRoot({
-          databaseUrl: process.env.DATABASE_URL ?? '',
-          adminDatabaseUrl: process.env.ADMIN_DATABASE_URL ?? '',
-        }),
-        AuthModule,
-        OrgsModule,
-      ],
+      imports: [...base.imports, AuthModule, OrgsModule],
       controllers: [TestOwnerOnlyController],
-      // AllExceptionsFilter is what reduces PlanGuard/RolesGuard exceptions to their machine
-      // codes (TDD §7.8); it lives on AppModule's APP_FILTER, which this module never imports.
-      providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
+      providers: base.providers,
     }).compile();
 
-    app = moduleRef.createNestApplication({ rawBody: true });
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-        exceptionFactory: validationExceptionFactory,
-      }),
-    );
-    await app.init();
+    app = await bootstrapTestApp(moduleRef);
   });
 
   afterAll(async () => {

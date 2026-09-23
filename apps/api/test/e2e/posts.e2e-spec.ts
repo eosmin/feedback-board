@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '../../src/app.module';
-import { validationExceptionFactory } from '../../src/common/validation-exception.factory';
+import { bootstrapTestApp } from '../fixtures/bootstrap-test-app';
 import { closeTestApp } from '../fixtures/close-test-app';
 import { signInAs } from '../fixtures/sign-in';
 
@@ -46,17 +46,7 @@ describe('posts (e2e)', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-
-    app = moduleRef.createNestApplication({ rawBody: true });
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-        exceptionFactory: validationExceptionFactory,
-      }),
-    );
-    await app.init();
+    app = await bootstrapTestApp(moduleRef);
   });
 
   afterAll(async () => {

@@ -1,13 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
-import { DatabaseModule } from '@feedback-board/core';
-import { LoggerModule } from 'nestjs-pino';
+import { DatabaseModule, LoggerModule } from '@feedback-board/core';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ConfigModule } from './config/config.module';
 import { validateEnv } from './config/env.schema';
-import type { Env } from './config/env.schema';
 import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
 import { OrgsModule } from './orgs/orgs.module';
@@ -25,29 +22,11 @@ const env = validateEnv(process.env);
 @Module({
   imports: [
     ConfigModule,
-    LoggerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService<Env, true>) => {
-        const isProduction = config.get('NODE_ENV', { infer: true }) === 'production';
-
-        return {
-          pinoHttp: {
-            level: isProduction ? 'info' : 'debug',
-            ...(!isProduction && {
-              transport: {
-                target: 'pino-pretty',
-                options: { colorize: true, singleLine: true },
-              },
-            }),
-            redact: [
-              'req.headers.authorization',
-              'req.headers.cookie',
-              'req.headers["stripe-signature"]',
-            ],
-          },
-        };
-      },
-    }),
+    // LoggerModule.register() (TDD §2.6.16) wraps nestjs-pino's own LoggerModule.forRoot() —
+    // this app declares no nestjs-pino/pino/pino-http/pino-pretty dependency of its own, the
+    // options object it needs is just a boolean this app already computed from its validated
+    // env (§2.2a's rule applies here exactly as it does to DatabaseModule/AiModule).
+    LoggerModule.register({ isProduction: env.NODE_ENV === 'production' }),
     DatabaseModule.forRoot({
       databaseUrl: env.DATABASE_URL,
       adminDatabaseUrl: env.ADMIN_DATABASE_URL,
