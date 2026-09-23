@@ -1,13 +1,9 @@
 import { Controller, Get, INestApplication } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
-import { DatabaseModule } from '@feedback-board/core';
-import { LoggerModule } from 'nestjs-pino';
 import request from 'supertest';
 
-import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.filter';
-import { ConfigModule } from '../../src/config/config.module';
 import { AuthModule } from '../../src/auth/auth.module';
+import { buildTestModuleMetadata } from '../fixtures/build-test-module-metadata';
 import { signInAs } from '../fixtures/sign-in';
 
 /**
@@ -33,35 +29,11 @@ describe('auth (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
+    const base = buildTestModuleMetadata();
     const moduleRef = await Test.createTestingModule({
-      imports: [
-        ConfigModule,
-        // AllExceptionsFilter depends on nestjs-pino's Logger (TDD §7.9); AppModule registers
-        // it via LoggerModule.forRootAsync, which this test module does not otherwise import.
-        // The redact list mirrors AppModule's (TDD §16) — without it, this suite's own request
-        // logs print the raw Authorization header, i.e. a real bearer token, straight to the
-        // test runner's stdout.
-        LoggerModule.forRoot({
-          pinoHttp: {
-            redact: [
-              'req.headers.authorization',
-              'req.headers.cookie',
-              'req.headers["stripe-signature"]',
-            ],
-          },
-        }),
-        DatabaseModule.forRoot({
-          databaseUrl: process.env.DATABASE_URL ?? '',
-          adminDatabaseUrl: process.env.ADMIN_DATABASE_URL ?? '',
-        }),
-        AuthModule,
-      ],
+      imports: [...base.imports, AuthModule],
       controllers: [TestProtectedController],
-      // AllExceptionsFilter is what reduces JwtAuthGuard's UnauthorizedException to
-      // { error: 'UNAUTHORIZED' } (TDD §7.8); it lives on AppModule's APP_FILTER, which this
-      // module never imports, so it must be registered here too or every 401 in this file
-      // would assert against Nest's own English-prose default body instead.
-      providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
+      providers: base.providers,
     }).compile();
 
     app = moduleRef.createNestApplication();
