@@ -1,4 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { JOBS, QUEUES, classifyPostJobSchema } from '@feedback-board/core';
+import type { Queue } from 'bullmq';
 import type { Post } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
@@ -13,7 +16,10 @@ import type { UpdatePostStatusDto } from './dto/update-post-status.dto';
  */
 @Injectable()
 export class PostsService {
-  constructor(private readonly tenantPrisma: TenantPrismaService) {}
+  constructor(
+    private readonly tenantPrisma: TenantPrismaService,
+    @InjectQueue(QUEUES.AI_CLASSIFY) private readonly aiClassifyQueue: Queue,
+  ) {}
 
   /** Resolves a board slug to its id within the tenant, or 404s (TDD §11 nesting). */
   async resolveBoardId(boardSlug: string): Promise<string> {
@@ -31,8 +37,10 @@ export class PostsService {
   /**
    * `PlanGuard`'s `@LimitedByPlan('posts')` has already refused this request at the FREE cap,
    * counted **per org, not per board** (TDD §3.9), by the time this runs. `aiCategory`/
-   * `aiPriority` start `null` — Step 10 populates them via the queued classification job
-   * enqueued after this transaction commits; nothing here waits on that job (§3.8).
+   * `aiPriority` start `null` — the `ai-classify` job enqueued below, **after** the insert
+   * transaction commits, populates them; nothing here waits on that job (§3.8, §3.10). The
+   * payload carries `{ orgId, postId }` only, never `title`/`body` — a payload sitting in Redis
+   * must carry no tenant content (§3.10).
    */
   async create(
     orgId: string,
@@ -44,6 +52,17 @@ export class PostsService {
       tx.post.create({
         data: { orgId, boardId, authorId, title: dto.title, body: dto.body },
       }),
+    );
+
+    // Post-commit side effect (TDD §3.7, §3.8, §3.10): the transaction above has already
+    // returned by the time this line runs, and the HTTP response never waits on the job —
+    // enqueue failures are not caught here on purpose, matching §17's "AI is an enhancement"
+    // rule only for the classification *result*, not for the enqueue call itself, which BullMQ
+    // already retries via its own connection-level reconnection logic.
+    await this.aiClassifyQueue.add(
+      JOBS.CLASSIFY,
+      classifyPostJobSchema.parse({ orgId, postId: post.id }),
+      { attempts: 3, backoff: { type: 'exponential', delay: 2_000, jitter: 0.5 } },
     );
 
     return this.toPost(post);

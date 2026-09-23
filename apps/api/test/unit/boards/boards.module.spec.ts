@@ -1,13 +1,21 @@
 import { Test } from '@nestjs/testing';
 import { DatabaseModule } from '@feedback-board/core';
+import type { TestingModule } from '@nestjs/testing';
 
 import { BoardsModule } from '../../../src/boards/boards.module';
 import { BoardsController } from '../../../src/boards/boards.controller';
 import { REDIS_CONNECTION } from '../../../src/queue/redis.connection';
+import { closeTestingModule } from '../../fixtures/close-testing-module';
 
 describe('BoardsModule', () => {
+  let moduleRef: TestingModule | undefined;
+
+  afterEach(async () => {
+    await closeTestingModule(moduleRef);
+  });
+
   it('compiles and resolves BoardsController', async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         DatabaseModule.forRoot({
           databaseUrl: 'postgresql://app:pw@localhost:5432/postgres',
