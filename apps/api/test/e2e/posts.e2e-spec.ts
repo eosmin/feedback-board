@@ -19,28 +19,6 @@ const orgSlug = (name: string): string => `posts-e2e-${RUN_ID}-${name}`;
 const boardSlug = (name: string): string => `board-${RUN_ID}-${name}`;
 const email = (name: string): string => `posts-e2e-${RUN_ID}-${name}@example.com`;
 
-/**
- * KNOWN GAP, closes in Step 11 — same underlying cause as `boards.e2e-spec.ts`'s own note, but
- * confirmed here to be a **guaranteed** collision, not merely a possible one, so every test in
- * this file is skipped, including the single happy-path test `boards.e2e-spec.ts` gets to keep
- * unskipped. Do not delete this note when un-skipping the tests below.
- *
- * `PlanGuard.countExisting('boards')` (apps/api/src/orgs/guards/plan.guard.ts) runs
- * `tx.board.count()` with **no** `where: { orgId }` clause, by design (TDD §3.3): the cap is
- * meant to be made tenant-safe by RLS alone. Until Step 11 repoints `DATABASE_URL` at the
- * `feedbackboard_app` role and the `boards` RLS policy is live, that count is global across
- * every org in this shared, persistent database.
- *
- * The Step 9.3 vote-toggle and vote-404 tests, and the Step 9.4 comment tests below, are
- * skipped for the exact same reason, confirmed on the host (not merely theorized):
- * `createOrgWithBoard()` calls `POST /orgs/:orgSlug/boards`, which carries
- * `@LimitedByPlan('boards')` — neither votes nor comments are themselves plan-limited, but each
- * test still needs a board to create a post on, and that board creation hits the same global
- * count as every other suite's board-creating test. Confirmed by running the suite: the vote
- * tests failed with `{"error":"PLAN_LIMIT","limit":"boards","plan":"FREE","cap":1}` from
- * `createOrgWithBoard` itself, once other e2e suites in the same persistent database had
- * already exhausted the global cap of 1; the same applies to every comment test added here.
- */
 describe('posts (e2e)', () => {
   let app: INestApplication;
 
@@ -82,7 +60,7 @@ describe('posts (e2e)', () => {
     return { token, orgSlugValue, boardSlugValue };
   }
 
-  it.skip(
+  it(
     'creates a post and lists it back with a null aiCategory/aiPriority',
     async () => {
       const { token, orgSlugValue, boardSlugValue } = await createOrgWithBoard('create');
@@ -114,7 +92,7 @@ describe('posts (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
     'returns single post detail',
     async () => {
       const { token, orgSlugValue, boardSlugValue } = await createOrgWithBoard('detail');
@@ -136,7 +114,7 @@ describe('posts (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
     'lets OWNER/ADMIN change a post status',
     async () => {
       const { token, orgSlugValue, boardSlugValue } = await createOrgWithBoard('status');
@@ -159,7 +137,10 @@ describe('posts (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip('refuses a FREE org its 51st post with the PLAN_LIMIT body', async () => {
+  it(// Now safe to un-skip (Step 11) — same root cause as boards.e2e-spec.ts's own note:
+  // createOrgWithBoard's board creation shares the same PlanGuard org-wide count this test's
+  // own 51st-post assertion depends on, and both are now scoped by the live RLS policy.
+  'refuses a FREE org its 51st post with the PLAN_LIMIT body', async () => {
     const { token, orgSlugValue, boardSlugValue } = await createOrgWithBoard('cap');
 
     for (let index = 0; index < 50; index += 1) {
@@ -189,7 +170,7 @@ describe('posts (e2e)', () => {
     });
   }, 60_000);
 
-  it.skip(
+  it(
     'toggles a vote: first call votes, second call removes it, voteCount matches the real row count both times',
     async () => {
       const { token, orgSlugValue, boardSlugValue } = await createOrgWithBoard('vote');
@@ -233,7 +214,7 @@ describe('posts (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
     'returns 404 NOT_FOUND when voting on a post id that does not resolve within the tenant',
     async () => {
       const { token, orgSlugValue } = await createOrgWithBoard('vote-missing');
@@ -248,7 +229,7 @@ describe('posts (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
     'adds a comment and lists it back',
     async () => {
       const { token, orgSlugValue, boardSlugValue } = await createOrgWithBoard('comment');
@@ -281,7 +262,7 @@ describe('posts (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
     'returns 404 NOT_FOUND when commenting on a post id that does not resolve within the tenant',
     async () => {
       const { token, orgSlugValue } = await createOrgWithBoard('comment-missing');
@@ -297,7 +278,7 @@ describe('posts (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
     'returns 404 NOT_FOUND when listing comments for a post id that does not resolve within the tenant',
     async () => {
       const { token, orgSlugValue } = await createOrgWithBoard('comment-list-missing');

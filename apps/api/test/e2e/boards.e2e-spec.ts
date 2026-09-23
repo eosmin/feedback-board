@@ -19,27 +19,6 @@ const orgSlug = (name: string): string => `boards-e2e-${RUN_ID}-${name}`;
 const boardSlug = (name: string): string => `board-${RUN_ID}-${name}`;
 const email = (name: string): string => `boards-e2e-${RUN_ID}-${name}@example.com`;
 
-/**
- * KNOWN GAP, closes in Step 11 — do not delete this note when un-skipping the tests below.
- *
- * `PlanGuard.countExisting('boards')` (apps/api/src/orgs/guards/plan.guard.ts) runs
- * `tx.board.count()` with **no** `where: { orgId }` clause, by design (TDD §3.3): the cap is
- * meant to be made tenant-safe by RLS alone, not by a second, duplicated filter in application
- * code — duplicating it now would make Step 11's own e2e assertion ("with app.org_id set to
- * org A, the app role sees only org A's rows — the case the old exemption could not have
- * passed", TDD §13 step 11 Done-when) trivially true instead of a real proof that RLS works.
- *
- * Until Step 11 repoints `DATABASE_URL` at the `feedbackboard_app` role and the boards/posts/
- * votes/comments policies exist, `tx.board.count()` counts EVERY org's boards, not just the
- * caller's — so a brand-new FREE org can be refused its very first board because some other
- * org (created earlier in the same test run) already holds one. Confirmed against
- * `SELECT org_id, count(*) FROM boards GROUP BY org_id;` — more than one org_id shows up.
- *
- * The three tests below are skipped for that reason, not because the route is broken. Re-enable
- * them (delete `.skip`) as part of Step 11's own Done-when, once DATABASE_URL points at
- * feedbackboard_app and the RLS policies are live — they should pass unmodified at that point,
- * because PlanGuard's query does not change; only what it is allowed to see does.
- */
 describe('boards (e2e)', () => {
   let app: INestApplication;
 
@@ -69,11 +48,6 @@ describe('boards (e2e)', () => {
     return { token, slug };
   }
 
-  // NOT skipped: this test only asserts that a single, successful board creation lists back
-  // correctly. It does not assert a *refusal*, so it is unaffected by the org-wide count gap
-  // above, as long as it runs against a FREE org that has not yet hit the global cap — true on
-  // a freshly reset database, but see the Step 11 note above for why this remains fragile until
-  // then (a prior test file creating enough boards in the same run could still trip it).
   it(
     'creates a board and lists it back',
     async () => {
@@ -102,7 +76,7 @@ describe('boards (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
     'returns board detail with metadata and its post count',
     async () => {
       const { token, slug } = await createOrg('detail');
@@ -127,7 +101,12 @@ describe('boards (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
+    // Now safe to un-skip (Step 11): PlanGuard.countExisting('boards') runs tx.board.count()
+    // with no orgId filter by design (TDD §3.3), and until this step's RLS policy was live,
+    // that count was global across every org in this shared, persistent database. With
+    // DATABASE_URL pointed at feedbackboard_app and the boards RLS policy enforced, the count
+    // now runs under app.org_id and only ever sees the caller's own org.
     'refuses a FREE org its 2nd board with the PLAN_LIMIT body',
     async () => {
       const { token, slug } = await createOrg('cap');
@@ -155,7 +134,7 @@ describe('boards (e2e)', () => {
     SIGN_IN_TEST_TIMEOUT_MS,
   );
 
-  it.skip(
+  it(
     'refuses a MEMBER creating a board — OWNER/ADMIN only',
     async () => {
       const { token: ownerToken, slug } = await createOrg('rbac');
@@ -174,8 +153,7 @@ describe('boards (e2e)', () => {
       expect(response.body).toEqual({ error: 'FORBIDDEN' });
 
       // Sanity check the same route works for the actual OWNER, so the 403 above proves RBAC
-      // rather than a broken route. This assertion is the one the Step 11 gap actually breaks
-      // today — the OWNER's create can itself be refused by the org-wide count.
+      // rather than a broken route.
       const ownerResponse = await request(app.getHttpServer())
         .post(`/orgs/${slug}/boards`)
         .set('Authorization', `Bearer ${ownerToken}`)
