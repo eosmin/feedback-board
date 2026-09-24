@@ -8,6 +8,11 @@ describe('ERROR_CODES', () => {
     expect(ERROR_CODES.PLAN_LIMIT).toBe('PLAN_LIMIT');
   });
 
+  it('carries a signature code separate from VALIDATION_FAILED, which promises a fields list', () => {
+    expect(ERROR_CODES.INVALID_SIGNATURE).toBe('INVALID_SIGNATURE');
+    expect(ERROR_CODES.INVALID_SIGNATURE).not.toBe(ERROR_CODES.VALIDATION_FAILED);
+  });
+
   it('maps every key to its own name, so no code can drift from its constant', () => {
     for (const [key, value] of Object.entries(ERROR_CODES)) {
       expect(value).toBe(key);

@@ -14,6 +14,11 @@ export const ERROR_CODES = {
   NOT_FOUND: 'NOT_FOUND',
   CONFLICT: 'CONFLICT',
   RATE_LIMITED: 'RATE_LIMITED',
+  /**
+   * A signed inbound webhook whose signature is missing or does not verify. Distinct from
+   * VALIDATION_FAILED, whose body promises a `fields` list this refusal cannot carry.
+   */
+  INVALID_SIGNATURE: 'INVALID_SIGNATURE',
   /** The filter's fallback, so an unhandled failure still answers with a code. */
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;
