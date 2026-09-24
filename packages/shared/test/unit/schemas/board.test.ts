@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { boardDetailSchema, boardSchema, createBoardSchema } from '../../../src/schemas/board';
+import {
+  boardDetailSchema,
+  boardSchema,
+  createBoardSchema,
+  publicBoardSchema,
+} from '../../../src/schemas/board';
 
 const UUID = '3f1a7c2e-9b4d-4f8a-9c1e-7d5b2a6e0f43';
 const CREATED_AT = '2026-09-07T10:15:00.000Z';
@@ -67,5 +72,29 @@ describe('boardSchema', () => {
   it('requires a post count on the detail shape', () => {
     expect(boardDetailSchema.safeParse(board).success).toBe(false);
     expect(boardDetailSchema.safeParse({ ...board, postCount: 0 }).success).toBe(true);
+  });
+});
+
+describe('publicBoardSchema', () => {
+  const board = {
+    id: UUID,
+    orgId: UUID,
+    name: 'Roadmap',
+    slug: 'roadmap',
+    isPublic: true,
+    createdAt: CREATED_AT,
+  };
+
+  it('drops the org id from the public shape', () => {
+    const result = publicBoardSchema.safeParse(board);
+
+    expect(result.success).toBe(true);
+    expect(result.success && 'orgId' in result.data).toBe(false);
+  });
+
+  it('still requires the fields a public board renders', () => {
+    const { orgId: _orgId, name: _name, ...withoutName } = board;
+
+    expect(publicBoardSchema.safeParse(withoutName).success).toBe(false);
   });
 });

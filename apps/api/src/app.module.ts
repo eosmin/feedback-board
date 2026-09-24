@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { OrgsModule } from './orgs/orgs.module';
 import { BoardsModule } from './boards/boards.module';
 import { PostsModule } from './posts/posts.module';
+import { PublicModule } from './public/public.module';
 
 // Importing ConfigModule (above) triggers config.module.ts's own module-load-time call to
 // NestConfigModule.forRoot(...), which loads the root .env file synchronously as a side effect
@@ -35,6 +36,7 @@ const env = validateEnv(process.env);
     OrgsModule,
     BoardsModule,
     PostsModule,
+    PublicModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
