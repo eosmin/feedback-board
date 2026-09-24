@@ -3,9 +3,9 @@ import type { Config } from 'jest';
 /**
  * Coverage thresholds are the TDD §14.1 block, phased in per decision D12 (see
  * IMPLEMENTATION_PLAN.md's "Open decisions"): a per-path key is added only in the same commit
- * that creates its directory, because a key whose directory holds no file aborts the run. Today
- * this holds five of the eventual six keys — `./src/public/` was added in Step 12 alongside the
- * module it gates; `./src/billing/` lands in Step 13 the same way.
+ * that creates its directory, because a key whose directory holds no file aborts the run. All six
+ * keys are present as of Step 13: `./src/public/` arrived with its module in Step 12 and
+ * `./src/billing/` with its module in Step 13.
  *
  * `*.module.ts` is excluded, so no security decision may live in a module file (§14.1).
  *
@@ -35,6 +35,7 @@ const config: Config = {
     global: { statements: 80, branches: 75, functions: 80, lines: 80 },
     './src/auth/': { statements: 90, branches: 85, functions: 90, lines: 90 },
     './src/orgs/guards/': { statements: 90, branches: 85, functions: 90, lines: 90 },
+    './src/billing/': { statements: 90, branches: 85, functions: 90, lines: 90 },
     './src/database/': { statements: 90, branches: 85, functions: 90, lines: 90 },
     './src/queue/': { statements: 90, branches: 85, functions: 90, lines: 90 },
     './src/public/': { statements: 90, branches: 85, functions: 90, lines: 90 },
