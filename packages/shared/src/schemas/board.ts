@@ -29,3 +29,11 @@ export const boardDetailSchema = boardSchema.extend({
 });
 
 export type BoardDetail = z.infer<typeof boardDetailSchema>;
+
+/**
+ * `GET /public/:orgSlug/:boardSlug` — anonymous, so the internal org id is omitted, the same
+ * rule `publicPostSchema` applies to posts. The visitor already addresses the org by its slug.
+ */
+export const publicBoardSchema = boardSchema.omit({ orgId: true });
+
+export type PublicBoard = z.infer<typeof publicBoardSchema>;
