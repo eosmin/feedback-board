@@ -174,4 +174,38 @@ describe('row-level security (e2e)', () => {
     });
     expect(readBack?.id).toBe(subscription.id);
   });
+
+  it("a cross-tenant read of another org's webhooks and subscription returns zero rows, even with a deliberately weakened WHERE clause — the Milestone 7 tables the boards-only case above did not cover", async () => {
+    const orgA = await createOrgWithMember('webhooks-cross-a');
+    const orgB = await createOrgWithMember('webhooks-cross-b');
+
+    const webhook = await admin.client.webhook.create({
+      data: {
+        orgId: orgB.orgId,
+        targetUrl: `https://example.com/rls-e2e/${RUN_ID}`,
+        secret: randomUUID(),
+        events: ['post.created'],
+      },
+    });
+    const subscription = await admin.client.subscription.create({
+      data: {
+        orgId: orgB.orgId,
+        stripeSubscriptionId: `sub_rls_cross_${RUN_ID}`,
+        stripePriceId: `price_rls_cross_${RUN_ID}`,
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(),
+      },
+    });
+
+    const { webhooks, subscriptions } = await runner.runAs(orgA.orgId, async (tx) => ({
+      // WHERE clauses deliberately keyed on the target row's own id, not orgId — the same
+      // "forgot to scope" shape the boards case above exercises, now for the two tables this
+      // milestone introduced (TDD §3.7, §3.6; §5.6's per-step cross-tenant denial rule).
+      webhooks: await tx.webhook.findMany({ where: { id: webhook.id } }),
+      subscriptions: await tx.subscription.findMany({ where: { id: subscription.id } }),
+    }));
+
+    expect(webhooks).toEqual([]);
+    expect(subscriptions).toEqual([]);
+  });
 });

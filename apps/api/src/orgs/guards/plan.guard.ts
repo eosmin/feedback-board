@@ -1,6 +1,11 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { PLAN_LIMITS, type Plan, type PlanLimitedResource } from '@feedback-board/shared';
+import {
+  PLAN_CAPABILITIES,
+  PLAN_LIMITS,
+  type Plan,
+  type PlanLimitedResource,
+} from '@feedback-board/shared';
 
 import { LIMITED_BY_PLAN_KEY, REQUIRES_PLAN_KEY } from '../plan.decorator';
 import { TenantPrismaService } from '../../database/tenant-prisma.service';
@@ -38,7 +43,10 @@ export class PlanGuard implements CanActivate {
     ]);
 
     if (requiredPlan !== undefined && plan !== requiredPlan) {
-      throw new ForbiddenException(this.buildBody('webhooks', plan, false));
+      // PLAN_CAPABILITIES currently holds exactly one entry ('webhooks') — the only
+      // @RequiresPlan(...) gate in this codebase (TDD §11). Reading it by index instead of
+      // hardcoding the literal keeps this guard correct if a second capability is ever added.
+      throw new ForbiddenException(this.buildBody(PLAN_CAPABILITIES[0], plan, false));
     }
 
     const limitedResource = this.reflector.getAllAndOverride<PlanLimitedResource | undefined>(

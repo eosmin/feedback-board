@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ERROR_CODES } from '@feedback-board/shared';
 import type {
   Webhook,
   WebhookCreated,
@@ -80,7 +81,7 @@ export class WebhooksService {
     );
 
     if (existing === null) {
-      throw new NotFoundException({ error: 'NOT_FOUND' });
+      throw new NotFoundException({ error: ERROR_CODES.NOT_FOUND });
     }
 
     await this.tenantPrisma.run((tx) => tx.webhook.delete({ where: { id: webhookId } }));
@@ -96,7 +97,7 @@ export class WebhooksService {
     );
 
     if (webhook === null) {
-      throw new NotFoundException({ error: 'NOT_FOUND' });
+      throw new NotFoundException({ error: ERROR_CODES.NOT_FOUND });
     }
 
     const deliveries = await this.tenantPrisma.run((tx) =>
