@@ -13,6 +13,7 @@ import { PostsModule } from './posts/posts.module';
 import { PublicModule } from './public/public.module';
 import { BillingModule } from './billing/billing.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { BullBoardModule } from './queue/bull-board.module';
 
 // Importing ConfigModule (above) triggers config.module.ts's own module-load-time call to
 // NestConfigModule.forRoot(...), which loads the root .env file synchronously as a side effect
@@ -20,6 +21,12 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 // takes literal connection strings (TDD §2.6.4, §3.10: packages/core reads no process.env of
 // its own), so this app validates its own environment once, eagerly, to supply them; Nest's own
 // ConfigModule.validate then re-runs the identical check during normal DI bootstrap.
+//
+// AiModule is NOT registered here: the digest is BoardsModule's own feature (TDD §3.8's second
+// flow), and AiService holds no shared resource worth hoisting to the root module (the same
+// reasoning packages/core/src/ai/ai.module.ts's own docstring gives for not marking it global)
+// — BoardsModule builds its AiService from a ConfigService-injected factory instead, so a
+// boards-only test tree never needs this app's full env (§7.1).
 const env = validateEnv(process.env);
 
 @Module({
@@ -41,6 +48,11 @@ const env = validateEnv(process.env);
     PublicModule,
     BillingModule,
     WebhooksModule,
+    // Registered last (§8 step 15): it inspects queues (QueueModule) and verifies JWTs
+    // (AuthModule), both of which must already be wired. Its own register() reads the flag
+    // once, eagerly, and returns an empty DynamicModule when disabled — the route does not
+    // exist at all rather than existing and refusing every request (§3.10, decision D6).
+    BullBoardModule.register({ enabled: env.BULL_BOARD_ENABLED }),
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
