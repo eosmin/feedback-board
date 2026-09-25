@@ -1,6 +1,12 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { DatabaseModule, LoggerModule, QUEUES, AiModule } from '@feedback-board/core';
+import {
+  DatabaseModule,
+  LoggerModule,
+  QUEUES,
+  AiModule,
+  WebhookDeliveryService,
+} from '@feedback-board/core';
 import type { Redis } from 'ioredis';
 
 import { ConfigModule } from './config/config.module';
@@ -8,6 +14,7 @@ import { validateEnv } from './config/env.schema';
 import { RedisModule } from './queue/redis.module';
 import { REDIS_CONNECTION } from './queue/redis.connection';
 import { AiClassifyProcessor } from './processors/ai-classify.processor';
+import { WebhookDeliveryProcessor } from './processors/webhook-delivery.processor';
 
 // Same pattern as apps/api/src/app.module.ts: importing ConfigModule triggers its own
 // module-load-time NestConfigModule.forRoot(...) call, which loads .env synchronously before
@@ -39,6 +46,11 @@ const env = validateEnv(process.env);
  * rather than adding an `AI_DIGEST_MODEL` var this process has no business reading (§16's
  * ownership table lists `AI_*` as "digest only" for `apps/api`, "classification" for
  * `apps/worker`) — `generateDigest()` is simply never invoked from here.
+ *
+ * `WebhookDeliveryService` is a plain provider, not a dynamic-module registration (TDD §3.10):
+ * unlike `AiService`/`LoggerModule`, it holds no options and no shared resource, so both queues'
+ * processors share one instance the same way `TenantRunner` is shared, with no `register()` call.
+ * `registerQueue` now covers both queues: `webhooks` (this step) alongside `ai-classify`.
  */
 @Module({
   imports: [
@@ -62,8 +74,8 @@ const env = validateEnv(process.env);
       inject: [REDIS_CONNECTION],
       useFactory: (connection: Redis) => ({ connection }),
     }),
-    BullModule.registerQueue({ name: QUEUES.AI_CLASSIFY }),
+    BullModule.registerQueue({ name: QUEUES.AI_CLASSIFY }, { name: QUEUES.WEBHOOKS }),
   ],
-  providers: [AiClassifyProcessor],
+  providers: [AiClassifyProcessor, WebhookDeliveryProcessor, WebhookDeliveryService],
 })
 export class WorkerModule {}
