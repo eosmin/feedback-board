@@ -18,6 +18,19 @@ import type { Config } from 'jest';
  * script itself already passes via `--testPathPatterns`, so a script that hardcodes
  * `test/e2e` there always matches the whole directory regardless of what a caller appends.
  * Scoping the directory in `testMatch` instead removes the need for that flag entirely.
+ *
+ * `moduleNameMapper` strips a trailing `.js` off any relative specifier before Jest resolves it
+ * — the same fix `apps/worker/jest.config.ts` already carries and documents in full. Root
+ * cause: `tsconfig.base.json`'s `"module": "nodenext"` requires an explicit `.js` extension on
+ * every relative import, including a dynamic `import(...)`, even though the source file is
+ * `.ts` — TypeScript rewrites the specifier at type-check time, not at emit time, so `tsc` both
+ * requires and accepts it. Jest's resolver, unlike `tsc`, takes that extension literally and
+ * looks for a compiled `.js` file that was never emitted (`ts-jest` compiles in memory; there is
+ * no build step in a test run), which fails only for files that actually use a dynamic
+ * `import()` — `test/e2e/bull-board.e2e-spec.ts` is the first one in this package. Every static
+ * import in `apps/api` already omits the extension and resolves fine under both `tsc` and Jest,
+ * because `ts-jest`'s own transform rewrites those before Jest's resolver ever sees them; only a
+ * dynamic `import()` call reaches Jest's resolver with the literal string from source.
  */
 const config: Config = {
   rootDir: '.',
@@ -25,6 +38,9 @@ const config: Config = {
   testEnvironment: 'node',
   testMatch: ['<rootDir>/test/unit/**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }],
   },

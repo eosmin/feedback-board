@@ -12,15 +12,18 @@ function buildService(): {
   create: jest.Mock;
   list: jest.Mock;
   getDetail: jest.Mock;
+  generateDigest: jest.Mock;
 } {
   const create = jest.fn().mockResolvedValue({ id: 'board-1' });
   const list = jest.fn().mockResolvedValue([]);
   const getDetail = jest.fn().mockResolvedValue({ id: 'board-1' });
+  const generateDigest = jest.fn().mockResolvedValue({ summary: 'A summary.' });
   return {
-    service: { create, list, getDetail } as unknown as BoardsService,
+    service: { create, list, getDetail, generateDigest } as unknown as BoardsService,
     create,
     list,
     getDetail,
+    generateDigest,
   };
 }
 
@@ -62,5 +65,15 @@ describe('BoardsController', () => {
     await controller.detail('acme', 'roadmap');
 
     expect(getDetail).toHaveBeenCalledWith('roadmap');
+  });
+
+  it('generates a digest via the service', async () => {
+    const { service, generateDigest } = buildService();
+    const controller = new BoardsController(service);
+
+    const result = await controller.generateDigest('acme', 'roadmap');
+
+    expect(generateDigest).toHaveBeenCalledWith('roadmap');
+    expect(result).toEqual({ summary: 'A summary.' });
   });
 });

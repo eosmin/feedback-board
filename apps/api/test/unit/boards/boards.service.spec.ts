@@ -1,5 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@feedback-board/core';
+import type { AiService, DigestPostInput } from '@feedback-board/core';
 
 import { BoardsService } from '../../../src/boards/boards.service';
 import type { TenantPrismaService } from '../../../src/database/tenant-prisma.service';
@@ -14,6 +15,7 @@ function buildTenantPrisma(overrides: {
   findMany?: jest.Mock;
   findFirst?: jest.Mock;
   count?: jest.Mock;
+  postFindMany?: jest.Mock;
 }): TenantPrismaService {
   const run = jest.fn(async (fn: (tx: unknown) => unknown) => {
     const tx = {
@@ -24,11 +26,16 @@ function buildTenantPrisma(overrides: {
       },
       post: {
         count: overrides.count ?? jest.fn(),
+        findMany: overrides.postFindMany ?? jest.fn(),
       },
     };
     return fn(tx);
   });
   return { run } as unknown as TenantPrismaService;
+}
+
+function buildAiService(generateDigest: jest.Mock): AiService {
+  return { generateDigest } as unknown as AiService;
 }
 
 describe('BoardsService', () => {
@@ -41,7 +48,7 @@ describe('BoardsService', () => {
       isPublic: true,
       createdAt: CREATED_AT,
     });
-    const service = new BoardsService(buildTenantPrisma({ create }));
+    const service = new BoardsService(buildTenantPrisma({ create }), buildAiService(jest.fn()));
     const dto: CreateBoardDto = { name: 'Roadmap', slug: 'roadmap' };
 
     const result = await service.create(ORG_ID, dto);
@@ -70,7 +77,7 @@ describe('BoardsService', () => {
       isPublic: true,
       createdAt: CREATED_AT,
     });
-    const service = new BoardsService(buildTenantPrisma({ create }));
+    const service = new BoardsService(buildTenantPrisma({ create }), buildAiService(jest.fn()));
 
     await service.create(ORG_ID, { name: 'Roadmap', slug: 'roadmap' });
 
@@ -86,7 +93,7 @@ describe('BoardsService', () => {
         clientVersion: '7.0.0',
       }),
     );
-    const service = new BoardsService(buildTenantPrisma({ create }));
+    const service = new BoardsService(buildTenantPrisma({ create }), buildAiService(jest.fn()));
 
     await expect(
       service.create(ORG_ID, { name: 'Roadmap', slug: 'roadmap' }),
@@ -95,7 +102,7 @@ describe('BoardsService', () => {
 
   it('rethrows an unrelated database error unchanged', async () => {
     const create = jest.fn().mockRejectedValue(new Error('connection reset'));
-    const service = new BoardsService(buildTenantPrisma({ create }));
+    const service = new BoardsService(buildTenantPrisma({ create }), buildAiService(jest.fn()));
 
     await expect(service.create(ORG_ID, { name: 'Roadmap', slug: 'roadmap' })).rejects.toThrow(
       'connection reset',
@@ -113,7 +120,7 @@ describe('BoardsService', () => {
         createdAt: CREATED_AT,
       },
     ]);
-    const service = new BoardsService(buildTenantPrisma({ findMany }));
+    const service = new BoardsService(buildTenantPrisma({ findMany }), buildAiService(jest.fn()));
 
     const result = await service.list();
 
@@ -140,7 +147,10 @@ describe('BoardsService', () => {
       createdAt: CREATED_AT,
     });
     const count = jest.fn().mockResolvedValue(3);
-    const service = new BoardsService(buildTenantPrisma({ findFirst, count }));
+    const service = new BoardsService(
+      buildTenantPrisma({ findFirst, count }),
+      buildAiService(jest.fn()),
+    );
 
     const result = await service.getDetail('roadmap');
 
@@ -159,8 +169,70 @@ describe('BoardsService', () => {
 
   it('throws 404 NOT_FOUND when the board slug does not resolve within the tenant', async () => {
     const findFirst = jest.fn().mockResolvedValue(null);
-    const service = new BoardsService(buildTenantPrisma({ findFirst }));
+    const service = new BoardsService(buildTenantPrisma({ findFirst }), buildAiService(jest.fn()));
 
     await expect(service.getDetail('missing')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  describe('generateDigest', () => {
+    it('loads only OPEN/PLANNED/IN_PROGRESS posts and returns the model text', async () => {
+      const findFirst = jest.fn().mockResolvedValue({ id: BOARD_ID });
+      const postFindMany = jest.fn().mockResolvedValue([
+        {
+          title: 'Dark mode',
+          body: 'Please add it',
+          voteCount: 5,
+          aiCategory: 'FEATURE_REQUEST',
+          aiPriority: 'HIGH',
+        },
+      ]);
+      const generateDigest = jest.fn().mockResolvedValue('Most requested: dark mode.');
+      const service = new BoardsService(
+        buildTenantPrisma({ findFirst, postFindMany }),
+        buildAiService(generateDigest),
+      );
+
+      const result = await service.generateDigest('roadmap');
+
+      expect(findFirst).toHaveBeenCalledWith({ where: { slug: 'roadmap' }, select: { id: true } });
+      expect(postFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { boardId: BOARD_ID, status: { in: ['OPEN', 'PLANNED', 'IN_PROGRESS'] } },
+        }),
+      );
+      const [input] = generateDigest.mock.calls[0] as [DigestPostInput[]];
+      expect(input).toEqual([
+        {
+          title: 'Dark mode',
+          body: 'Please add it',
+          voteCount: 5,
+          category: 'FEATURE_REQUEST',
+          priority: 'HIGH',
+        },
+      ]);
+      expect(result).toEqual({ summary: 'Most requested: dark mode.' });
+    });
+
+    it('throws 404 NOT_FOUND when the board slug does not resolve within the tenant', async () => {
+      const findFirst = jest.fn().mockResolvedValue(null);
+      const service = new BoardsService(
+        buildTenantPrisma({ findFirst }),
+        buildAiService(jest.fn()),
+      );
+
+      await expect(service.generateDigest('missing')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('propagates a model failure instead of swallowing it — unlike classification, the digest is user-visible', async () => {
+      const findFirst = jest.fn().mockResolvedValue({ id: BOARD_ID });
+      const postFindMany = jest.fn().mockResolvedValue([]);
+      const generateDigest = jest.fn().mockRejectedValue(new Error('model unavailable'));
+      const service = new BoardsService(
+        buildTenantPrisma({ findFirst, postFindMany }),
+        buildAiService(generateDigest),
+      );
+
+      await expect(service.generateDigest('roadmap')).rejects.toThrow('model unavailable');
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import {
+  buildAiTransportConfig,
   DatabaseModule,
   LoggerModule,
   QUEUES,
@@ -45,7 +46,10 @@ const env = validateEnv(process.env);
  * (§3.8's second flow). `digestModel` is set to `AI_CLASSIFY_MODEL` as an unused placeholder
  * rather than adding an `AI_DIGEST_MODEL` var this process has no business reading (§16's
  * ownership table lists `AI_*` as "digest only" for `apps/api`, "classification" for
- * `apps/worker`) — `generateDigest()` is simply never invoked from here.
+ * `apps/worker`) — `generateDigest()` is simply never invoked from here. `buildAiTransportConfig`
+ * (`packages/core`) builds the `AI_CUSTOM_*` half of `AiServiceOptions` — `apps/api/src/boards/
+ * boards.module.ts` needs the identical translation from its own env, so it is written once,
+ * not copy-pasted per app (§7.1).
  *
  * `WebhookDeliveryService` is a plain provider, not a dynamic-module registration (TDD §3.10):
  * unlike `AiService`/`LoggerModule`, it holds no options and no shared resource, so both queues'
@@ -60,14 +64,7 @@ const env = validateEnv(process.env);
     AiModule.register({
       classifyModel: env.AI_CLASSIFY_MODEL,
       digestModel: env.AI_CLASSIFY_MODEL,
-      transport: {
-        ...(env.AI_CUSTOM_BASE_URL !== undefined && { customBaseUrl: env.AI_CUSTOM_BASE_URL }),
-        ...(env.AI_CUSTOM_API_KEY !== undefined && { customApiKey: env.AI_CUSTOM_API_KEY }),
-        ...(env.AI_CUSTOM_PROVIDER_NAME !== undefined && {
-          customProviderName: env.AI_CUSTOM_PROVIDER_NAME,
-        }),
-        customSupportsStructuredOutputs: env.AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS,
-      },
+      transport: buildAiTransportConfig(env),
     }),
     RedisModule,
     BullModule.forRootAsync({

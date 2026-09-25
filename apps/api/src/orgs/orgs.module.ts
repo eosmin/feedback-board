@@ -21,10 +21,16 @@ import { OrgsService } from './orgs.service';
  * `RateLimitStore` here and the BullMQ producer there share the one real `ioredis` connection
  * this process holds (TDD §2.6.14), instead of each module constructing its own.
  *
- * Guards and `TenantPrismaService` are exported so `BoardsModule`/`PostsModule` (Step 9) can
- * reuse the same instances rather than duplicating guard classes or a second tenant-scoped
- * client across modules (TDD §7.1) — `BoardsService` injects `TenantPrismaService` directly,
- * the same way `OrgsService` and `PlanGuard` already do here.
+ * Guards, `TenantPrismaService` and `RateLimitStore` are exported so `BoardsModule`/
+ * `PostsModule` (Step 9) can reuse the same instances rather than duplicating guard classes or
+ * a second tenant-scoped client across modules (TDD §7.1) — `BoardsService` injects
+ * `TenantPrismaService` directly, the same way `OrgsService` and `PlanGuard` already do here.
+ * `RateLimitStore` specifically must be exported, not just `OrgRateLimitGuard`: Nest resolves a
+ * constructor dependency from the *importing* module's own provider graph, not from whatever
+ * module originally declared the class that needs it — `BoardsModule` (Step 15) imports
+ * `OrgsModule` and uses `OrgRateLimitGuard` on its own controller, so `RateLimitStore` must be
+ * visible there too, or that guard's own dependency fails to resolve with "Nest can't resolve
+ * dependencies of OrgRateLimitGuard" the moment a second module puts it on a route.
  */
 @Module({
   imports: [RedisModule],
@@ -38,6 +44,13 @@ import { OrgsService } from './orgs.service';
     PlanGuard,
     OrgRateLimitGuard,
   ],
-  exports: [TenantPrismaService, OrgGuard, RolesGuard, PlanGuard, OrgRateLimitGuard],
+  exports: [
+    TenantPrismaService,
+    RateLimitStore,
+    OrgGuard,
+    RolesGuard,
+    PlanGuard,
+    OrgRateLimitGuard,
+  ],
 })
 export class OrgsModule {}
