@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   boardDetailSchema,
+  boardDigestSchema,
   boardSchema,
   createBoardSchema,
   publicBoardSchema,
@@ -96,5 +97,25 @@ describe('publicBoardSchema', () => {
     const { orgId: _orgId, name: _name, ...withoutName } = board;
 
     expect(publicBoardSchema.safeParse(withoutName).success).toBe(false);
+  });
+});
+
+describe('boardDigestSchema', () => {
+  it('accepts a plain-text summary', () => {
+    expect(
+      boardDigestSchema.safeParse({ summary: 'Most posts are about UX polish.' }).success,
+    ).toBe(true);
+  });
+
+  it('accepts an empty summary — the model may legitimately return nothing to say', () => {
+    expect(boardDigestSchema.safeParse({ summary: '' }).success).toBe(true);
+  });
+
+  it('rejects a missing summary field', () => {
+    expect(boardDigestSchema.safeParse({}).success).toBe(false);
+  });
+
+  it('rejects a non-string summary', () => {
+    expect(boardDigestSchema.safeParse({ summary: 42 }).success).toBe(false);
   });
 });
