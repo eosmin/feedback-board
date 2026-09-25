@@ -37,3 +37,15 @@ export type BoardDetail = z.infer<typeof boardDetailSchema>;
 export const publicBoardSchema = boardSchema.omit({ orgId: true });
 
 export type PublicBoard = z.infer<typeof publicBoardSchema>;
+
+/**
+ * `POST /orgs/:orgSlug/boards/:boardSlug/ai-digest` response (TDD §3.8) — `result.text` from
+ * `AiService.generateDigest()`, returned directly to the browser. Deliberately **not**
+ * persisted and **not cached** (§1.5): there is no row and no id to carry alongside it, so the
+ * response is a single field, not a resource shape.
+ */
+export const boardDigestSchema = z.object({
+  summary: z.string(),
+});
+
+export type BoardDigest = z.infer<typeof boardDigestSchema>;
