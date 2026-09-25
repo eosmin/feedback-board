@@ -13,6 +13,8 @@ export * from './ai/resolve-model';
 export * from './ai/ai.service';
 export * from './ai/ai.module';
 
+export * from './webhooks/webhook-delivery.service';
+
 export * from './logger/logger.module';
 // `nestjs-pino`'s own classes, not re-implemented ones (TDD §2.6.16) — `apps/api` and
 // `apps/worker` inject `Logger`/`PinoLogger` from this barrel instead of declaring

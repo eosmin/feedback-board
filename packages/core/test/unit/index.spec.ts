@@ -36,6 +36,10 @@ describe('package entry point', () => {
     expect(core.AiModule).toBeDefined();
   });
 
+  it('re-exports the webhook delivery service used by apps/worker (TDD §3.10)', () => {
+    expect(core.WebhookDeliveryService).toBeDefined();
+  });
+
   it("re-exports the shared LoggerModule and nestjs-pino's own Logger/PinoLogger classes", () => {
     expect(core.LoggerModule).toBeDefined();
     expect(core.Logger).toBeDefined();

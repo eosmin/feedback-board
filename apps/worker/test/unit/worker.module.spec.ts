@@ -26,13 +26,16 @@ describe('WorkerModule', () => {
     await closeTestingModule(moduleRef);
   });
 
-  it('compiles with DatabaseModule.forTenant, AiModule, LoggerModule and the ai-classify queue registered', async () => {
+  it('compiles with DatabaseModule.forTenant, AiModule, LoggerModule and both queues registered', async () => {
     const { Test } = await import('@nestjs/testing');
     const { getQueueToken } = await import('@nestjs/bullmq');
-    const { AiService, AppPrismaClient, Logger, QUEUES } = await import('@feedback-board/core');
+    const { AiService, AppPrismaClient, Logger, QUEUES, WebhookDeliveryService } =
+      await import('@feedback-board/core');
     const { WorkerModule } = await import('../../src/worker.module.js');
     const { REDIS_CONNECTION } = await import('../../src/queue/redis.connection.js');
     const { AiClassifyProcessor } = await import('../../src/processors/ai-classify.processor.js');
+    const { WebhookDeliveryProcessor } =
+      await import('../../src/processors/webhook-delivery.processor.js');
 
     moduleRef = await Test.createTestingModule({ imports: [WorkerModule] })
       .overrideProvider(REDIS_CONNECTION)
@@ -47,6 +50,9 @@ describe('WorkerModule', () => {
     expect(moduleRef.get(AiService)).toBeDefined();
     expect(moduleRef.get(Logger)).toBeInstanceOf(Logger);
     expect(moduleRef.get(AiClassifyProcessor)).toBeInstanceOf(AiClassifyProcessor);
+    expect(moduleRef.get(WebhookDeliveryProcessor)).toBeInstanceOf(WebhookDeliveryProcessor);
+    expect(moduleRef.get(WebhookDeliveryService)).toBeInstanceOf(WebhookDeliveryService);
     expect(moduleRef.get(getQueueToken(QUEUES.AI_CLASSIFY))).toBeDefined();
+    expect(moduleRef.get(getQueueToken(QUEUES.WEBHOOKS))).toBeDefined();
   });
 });
