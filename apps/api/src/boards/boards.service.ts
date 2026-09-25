@@ -1,6 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AiService, Prisma } from '@feedback-board/core';
 import type { AiService as Ai, DigestPostInput } from '@feedback-board/core';
+import { ERROR_CODES } from '@feedback-board/shared';
 import type { Board, BoardDetail, BoardDigest } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
@@ -63,7 +64,7 @@ export class BoardsService {
       };
     } catch (error) {
       if (isUniqueConstraintViolation(error)) {
-        throw new ConflictException({ error: 'CONFLICT' });
+        throw new ConflictException({ error: ERROR_CODES.CONFLICT });
       }
       throw error;
     }
@@ -96,7 +97,7 @@ export class BoardsService {
     );
 
     if (board === null) {
-      throw new NotFoundException({ error: 'NOT_FOUND' });
+      throw new NotFoundException({ error: ERROR_CODES.NOT_FOUND });
     }
 
     const postCount = await this.tenantPrisma.run((tx) =>
@@ -129,7 +130,7 @@ export class BoardsService {
     );
 
     if (board === null) {
-      throw new NotFoundException({ error: 'NOT_FOUND' });
+      throw new NotFoundException({ error: ERROR_CODES.NOT_FOUND });
     }
 
     const posts = await this.tenantPrisma.run((tx) =>
