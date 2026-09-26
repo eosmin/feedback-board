@@ -14,25 +14,36 @@ const root = require('../../eslint.config.js');
  * monorepo, and a single long-lived ESLint process (the VS Code extension) visiting files from
  * multiple packages cannot otherwise disambiguate which one applies to a given file.
  */
-module.exports = defineConfig(...root, {
-  files: ['src/**/*.ts', 'test/**/*.ts'],
-  languageOptions: {
-    parserOptions: {
-      tsconfigRootDir: __dirname,
+module.exports = defineConfig(
+  ...root,
+  {
+    files: ['src/**/*.ts', 'test/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+      },
+    },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@feedback-board/core', '@feedback-board/core/*'],
+              message:
+                'packages/shared is bundled into the browser — it must never import packages/core.',
+            },
+          ],
+        },
+      ],
     },
   },
-  rules: {
-    'no-restricted-imports': [
-      'error',
-      {
-        patterns: [
-          {
-            group: ['@feedback-board/core', '@feedback-board/core/*'],
-            message:
-              'packages/shared is bundled into the browser — it must never import packages/core.',
-          },
-        ],
+  {
+    files: ['*.config.js', '*.config.mts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
       },
-    ],
+    },
   },
-});
+);
