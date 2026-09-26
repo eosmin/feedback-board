@@ -80,3 +80,26 @@ export async function apiFetch<S extends z.ZodType>(
 
   return schema.parse(json);
 }
+
+/**
+ * The `/public/*` counterpart of `apiFetch`: no Supabase session, no `Authorization` header,
+ * because these routes carry `@Public()` and take no JWT at all (TDD §11). Used from Server
+ * Components (the public board page), so it never touches `createSupabaseBrowserClient` — that
+ * client assumes a browser or a request-scoped cookie jar, neither of which a public read needs.
+ * `cache: 'no-store'` keeps the board's vote counts and statuses fresh on every request; this
+ * project does not cache public reads (§1.5).
+ */
+export async function publicApiFetch<S extends z.ZodType>(
+  path: string,
+  schema: S,
+): Promise<z.infer<S>> {
+  const response = await fetch(apiUrl(path), { cache: 'no-store' });
+
+  const json: unknown = response.status === 204 ? null : await response.json();
+
+  if (!response.ok) {
+    throw new ApiError(response.status, json as ApiErrorBody);
+  }
+
+  return schema.parse(json);
+}

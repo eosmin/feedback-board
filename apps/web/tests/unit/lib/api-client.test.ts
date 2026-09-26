@@ -5,7 +5,7 @@ vi.mock('../../../lib/supabase/client', () => ({
   createSupabaseBrowserClient: vi.fn(),
 }));
 
-import { apiFetch, ApiError } from '../../../lib/api-client';
+import { apiFetch, ApiError, publicApiFetch } from '../../../lib/api-client';
 import { createSupabaseBrowserClient } from '../../../lib/supabase/client';
 
 const mockCreateSupabaseBrowserClient = vi.mocked(createSupabaseBrowserClient);
@@ -126,5 +126,44 @@ describe('apiFetch', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await expect(apiFetch('/orgs/acme', responseSchema)).rejects.toThrow();
+  });
+});
+
+describe('publicApiFetch', () => {
+  const responseSchema = z.object({ id: z.string() });
+
+  it('sends no Authorization header and never touches Supabase', async () => {
+    process.env.NEXT_PUBLIC_API_URL = 'https://api.example.test';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ id: 'abc' }), { status: 200 }));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await publicApiFetch('/public/acme/roadmap', responseSchema);
+
+    expect(result).toEqual({ id: 'abc' });
+    expect(mockCreateSupabaseBrowserClient).not.toHaveBeenCalled();
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://api.example.test/public/acme/roadmap');
+    expect(init.cache).toBe('no-store');
+    expect(init.headers).toBeUndefined();
+  });
+
+  it('throws an ApiError carrying the NOT_FOUND body on a 404 response', async () => {
+    process.env.NEXT_PUBLIC_API_URL = 'https://api.example.test';
+    const errorBody = { error: 'NOT_FOUND' };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(errorBody), { status: 404 }));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await publicApiFetch('/public/acme/roadmap', responseSchema).then(
+      () => expect.unreachable('expected publicApiFetch to reject'),
+      (error: unknown) => {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).status).toBe(404);
+        expect((error as ApiError).body).toEqual(errorBody);
+      },
+    );
   });
 });
