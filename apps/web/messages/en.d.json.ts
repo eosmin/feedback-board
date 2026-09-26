@@ -10,6 +10,15 @@ declare const messages: {
       "unauthorized": "You need to sign in to continue.",
       "notFound": "We could not find what you were looking for."
     }
+  },
+  "login": {
+    "title": "Sign in to FeedbackBoard",
+    "emailLabel": "Email address",
+    "emailInvalid": "Enter a valid email address.",
+    "submit": "Send magic link",
+    "sending": "Sending…",
+    "checkEmail": "Check {email} for a sign-in link.",
+    "error": "We could not send the link. Please try again."
   }
 };
 export default messages;

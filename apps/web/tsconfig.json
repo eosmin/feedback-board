@@ -8,6 +8,7 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node"],
     "allowJs": true,
+    "allowArbitraryExtensions": true,
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
