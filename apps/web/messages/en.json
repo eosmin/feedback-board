@@ -1,0 +1,11 @@
+{
+  "common": {
+    "appName": "FeedbackBoard",
+    "loading": "Loading…",
+    "error": {
+      "generic": "Something went wrong. Please try again.",
+      "unauthorized": "You need to sign in to continue.",
+      "notFound": "We could not find what you were looking for."
+    }
+  }
+}

@@ -8,11 +8,22 @@ const root = require('../../eslint.config.js');
  * package's tsconfig from the monorepo's other tsconfig.json files (same note as
  * packages/core/eslint.config.js and apps/api/eslint.config.js).
  */
-module.exports = defineConfig(...root, {
-  files: ['src/**/*.ts', 'test/**/*.ts'],
-  languageOptions: {
-    parserOptions: {
-      tsconfigRootDir: __dirname,
+module.exports = defineConfig(
+  ...root,
+  {
+    files: ['src/**/*.ts', 'test/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+      },
     },
   },
-});
+  {
+    files: ['*.config.js', '*.config.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+      },
+    },
+  },
+);

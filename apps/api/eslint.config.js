@@ -14,11 +14,22 @@ const root = require('../../eslint.config.js');
  * files from more than one package. `packages/core/eslint.config.js` documents the same fix for
  * the same reason.
  */
-module.exports = defineConfig(...root, {
-  files: ['src/**/*.ts', 'test/**/*.ts'],
-  languageOptions: {
-    parserOptions: {
-      tsconfigRootDir: __dirname,
+module.exports = defineConfig(
+  ...root,
+  {
+    files: ['src/**/*.ts', 'test/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+      },
     },
   },
-});
+  {
+    files: ['*.config.js', '*.config.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+      },
+    },
+  },
+);

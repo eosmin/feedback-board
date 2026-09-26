@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+
+/**
+ * CSS-first Tailwind 4 config (TDD §2.6.9) — no JS config file. A small, deliberate palette:
+ * this project is a portfolio demo, not a design system, so the namespace is extended rather
+ * than reset.
+ */
+
+@theme {
+  --color-brand-50: oklch(0.97 0.02 260);
+  --color-brand-100: oklch(0.93 0.04 260);
+  --color-brand-200: oklch(0.86 0.08 260);
+  --color-brand-300: oklch(0.76 0.12 260);
+  --color-brand-400: oklch(0.65 0.16 260);
+  --color-brand-500: oklch(0.55 0.19 260);
+  --color-brand-600: oklch(0.46 0.19 260);
+  --color-brand-700: oklch(0.38 0.17 260);
+  --color-brand-800: oklch(0.3 0.13 260);
+  --color-brand-900: oklch(0.24 0.1 260);
+}
+
+body {
+  min-height: 100dvh;
+}
