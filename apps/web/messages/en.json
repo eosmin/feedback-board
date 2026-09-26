@@ -16,5 +16,31 @@
     "sending": "Sending…",
     "checkEmail": "Check {email} for a sign-in link.",
     "error": "We could not send the link. Please try again."
+  },
+  "publicBoard": {
+    "empty": "No feedback has been posted yet.",
+    "voteCount": "{count, number} votes",
+    "status": {
+      "OPEN": "Open",
+      "PLANNED": "Planned",
+      "IN_PROGRESS": "In progress",
+      "DONE": "Done",
+      "CLOSED": "Closed"
+    },
+    "category": {
+      "BUG": "Bug",
+      "FEATURE_REQUEST": "Feature request",
+      "UX": "UX",
+      "OTHER": "Other"
+    },
+    "priority": {
+      "LOW": "Low priority",
+      "MEDIUM": "Medium priority",
+      "HIGH": "High priority"
+    },
+    "notFound": {
+      "title": "Board not found",
+      "description": "This board does not exist or is not public."
+    }
   }
 }
