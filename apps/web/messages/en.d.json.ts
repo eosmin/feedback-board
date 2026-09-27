@@ -64,6 +64,34 @@ declare const messages: {
       "submit": "Create organization",
       "creating": "Creating…",
       "error": "We could not create the organization. Please try again."
+    },
+    "orgOverview": {
+      "boardsTitle": "Boards",
+      "boardsEmpty": "No boards yet. Create one to get started.",
+      "visibility": {
+        "public": "Public",
+        "private": "Private"
+      },
+      "createBoard": {
+        "title": "Create a board",
+        "nameLabel": "Board name",
+        "nameInvalid": "Enter a name between 2 and 60 characters.",
+        "slugLabel": "URL slug",
+        "slugHelp": "Lowercase letters, numbers and hyphens. Used in the board's public URL.",
+        "slugInvalid": "Enter a valid slug.",
+        "slugTaken": "That slug is already used by another board in this org.",
+        "isPublicLabel": "Make this board publicly viewable",
+        "submit": "Create board",
+        "creating": "Creating…",
+        "error": "We could not create the board. Please try again."
+      },
+      "planLimit": {
+        "boards": {
+          "title": "You've reached the Free plan board limit",
+          "description": "Upgrade to Pro for unlimited boards.",
+          "cta": "Upgrade to Pro"
+        }
+      }
     }
   }
 };
