@@ -89,6 +89,44 @@
           "cta": "Upgrade to Pro"
         }
       }
+    },
+    "boardDetail": {
+      "postsEmpty": "No feedback has been posted yet.",
+      "voteButton": "Vote ({count, number})",
+      "statusLabel": "Status",
+      "createPost": {
+        "title": "Share feedback",
+        "titleLabel": "Title",
+        "titleInvalid": "Enter a title between 3 and 200 characters.",
+        "bodyLabel": "Description",
+        "bodyInvalid": "Enter a description.",
+        "submit": "Post feedback",
+        "creating": "Posting…",
+        "error": "We could not create the post. Please try again."
+      },
+      "planLimit": {
+        "posts": {
+          "title": "You've reached the Free plan post limit",
+          "description": "Upgrade to Pro for unlimited posts.",
+          "cta": "Upgrade to Pro"
+        }
+      },
+      "comments": {
+        "title": "Comments",
+        "loading": "Loading comments…",
+        "empty": "No comments yet.",
+        "bodyLabel": "Add a comment",
+        "bodyInvalid": "Enter a comment.",
+        "submit": "Comment",
+        "submitting": "Posting…"
+      },
+      "aiDigest": {
+        "title": "AI summary",
+        "submit": "Generate AI Summary",
+        "generating": "Generating…",
+        "error": "We could not generate a summary. Please try again.",
+        "rateLimited": "You've reached the hourly limit for AI summaries. Try again later."
+      }
     }
   }
 }
