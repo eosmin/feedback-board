@@ -45,6 +45,26 @@ declare const messages: {
       "title": "Board not found",
       "description": "This board does not exist or is not public."
     }
+  },
+  "dashboard": {
+    "title": "Your organizations",
+    "empty": "You don't belong to any organization yet. Create one to get started.",
+    "planBadge": {
+      "FREE": "Free plan",
+      "PRO": "Pro plan"
+    },
+    "createOrg": {
+      "title": "Create an organization",
+      "nameLabel": "Organization name",
+      "nameInvalid": "Enter a name between 2 and 60 characters.",
+      "slugLabel": "URL slug",
+      "slugHelp": "Lowercase letters, numbers and hyphens. Used in your board's public URL.",
+      "slugInvalid": "Enter a valid, non-reserved slug.",
+      "slugReserved": "That slug is reserved. Choose another one.",
+      "submit": "Create organization",
+      "creating": "Creating…",
+      "error": "We could not create the organization. Please try again."
+    }
   }
 };
 export default messages;
