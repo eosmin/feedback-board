@@ -17,6 +17,7 @@ coverage/
 .nyc_output/
 playwright-report/
 test-results/
+.vitest/
 
 # Environment — every runtime .env is secret (TDD §16, §17)
 .env
