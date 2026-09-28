@@ -148,6 +148,54 @@ declare const messages: {
         "redirecting": "Redirecting…",
         "error": "We could not start that session. Please try again."
       }
+    },
+    "webhooks": {
+      "title": "Webhooks",
+      "createForm": {
+        "title": "Add a webhook",
+        "targetUrlLabel": "Target URL",
+        "targetUrlInvalid": "Enter a valid URL.",
+        "eventsLabel": "Events",
+        "eventsInvalid": "Select at least one event.",
+        "event": {
+          "post_created": "Post created",
+          "post_status_changed": "Post status changed"
+        },
+        "submit": "Add webhook",
+        "creating": "Adding…",
+        "error": "We could not add the webhook. Please try again."
+      },
+      "secretBanner": {
+        "title": "Signing secret",
+        "description": "Copy this secret now. It will not be shown again.",
+        "dismiss": "I've saved it"
+      },
+      "upgradePrompt": {
+        "title": "Webhooks require the Pro plan",
+        "description": "Upgrade to Pro to add and receive webhook notifications.",
+        "cta": "Upgrade to Pro"
+      },
+      "list": {
+        "empty": "No webhooks yet.",
+        "status": {
+          "active": "Active",
+          "disabled": "Disabled — upgrade to Pro to reactivate"
+        },
+        "delete": "Delete"
+      },
+      "deliveries": {
+        "show": "View delivery log",
+        "loading": "Loading…",
+        "empty": "No delivery attempts yet.",
+        "error": "We could not load the delivery log. Please try again.",
+        "noResponse": "No response",
+        "columns": {
+          "attempt": "Attempt",
+          "event": "Event",
+          "status": "Status",
+          "createdAt": "Date"
+        }
+      }
     }
   }
 };
