@@ -63,6 +63,30 @@ describe('AiDigestPanel', () => {
     expect(container.textContent).toContain('Most feedback is about dark mode.');
   });
 
+  it('renders Markdown in the summary as elements, not literal ** characters', async () => {
+    mockApiFetch.mockResolvedValue({ summary: '**Dark mode** is the top request.' });
+
+    act(() => {
+      root.render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <AiDigestPanel orgSlug="acme" boardSlug="feature-requests" />
+        </NextIntlClientProvider>,
+      );
+    });
+
+    const button = container.querySelector('button') as HTMLButtonElement;
+
+    await act(async () => {
+      button.click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const strong = container.querySelector('strong');
+    expect(strong?.textContent).toBe('Dark mode');
+    expect(container.textContent).not.toContain('**Dark mode**');
+  });
+
   it('shows the rate-limit copy for a 429 RATE_LIMITED response, not the generic error', async () => {
     mockApiFetch.mockRejectedValue(new ApiError(429, { error: 'RATE_LIMITED' }));
 
