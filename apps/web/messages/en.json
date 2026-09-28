@@ -127,6 +127,24 @@
         "error": "We could not generate a summary. Please try again.",
         "rateLimited": "You've reached the hourly limit for AI summaries. Try again later."
       }
+    },
+    "billing": {
+      "title": "Billing",
+      "checkoutSuccess": "Thanks! Your subscription is being activated.",
+      "usage": {
+        "boards": "Boards",
+        "posts": "Posts",
+        "webhooks": "Webhooks",
+        "unlimited": "Unlimited",
+        "available": "Available",
+        "unavailable": "Not available on the Free plan"
+      },
+      "actions": {
+        "upgrade": "Upgrade to Pro",
+        "managePortal": "Manage billing",
+        "redirecting": "Redirecting…",
+        "error": "We could not start that session. Please try again."
+      }
     }
   }
 }
