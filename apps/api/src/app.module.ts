@@ -1,3 +1,5 @@
+import { existsSync } from 'fs';
+
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { DatabaseModule, LoggerModule } from '@feedback-board/core';
@@ -15,12 +17,22 @@ import { BillingModule } from './billing/billing.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { BullBoardModule } from './queue/bull-board.module';
 
-// Importing ConfigModule (above) triggers config.module.ts's own module-load-time call to
-// NestConfigModule.forRoot(...), which loads the root .env file synchronously as a side effect
-// before this line runs — so process.env is already populated here. DatabaseModule.forRoot
-// takes literal connection strings (TDD §2.6.4, §3.10: packages/core reads no process.env of
-// its own), so this app validates its own environment once, eagerly, to supply them; Nest's own
-// ConfigModule.validate then re-runs the identical check during normal DI bootstrap.
+// `NestConfigModule.forRoot` (called by `ConfigModule`, imported above) is `async`: when its own
+// internal `validate: validateEnv` call throws, that throw only rejects forRoot's returned
+// promise — nobody awaits it this early, so `.env` never gets merged into `process.env`. The
+// `validateEnv(process.env)` call below then runs against a bare `process.env` and reports every
+// required key as missing, not just the one that actually is — a misleading cascade. Loading the
+// file here, synchronously, with Node's own loader removes the dependency on forRoot's internal
+// timing: by the time `validateEnv` runs, `.env` is merged in regardless of what `ConfigModule`
+// does or how it orders its own async work.
+if (existsSync('.env')) {
+  process.loadEnvFile('.env');
+}
+
+// DatabaseModule.forRoot takes literal connection strings (TDD §2.6.4, §3.10: packages/core
+// reads no process.env of its own), so this app validates its own environment once, eagerly, to
+// supply them; Nest's own ConfigModule.validate then re-runs the identical check during normal DI
+// bootstrap.
 //
 // AiModule is NOT registered here: the digest is BoardsModule's own feature (TDD §3.8's second
 // flow), and AiService holds no shared resource worth hoisting to the root module (the same

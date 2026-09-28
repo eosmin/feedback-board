@@ -1,3 +1,5 @@
+import { existsSync } from 'fs';
+
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import {
@@ -17,11 +19,19 @@ import { REDIS_CONNECTION } from './queue/redis.connection';
 import { AiClassifyProcessor } from './processors/ai-classify.processor';
 import { WebhookDeliveryProcessor } from './processors/webhook-delivery.processor';
 
-// Same pattern as apps/api/src/app.module.ts: importing ConfigModule triggers its own
-// module-load-time NestConfigModule.forRoot(...) call, which loads .env synchronously before
-// this line runs. DatabaseModule.forTenant, LoggerModule.register and AiModule.register all take
-// literal values (packages/core reads no process.env of its own, §2.2a), so this app validates
-// its own environment once, eagerly, to supply them.
+// Same pattern as apps/api/src/app.module.ts: `NestConfigModule.forRoot` (called by
+// `ConfigModule`, imported above) is `async`, and when its own internal `validate: validateEnv`
+// call throws, that throw only rejects forRoot's returned promise — nobody awaits it this early,
+// so `.env` never gets merged into `process.env`. Loading the file here, synchronously, with
+// Node's own loader removes the dependency on forRoot's internal timing, so a single missing
+// required var reports as itself instead of cascading into every var looking missing.
+if (existsSync('.env')) {
+  process.loadEnvFile('.env');
+}
+
+// DatabaseModule.forTenant, LoggerModule.register and AiModule.register all take literal values
+// (packages/core reads no process.env of its own, §2.2a), so this app validates its own
+// environment once, eagerly, to supply them.
 const env = validateEnv(process.env);
 
 /**
