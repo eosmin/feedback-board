@@ -7,6 +7,7 @@ import { OrgGuard } from './guards/org.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { PlanGuard } from './guards/plan.guard';
 import { OrgRateLimitGuard } from './guards/org-rate-limit.guard';
+import { OrgRateLimitHeaderInterceptor } from './guards/org-rate-limit.interceptor';
 import { OrgsController } from './orgs.controller';
 import { OrgsService } from './orgs.service';
 
@@ -43,6 +44,7 @@ import { OrgsService } from './orgs.service';
     RolesGuard,
     PlanGuard,
     OrgRateLimitGuard,
+    OrgRateLimitHeaderInterceptor,
   ],
   exports: [
     TenantPrismaService,
@@ -51,6 +53,7 @@ import { OrgsService } from './orgs.service';
     RolesGuard,
     PlanGuard,
     OrgRateLimitGuard,
+    OrgRateLimitHeaderInterceptor,
   ],
 })
 export class OrgsModule {}
