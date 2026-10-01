@@ -12,7 +12,10 @@ import { useEffect, useRef } from 'react';
  */
 export function useClickOutside(ref: RefObject<HTMLElement | null>, onOutsideClick: () => void): void {
   const callbackRef = useRef(onOutsideClick);
-  callbackRef.current = onOutsideClick;
+
+  useEffect(() => {
+    callbackRef.current = onOutsideClick;
+  }, [onOutsideClick]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent): void {

@@ -11,7 +11,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { apiFetch, ApiError } from '../../lib/api-client';
 import { useSlugAutofill } from '../../lib/use-slug-autofill';
@@ -37,14 +37,15 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateOrgInput>({
     resolver: zodResolver(createOrgSchema),
   });
 
-  const { onSlugChange } = useSlugAutofill(watch('name'), setValue);
+  const nameValue = useWatch({ control, name: 'name' });
+  const { onSlugChange } = useSlugAutofill(nameValue, setValue);
 
   async function onSubmit(values: CreateOrgInput): Promise<void> {
     setSubmitError(null);

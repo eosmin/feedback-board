@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
 
 import { apiFetch, ApiError } from '../../lib/api-client';
@@ -46,7 +46,7 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateBoardFormValues>({
@@ -54,7 +54,8 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
     defaultValues: { isPublic: true },
   });
 
-  const { onSlugChange } = useSlugAutofill(watch('name'), setValue);
+  const nameValue = useWatch({ control, name: 'name' });
+  const { onSlugChange } = useSlugAutofill(nameValue, setValue);
 
   async function onSubmit(values: CreateBoardFormValues): Promise<void> {
     setSubmitError(null);
