@@ -1,10 +1,12 @@
-import { boardSchema, orgDetailSchema } from '@feedback-board/shared';
+import { boardSchema } from '@feedback-board/shared';
 import { getTranslations } from 'next-intl/server';
 import type { ReactElement } from 'react';
 import { z } from 'zod';
 
 import { OrgBoardsOverview } from '../../../components/dashboard/org-boards-overview';
+import { Badge, PageHeader } from '../../../components/ui';
 import { serverApiFetch } from '../../../lib/api-client-server';
+import { getOrgDetail } from '../../../lib/org-detail';
 import { requireUser } from '../../../lib/supabase/require-user';
 
 const boardListSchema = z.array(boardSchema);
@@ -26,23 +28,22 @@ interface OrgOverviewPageProps {
 export default async function OrgOverviewPage({
   params,
 }: OrgOverviewPageProps): Promise<ReactElement> {
-  await requireUser();
   const { orgSlug } = await params;
+  await requireUser(`/dashboard/${orgSlug}`);
   const t = await getTranslations('dashboard.orgOverview');
 
   const [org, boards] = await Promise.all([
-    serverApiFetch(`/orgs/${orgSlug}`, orgDetailSchema),
+    getOrgDetail(orgSlug),
     serverApiFetch(`/orgs/${orgSlug}/boards`, boardListSchema),
   ]);
 
   return (
-    <main>
-      <h1>{org.name}</h1>
-      <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">
-        {org.plan}
-      </span>
-      <h2>{t('boardsTitle')}</h2>
-      <OrgBoardsOverview orgSlug={orgSlug} initialBoards={boards} />
+    <main className="flex flex-col gap-6 p-6">
+      <PageHeader title={org.name} badge={<Badge>{org.plan}</Badge>} />
+      <div className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium text-zinc-900">{t('boardsTitle')}</h2>
+        <OrgBoardsOverview orgSlug={orgSlug} initialBoards={boards} />
+      </div>
     </main>
   );
 }

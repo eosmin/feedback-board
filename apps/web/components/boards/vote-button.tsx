@@ -6,6 +6,7 @@ import type { ReactElement } from 'react';
 import { useState } from 'react';
 
 import { apiFetch } from '../../lib/api-client';
+import { Button } from '../ui';
 
 interface VoteButtonProps {
   orgSlug: string;
@@ -39,8 +40,8 @@ export function VoteButton({ orgSlug, post, onUpdated }: VoteButtonProps): React
   }
 
   return (
-    <button type="button" onClick={() => void handleClick()} disabled={isSubmitting}>
+    <Button variant="secondary" onClick={() => void handleClick()} disabled={isSubmitting}>
       {t('voteButton', { count: post.voteCount })}
-    </button>
+    </Button>
   );
 }

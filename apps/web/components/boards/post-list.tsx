@@ -2,6 +2,7 @@ import type { Post } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
+import { Card, EmptyState } from '../ui';
 import { PostClassificationBadge } from './post-classification-badge';
 import { PostComments } from './post-comments';
 import { PostStatusBadge } from './post-status-badge';
@@ -26,15 +27,15 @@ export function PostList({ orgSlug, posts, canManage, onUpdated }: PostListProps
   const t = useTranslations('dashboard.boardDetail');
 
   if (posts.length === 0) {
-    return <p>{t('postsEmpty')}</p>;
+    return <EmptyState>{t('postsEmpty')}</EmptyState>;
   }
 
   return (
     <ul className="flex flex-col gap-4">
       {posts.map((post) => (
-        <li key={post.id} className="rounded-lg border border-brand-100 p-4">
-          <h2 className="font-medium">{post.title}</h2>
-          <p className="mt-1 text-sm">{post.body}</p>
+        <Card as="li" key={post.id}>
+          <h2 className="font-medium text-zinc-900">{post.title}</h2>
+          <p className="mt-1 text-sm text-zinc-700">{post.body}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {canManage ? (
               <PostStatusSelect orgSlug={orgSlug} post={post} onUpdated={onUpdated} />
@@ -45,7 +46,7 @@ export function PostList({ orgSlug, posts, canManage, onUpdated }: PostListProps
             <VoteButton orgSlug={orgSlug} post={post} onUpdated={onUpdated} />
           </div>
           <PostComments orgSlug={orgSlug} postId={post.id} />
-        </li>
+        </Card>
       ))}
     </ul>
   );

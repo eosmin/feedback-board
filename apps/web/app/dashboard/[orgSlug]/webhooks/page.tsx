@@ -1,11 +1,13 @@
-import { orgDetailSchema, webhookSchema } from '@feedback-board/shared';
+import { webhookSchema } from '@feedback-board/shared';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { z } from 'zod';
 
+import { PageHeader } from '../../../../components/ui';
 import { WebhooksManager } from '../../../../components/webhooks/webhooks-manager';
 import { serverApiFetch } from '../../../../lib/api-client-server';
+import { getOrgDetail } from '../../../../lib/org-detail';
 import { requireUser } from '../../../../lib/supabase/require-user';
 
 const webhookListSchema = z.array(webhookSchema);
@@ -23,11 +25,11 @@ interface WebhooksPageProps {
  * `WebhooksController`'s routes are `@Roles('OWNER', 'ADMIN')` rather than OWNER-only.
  */
 export default async function WebhooksPage({ params }: WebhooksPageProps): Promise<ReactElement> {
-  await requireUser();
   const { orgSlug } = await params;
+  await requireUser(`/dashboard/${orgSlug}/webhooks`);
   const t = await getTranslations('dashboard.webhooks');
 
-  const org = await serverApiFetch(`/orgs/${orgSlug}`, orgDetailSchema);
+  const org = await getOrgDetail(orgSlug);
 
   if (org.role !== 'OWNER' && org.role !== 'ADMIN') {
     notFound();
@@ -36,8 +38,8 @@ export default async function WebhooksPage({ params }: WebhooksPageProps): Promi
   const webhooks = await serverApiFetch(`/orgs/${orgSlug}/webhooks`, webhookListSchema);
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
+    <main className="flex flex-col gap-6 p-6">
+      <PageHeader title={t('title')} />
       <WebhooksManager
         orgSlug={orgSlug}
         initialWebhooks={webhooks}

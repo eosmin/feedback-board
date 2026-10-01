@@ -65,9 +65,18 @@ describe('OrgPicker', () => {
     expect(container.textContent).toContain('Acme');
     expect(container.textContent).not.toContain('Umbrella');
 
-    const nameInput = container.querySelector('#org-name') as HTMLInputElement;
-    const slugInput = container.querySelector('#org-slug') as HTMLInputElement;
-    const form = container.querySelector('form') as HTMLFormElement;
+    const trigger = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === messages.dashboard.createOrg.trigger,
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+
+    // The dialog is rendered via a portal into document.body, not into `container`.
+    const nameInput = document.querySelector('#org-name') as HTMLInputElement;
+    const slugInput = document.querySelector('#org-slug') as HTMLInputElement;
+    const form = document.querySelector('#org-name')?.closest('form') as HTMLFormElement;
 
     await act(async () => {
       Object.defineProperty(nameInput, 'value', { value: 'Umbrella', configurable: true });

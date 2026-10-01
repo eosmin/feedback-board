@@ -2,6 +2,8 @@ import type { OrgDetail } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
+import { Card } from '../ui';
+
 interface UsageSummaryProps {
   /** `org.usage` from `GET /orgs/:orgSlug` — never counted client-side (TDD §3.9, §11). */
   usage: OrgDetail['usage'];
@@ -16,23 +18,25 @@ export function UsageSummary({ usage }: UsageSummaryProps): ReactElement {
   const t = useTranslations('dashboard.billing.usage');
 
   return (
-    <dl>
+    <Card as="dl" className="grid grid-cols-3 gap-4">
       <div>
-        <dt>{t('boards')}</dt>
-        <dd>
+        <dt className="text-xs font-medium uppercase text-zinc-500">{t('boards')}</dt>
+        <dd className="mt-1 text-sm text-zinc-900">
           {usage.boards.used} / {usage.boards.cap === null ? t('unlimited') : usage.boards.cap}
         </dd>
       </div>
       <div>
-        <dt>{t('posts')}</dt>
-        <dd>
+        <dt className="text-xs font-medium uppercase text-zinc-500">{t('posts')}</dt>
+        <dd className="mt-1 text-sm text-zinc-900">
           {usage.posts.used} / {usage.posts.cap === null ? t('unlimited') : usage.posts.cap}
         </dd>
       </div>
       <div>
-        <dt>{t('webhooks')}</dt>
-        <dd>{usage.webhooks.available ? t('available') : t('unavailable')}</dd>
+        <dt className="text-xs font-medium uppercase text-zinc-500">{t('webhooks')}</dt>
+        <dd className="mt-1 text-sm text-zinc-900">
+          {usage.webhooks.available ? t('available') : t('unavailable')}
+        </dd>
       </div>
-    </dl>
+    </Card>
   );
 }

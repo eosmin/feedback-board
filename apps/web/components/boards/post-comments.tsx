@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
+import { Button, Input } from '../ui';
 
 const commentListSchema = z.array(commentSchema);
 
@@ -70,36 +71,44 @@ export function PostComments({ orgSlug, postId }: PostCommentsProps): ReactEleme
   }
 
   return (
-    <section className="mt-3">
-      <h4 className="text-sm font-medium">{t('title')}</h4>
+    <section className="mt-3 border-t border-zinc-100 pt-3">
+      <h4 className="text-sm font-medium text-zinc-700">{t('title')}</h4>
       {comments === null ? (
-        <p>{t('loading')}</p>
+        <p className="text-sm text-zinc-500">{t('loading')}</p>
       ) : comments.length === 0 ? (
-        <p>{t('empty')}</p>
+        <p className="text-sm text-zinc-500">{t('empty')}</p>
       ) : (
         <ul className="flex flex-col gap-1">
           {comments.map((comment) => (
-            <li key={comment.id} className="text-sm">
+            <li key={comment.id} className="text-sm text-zinc-700">
               {comment.body}
             </li>
           ))}
         </ul>
       )}
-      <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} noValidate>
+      <form
+        onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+        noValidate
+        className="mt-2 flex items-start gap-2"
+      >
         <label htmlFor={`comment-body-${postId}`} className="sr-only">
           {t('bodyLabel')}
         </label>
-        <input
+        <Input
           id={`comment-body-${postId}`}
           type="text"
           aria-invalid={errors.body !== undefined}
           {...register('body')}
         />
-        {errors.body !== undefined && <p role="alert">{t('bodyInvalid')}</p>}
-        <button type="submit" disabled={isSubmitting}>
+        <Button type="submit" variant="secondary" disabled={isSubmitting}>
           {isSubmitting ? t('submitting') : t('submit')}
-        </button>
+        </Button>
       </form>
+      {errors.body !== undefined && (
+        <p role="alert" className="mt-1 text-sm text-red-600">
+          {t('bodyInvalid')}
+        </p>
+      )}
     </section>
   );
 }

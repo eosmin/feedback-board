@@ -10,6 +10,8 @@ import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
 import { apiFetch, ApiError } from '../../lib/api-client';
+import { useSlugAutofill } from '../../lib/use-slug-autofill';
+import { Button, Input } from '../ui';
 import { PlanLimitUpgradePrompt } from './plan-limit-upgrade-prompt';
 
 interface CreateBoardFormProps {
@@ -44,11 +46,15 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateBoardFormValues>({
     resolver: zodResolver(createBoardSchema),
     defaultValues: { isPublic: true },
   });
+
+  const { onSlugChange } = useSlugAutofill(watch('name'), setValue);
 
   async function onSubmit(values: CreateBoardFormValues): Promise<void> {
     setSubmitError(null);
@@ -80,38 +86,61 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} noValidate>
-      <h2>{t('title')}</h2>
-      <label htmlFor="board-name">{t('nameLabel')}</label>
-      <input
+    <form
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      noValidate
+      className="flex flex-col gap-3"
+    >
+      <label htmlFor="board-name" className="text-sm font-medium text-zinc-700">
+        {t('nameLabel')}
+      </label>
+      <Input
         id="board-name"
         type="text"
         aria-invalid={errors.name !== undefined}
         {...register('name')}
       />
-      {errors.name !== undefined && <p role="alert">{t('nameInvalid')}</p>}
+      {errors.name !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('nameInvalid')}
+        </p>
+      )}
 
-      <label htmlFor="board-slug">{t('slugLabel')}</label>
-      <input
+      <label htmlFor="board-slug" className="text-sm font-medium text-zinc-700">
+        {t('slugLabel')}
+      </label>
+      <Input
         id="board-slug"
         type="text"
         aria-invalid={errors.slug !== undefined || slugTaken}
-        {...register('slug')}
+        {...register('slug', { onChange: onSlugChange })}
       />
-      <p>{t('slugHelp')}</p>
-      {errors.slug !== undefined && <p role="alert">{t('slugInvalid')}</p>}
-      {slugTaken && <p role="alert">{t('slugTaken')}</p>}
+      <p className="text-sm text-zinc-500">{t('slugHelp')}</p>
+      {errors.slug !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('slugInvalid')}
+        </p>
+      )}
+      {slugTaken && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('slugTaken')}
+        </p>
+      )}
 
-      <label htmlFor="board-is-public">
+      <label htmlFor="board-is-public" className="flex items-center gap-2 text-sm text-zinc-700">
         <input id="board-is-public" type="checkbox" {...register('isPublic')} />
         {t('isPublicLabel')}
       </label>
 
-      {submitError !== null && <p role="alert">{submitError}</p>}
+      {submitError !== null && (
+        <p role="alert" className="text-sm text-red-600">
+          {submitError}
+        </p>
+      )}
 
-      <button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? t('creating') : t('submit')}
-      </button>
+      </Button>
     </form>
   );
 }

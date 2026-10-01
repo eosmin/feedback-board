@@ -3,11 +3,12 @@
 import type { WebhookDelivery } from '@feedback-board/shared';
 import { webhookDeliverySchema } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
-import type { ReactElement } from 'react';
+import { Fragment, type ReactElement } from 'react';
 import { useState } from 'react';
 import { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
+import { Button, EmptyState } from '../ui';
 
 const webhookDeliveryListSchema = z.array(webhookDeliverySchema);
 
@@ -26,6 +27,7 @@ export function WebhookDeliveries({ orgSlug, webhookId }: WebhookDeliveriesProps
   const [deliveries, setDeliveries] = useState<WebhookDelivery[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   async function load(): Promise<void> {
     setIsLoading(true);
@@ -44,42 +46,53 @@ export function WebhookDeliveries({ orgSlug, webhookId }: WebhookDeliveriesProps
     }
   }
 
-  if (loadError !== null) {
-    return <p role="alert">{loadError}</p>;
-  }
-
-  if (deliveries === null) {
-    return (
-      <button type="button" disabled={isLoading} onClick={() => void load()}>
-        {isLoading ? t('loading') : t('show')}
-      </button>
-    );
-  }
-
-  if (deliveries.length === 0) {
-    return <p>{t('empty')}</p>;
+  function handleToggle(): void {
+    const next = !isOpen;
+    setIsOpen(next);
+    if (next && deliveries === null) {
+      void load();
+    }
   }
 
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>{t('columns.attempt')}</th>
-          <th>{t('columns.event')}</th>
-          <th>{t('columns.status')}</th>
-          <th>{t('columns.createdAt')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {deliveries.map((delivery) => (
-          <tr key={delivery.id}>
-            <td>{delivery.attempt}</td>
-            <td>{delivery.event}</td>
-            <td>{delivery.responseStatus ?? t('noResponse')}</td>
-            <td>{delivery.createdAt}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <Fragment>
+      <Button variant="secondary" disabled={isLoading} onClick={handleToggle}>
+        {isLoading ? t('loading') : isOpen ? t('hide') : t('show')}
+      </Button>
+      {isOpen && (
+        <div className="mt-3 w-full basis-full">
+          {loadError !== null && (
+            <p role="alert" className="text-sm text-red-600">
+              {loadError}
+            </p>
+          )}
+          {loadError === null && deliveries !== null && deliveries.length === 0 && (
+            <EmptyState>{t('empty')}</EmptyState>
+          )}
+          {loadError === null && deliveries !== null && deliveries.length > 0 && (
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 text-xs uppercase text-zinc-500">
+                  <th className="py-1 pr-2 font-medium">{t('columns.attempt')}</th>
+                  <th className="py-1 pr-2 font-medium">{t('columns.event')}</th>
+                  <th className="py-1 pr-2 font-medium">{t('columns.status')}</th>
+                  <th className="py-1 pr-2 font-medium">{t('columns.createdAt')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deliveries.map((delivery) => (
+                  <tr key={delivery.id} className="border-b border-zinc-100 text-zinc-700">
+                    <td className="py-1 pr-2">{delivery.attempt}</td>
+                    <td className="py-1 pr-2">{delivery.event}</td>
+                    <td className="py-1 pr-2">{delivery.responseStatus ?? t('noResponse')}</td>
+                    <td className="py-1 pr-2">{delivery.createdAt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </Fragment>
   );
 }

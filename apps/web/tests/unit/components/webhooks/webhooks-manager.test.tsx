@@ -50,7 +50,7 @@ describe('WebhooksManager', () => {
     render(true);
 
     const t = messages.dashboard.webhooks;
-    expect(container.textContent).toContain(t.createForm.title);
+    expect(container.textContent).toContain(t.createForm.trigger);
     expect(container.textContent).not.toContain(t.upgradePrompt.title);
 
     const created = {
@@ -64,11 +64,20 @@ describe('WebhooksManager', () => {
     };
     mockApiFetch.mockResolvedValue(created);
 
-    const urlInput = container.querySelector('#webhook-target-url') as HTMLInputElement;
-    const eventCheckbox = container.querySelector(
+    const trigger = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === t.createForm.trigger,
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+
+    // The dialog is rendered via a portal into document.body, not into `container`.
+    const urlInput = document.querySelector('#webhook-target-url') as HTMLInputElement;
+    const eventCheckbox = document.querySelector(
       '#webhook-event-post\\.created',
     ) as HTMLInputElement;
-    const form = container.querySelector('form') as HTMLFormElement;
+    const form = document.querySelector('#webhook-target-url')?.closest('form') as HTMLFormElement;
 
     await act(async () => {
       Object.defineProperty(urlInput, 'value', {

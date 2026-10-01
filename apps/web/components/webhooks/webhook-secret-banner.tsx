@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
+import { Alert, Button } from '../ui';
+
 interface WebhookSecretBannerProps {
   secret: string;
   onDismiss: () => void;
@@ -17,13 +19,11 @@ export function WebhookSecretBanner({ secret, onDismiss }: WebhookSecretBannerPr
   const t = useTranslations('dashboard.webhooks.secretBanner');
 
   return (
-    <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-4">
-      <h3 className="font-medium">{t('title')}</h3>
-      <p className="mt-1 text-sm">{t('description')}</p>
-      <code className="mt-2 block break-all rounded bg-white px-2 py-1 text-sm">{secret}</code>
-      <button type="button" onClick={onDismiss} className="mt-2 font-medium text-brand-700 underline">
+    <Alert title={t('title')} description={t('description')}>
+      <code className="mb-2 block break-all rounded bg-white px-2 py-1 text-sm">{secret}</code>
+      <Button variant="secondary" onClick={onDismiss}>
         {t('dismiss')}
-      </button>
-    </div>
+      </Button>
+    </Alert>
   );
 }

@@ -1,0 +1,230 @@
+{
+  "common": {
+    "appName": "FeedbackBoard",
+    "loading": "Cargando…",
+    "close": "Cerrar",
+    "error": {
+      "generic": "Algo salió mal. Intenta de nuevo.",
+      "unauthorized": "Necesitas iniciar sesión para continuar.",
+      "notFound": "No pudimos encontrar lo que buscabas."
+    },
+    "language": {
+      "label": "Idioma"
+    }
+  },
+  "login": {
+    "title": "Inicia sesión en FeedbackBoard",
+    "emailLabel": "Correo electrónico",
+    "emailInvalid": "Ingresa un correo electrónico válido.",
+    "submit": "Enviar enlace mágico",
+    "sending": "Enviando…",
+    "checkEmail": "Revisa {email} para encontrar tu enlace de acceso.",
+    "error": "No pudimos enviar el enlace. Intenta de nuevo."
+  },
+  "publicBoard": {
+    "empty": "Todavía no se ha publicado ningún comentario.",
+    "voteCount": "{count, number} votos",
+    "status": {
+      "OPEN": "Abierto",
+      "PLANNED": "Planeado",
+      "IN_PROGRESS": "En progreso",
+      "DONE": "Completado",
+      "CLOSED": "Cerrado"
+    },
+    "category": {
+      "BUG": "Error",
+      "FEATURE_REQUEST": "Solicitud de función",
+      "UX": "Experiencia de usuario",
+      "OTHER": "Otro"
+    },
+    "priority": {
+      "LOW": "Prioridad baja",
+      "MEDIUM": "Prioridad media",
+      "HIGH": "Prioridad alta"
+    },
+    "notFound": {
+      "title": "Tablero no encontrado",
+      "description": "Este tablero no existe o no es público."
+    }
+  },
+  "dashboard": {
+    "title": "Tus organizaciones",
+    "empty": "Todavía no perteneces a ninguna organización. Crea una para comenzar.",
+    "planBadge": {
+      "FREE": "Plan gratuito",
+      "PRO": "Plan Pro"
+    },
+    "shell": {
+      "backToOrgs": "Todas las organizaciones",
+      "nav": {
+        "boards": "Tableros",
+        "billing": "Facturación",
+        "webhooks": "Webhooks"
+      },
+      "signOut": "Cerrar sesión",
+      "orgSwitcher": {
+        "label": "Cambiar organización",
+        "viewAll": "Ver todas las organizaciones ({count} más)",
+        "createNew": "Crear nueva organización"
+      }
+    },
+    "createOrg": {
+      "trigger": "Nueva organización",
+      "title": "Crear una organización",
+      "nameLabel": "Nombre de la organización",
+      "nameInvalid": "Ingresa un nombre entre 2 y 60 caracteres.",
+      "slugLabel": "Slug de URL",
+      "slugHelp": "Letras minúsculas, números y guiones. Se usa en la URL pública de tu tablero.",
+      "slugInvalid": "Ingresa un slug válido y no reservado.",
+      "slugReserved": "Ese slug está reservado. Elige otro.",
+      "submit": "Crear organización",
+      "creating": "Creando…",
+      "error": "No pudimos crear la organización. Intenta de nuevo."
+    },
+    "orgOverview": {
+      "boardsTitle": "Tableros",
+      "boardsEmpty": "Todavía no hay tableros. Crea uno para comenzar.",
+      "visibility": {
+        "public": "Público",
+        "private": "Privado"
+      },
+      "createBoard": {
+        "trigger": "Nuevo tablero",
+        "title": "Crear un tablero",
+        "nameLabel": "Nombre del tablero",
+        "nameInvalid": "Ingresa un nombre entre 2 y 60 caracteres.",
+        "slugLabel": "Slug de URL",
+        "slugHelp": "Letras minúsculas, números y guiones. Se usa en la URL pública del tablero.",
+        "slugInvalid": "Ingresa un slug válido.",
+        "slugTaken": "Ese slug ya lo usa otro tablero en esta organización.",
+        "isPublicLabel": "Hacer este tablero visible públicamente",
+        "submit": "Crear tablero",
+        "creating": "Creando…",
+        "error": "No pudimos crear el tablero. Intenta de nuevo."
+      },
+      "planLimit": {
+        "boards": {
+          "title": "Alcanzaste el límite de tableros del plan gratuito",
+          "description": "Mejora a Pro para tableros ilimitados.",
+          "cta": "Mejorar a Pro"
+        }
+      }
+    },
+    "boardDetail": {
+      "postsEmpty": "Todavía no se ha publicado ningún comentario.",
+      "voteButton": "Votar ({count, number})",
+      "statusLabel": "Estado",
+      "share": {
+        "trigger": "Compartir tablero",
+        "copied": "¡Copiado!",
+        "publicLink": "Enlace público del tablero",
+        "memberLink": "Enlace para miembros (requiere iniciar sesión)"
+      },
+      "createPost": {
+        "trigger": "Nuevo comentario",
+        "title": "Compartir comentario",
+        "titleLabel": "Título",
+        "titleInvalid": "Ingresa un título entre 3 y 200 caracteres.",
+        "bodyLabel": "Descripción",
+        "bodyInvalid": "Ingresa una descripción.",
+        "submit": "Publicar comentario",
+        "creating": "Publicando…",
+        "error": "No pudimos crear el comentario. Intenta de nuevo."
+      },
+      "planLimit": {
+        "posts": {
+          "title": "Alcanzaste el límite de publicaciones del plan gratuito",
+          "description": "Mejora a Pro para publicaciones ilimitadas.",
+          "cta": "Mejorar a Pro"
+        }
+      },
+      "comments": {
+        "title": "Comentarios",
+        "loading": "Cargando comentarios…",
+        "empty": "Todavía no hay comentarios.",
+        "bodyLabel": "Agregar un comentario",
+        "bodyInvalid": "Ingresa un comentario.",
+        "submit": "Comentar",
+        "submitting": "Publicando…"
+      },
+      "aiDigest": {
+        "title": "Resumen de IA",
+        "submit": "Generar resumen con IA",
+        "generating": "Generando…",
+        "error": "No pudimos generar un resumen. Intenta de nuevo.",
+        "rateLimited": "Alcanzaste el límite por hora de resúmenes de IA. Intenta más tarde.",
+        "noPosts": "Este tablero todavía no tiene comentarios abiertos, así que no hay nada que resumir.",
+        "quotaRemaining": "Te quedan {remaining} de {limit} resúmenes de IA esta hora",
+        "quotaExhausted": "Usaste todos tus resúmenes de IA de esta hora. Intenta más tarde."
+      }
+    },
+    "billing": {
+      "title": "Facturación",
+      "checkoutSuccess": "¡Gracias! Tu suscripción se está activando.",
+      "usage": {
+        "boards": "Tableros",
+        "posts": "Publicaciones",
+        "webhooks": "Webhooks",
+        "unlimited": "Ilimitado",
+        "available": "Disponible",
+        "unavailable": "No disponible en el plan gratuito"
+      },
+      "actions": {
+        "upgrade": "Mejorar a Pro",
+        "managePortal": "Administrar facturación",
+        "redirecting": "Redirigiendo…",
+        "error": "No pudimos iniciar esa sesión. Intenta de nuevo."
+      }
+    },
+    "webhooks": {
+      "title": "Webhooks",
+      "createForm": {
+        "trigger": "Agregar webhook",
+        "title": "Agregar un webhook",
+        "targetUrlLabel": "URL de destino",
+        "targetUrlInvalid": "Ingresa una URL válida.",
+        "eventsLabel": "Eventos",
+        "eventsInvalid": "Selecciona al menos un evento.",
+        "event": {
+          "post_created": "Publicación creada",
+          "post_status_changed": "Estado de publicación cambiado"
+        },
+        "submit": "Agregar webhook",
+        "creating": "Agregando…",
+        "error": "No pudimos agregar el webhook. Intenta de nuevo."
+      },
+      "secretBanner": {
+        "title": "Secreto de firma",
+        "description": "Copia este secreto ahora. No se volverá a mostrar.",
+        "dismiss": "Ya lo guardé"
+      },
+      "upgradePrompt": {
+        "title": "Los webhooks requieren el plan Pro",
+        "description": "Mejora a Pro para agregar y recibir notificaciones de webhooks.",
+        "cta": "Mejorar a Pro"
+      },
+      "list": {
+        "empty": "Todavía no hay webhooks.",
+        "status": {
+          "active": "Activo",
+          "disabled": "Desactivado — mejora a Pro para reactivarlo"
+        },
+        "delete": "Eliminar"
+      },
+      "deliveries": {
+        "show": "Ver registro de entregas",
+        "hide": "Ocultar registro de entregas",
+        "loading": "Cargando…",
+        "empty": "Todavía no hay intentos de entrega.",
+        "error": "No pudimos cargar el registro de entregas. Intenta de nuevo.",
+        "noResponse": "Sin respuesta",
+        "columns": {
+          "attempt": "Intento",
+          "event": "Evento",
+          "status": "Estado",
+          "createdAt": "Fecha"
+        }
+      }
+    }
+  }
+}

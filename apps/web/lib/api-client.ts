@@ -18,6 +18,7 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly body: ApiErrorBody,
+    public readonly headers: Headers = new Headers(),
   ) {
     super(body.error);
     this.name = 'ApiError';
@@ -46,6 +47,45 @@ async function authHeader(): Promise<Record<string, string>> {
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
+  headers?: Record<string, string>;
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  headers: Headers;
+}
+
+/**
+ * Shared by `apiFetch` and `apiFetchWithHeaders` so the request-building/parsing logic exists
+ * once — the only difference between the two is whether the caller needs the raw `Headers`
+ * (e.g. `X-RateLimit-Remaining`, TDD §3.8) alongside the parsed body.
+ */
+async function request<S extends z.ZodType>(
+  path: string,
+  schema: S,
+  options: RequestOptions,
+): Promise<ApiResponse<z.infer<S>>> {
+  const auth = await authHeader();
+
+  const init: RequestInit = {
+    method: options.method ?? 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...auth,
+      ...options.headers,
+    },
+    ...(options.body !== undefined && { body: JSON.stringify(options.body) }),
+  };
+
+  const response = await fetch(apiUrl(path), init);
+
+  const json: unknown = response.status === 204 ? null : await response.json();
+
+  if (!response.ok) {
+    throw new ApiError(response.status, json as ApiErrorBody, response.headers);
+  }
+
+  return { data: schema.parse(json), headers: response.headers };
 }
 
 /**
@@ -59,26 +99,22 @@ export async function apiFetch<S extends z.ZodType>(
   schema: S,
   options: RequestOptions = {},
 ): Promise<z.infer<S>> {
-  const auth = await authHeader();
+  const { data } = await request(path, schema, options);
+  return data;
+}
 
-  const init: RequestInit = {
-    method: options.method ?? 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...auth,
-    },
-    ...(options.body !== undefined && { body: JSON.stringify(options.body) }),
-  };
-
-  const response = await fetch(apiUrl(path), init);
-
-  const json: unknown = response.status === 204 ? null : await response.json();
-
-  if (!response.ok) {
-    throw new ApiError(response.status, json as ApiErrorBody);
-  }
-
-  return schema.parse(json);
+/**
+ * `apiFetch`'s counterpart for a caller that also needs response headers — currently just
+ * `AiDigestPanel` reading `X-RateLimit-Remaining`/`X-RateLimit-Limit` (TDD §3.8). A separate
+ * function rather than widening `apiFetch`'s return type everywhere: every other call site only
+ * wants the parsed body.
+ */
+export async function apiFetchWithHeaders<S extends z.ZodType>(
+  path: string,
+  schema: S,
+  options: RequestOptions = {},
+): Promise<ApiResponse<z.infer<S>>> {
+  return request(path, schema, options);
 }
 
 /**
