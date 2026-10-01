@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { generateText, Output } from 'ai';
+import { SUPPORTED_LOCALES } from '@feedback-board/shared';
 
 import { postClassificationSchema } from '../schemas/ai';
 import type { PostClassification } from '../schemas/ai';
@@ -87,20 +88,54 @@ export class AiService {
    * to the browser. Unlike `classifyPost()`, a failure here propagates: the digest is an
    * on-demand, user-triggered action with a visible response, not a background enhancement, so
    * the caller (the digest controller) is the right place to turn a thrown error into an HTTP
-   * failure rather than silently returning an empty summary.
+   * failure rather than silently returning an empty summary. `acceptLanguage` is the caller's
+   * `Accept-Language` header (apps/web forwards its own resolved locale, not the raw browser
+   * value) — it decides what language the digest comes back in, independent of what language the
+   * posts themselves are written in.
    */
-  async generateDigest(posts: readonly DigestPostInput[]): Promise<string> {
+  async generateDigest(
+    posts: readonly DigestPostInput[],
+    acceptLanguage?: string,
+  ): Promise<string> {
     const model = resolveModel(
       this.options.digestModel,
       this.options.transport,
       this.options.fetchImpl,
     );
+    const system = buildDigestSystemPrompt(resolveDigestLanguage(acceptLanguage));
     const prompt = buildDigestPrompt(posts);
 
-    const result = await generateText({ model, maxOutputTokens: 1024, prompt });
+    const result = await generateText({ model, system, maxOutputTokens: 1024, prompt });
 
     return result.text;
   }
+}
+
+/**
+ * This runs as a one-shot API call with no chat turn to follow up in — without an explicit system
+ * prompt the model would sometimes treat an empty-looking request conversationally (asking the
+ * caller to "paste the posts") instead of just summarizing what is already in the user prompt.
+ */
+function buildDigestSystemPrompt(language: string): string {
+  return [
+    'You are a backend function that turns feedback board posts into a short digest for a product team.',
+    'The caller is a server, not a chat user: it cannot read follow-up questions, so never ask for',
+    'posts, clarification, or anything else — the full list of posts is always already included in',
+    'the user message below. Output only the digest itself: no greeting, no preamble, no questions.',
+    `Write the digest in ${language}, regardless of what language the posts themselves are written in.`,
+  ].join(' ');
+}
+
+/**
+ * Maps the locale this project actually ships (`SUPPORTED_LOCALES`, `@feedback-board/shared` —
+ * the single list apps/web's switcher and browser-language auto-detect also read) to the language
+ * name the model is told to answer in. Anything unrecognized — no header, an unsupported code, a
+ * malformed value — falls back to English, matching the web app's own `DEFAULT_LOCALE`.
+ */
+function resolveDigestLanguage(acceptLanguage: string | undefined): string {
+  const primaryTag = acceptLanguage?.split(',')[0]?.trim().split('-')[0]?.toLowerCase();
+  const locale = SUPPORTED_LOCALES.find((candidate) => candidate.code === primaryTag);
+  return locale?.aiLanguageName ?? 'English';
 }
 
 function buildDigestPrompt(posts: readonly DigestPostInput[]): string {
