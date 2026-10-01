@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
+import { Button, Input } from '../ui';
 
 interface CreateWebhookFormProps {
   orgSlug: string;
@@ -61,21 +62,34 @@ export function CreateWebhookForm({ orgSlug, onCreated }: CreateWebhookFormProps
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} noValidate>
-      <h2>{t('title')}</h2>
-      <label htmlFor="webhook-target-url">{t('targetUrlLabel')}</label>
-      <input
+    <form
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      noValidate
+      className="flex flex-col gap-3"
+    >
+      <label htmlFor="webhook-target-url" className="text-sm font-medium text-zinc-700">
+        {t('targetUrlLabel')}
+      </label>
+      <Input
         id="webhook-target-url"
         type="url"
         aria-invalid={errors.targetUrl !== undefined}
         {...register('targetUrl')}
       />
-      {errors.targetUrl !== undefined && <p role="alert">{t('targetUrlInvalid')}</p>}
+      {errors.targetUrl !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('targetUrlInvalid')}
+        </p>
+      )}
 
-      <fieldset>
-        <legend>{t('eventsLabel')}</legend>
+      <fieldset className="flex flex-col gap-1">
+        <legend className="text-sm font-medium text-zinc-700">{t('eventsLabel')}</legend>
         {(WEBHOOK_EVENTS as WebhookEvent[]).map((event) => (
-          <label key={event} htmlFor={`webhook-event-${event}`}>
+          <label
+            key={event}
+            htmlFor={`webhook-event-${event}`}
+            className="flex items-center gap-2 text-sm text-zinc-700"
+          >
             <input
               id={`webhook-event-${event}`}
               type="checkbox"
@@ -86,13 +100,21 @@ export function CreateWebhookForm({ orgSlug, onCreated }: CreateWebhookFormProps
           </label>
         ))}
       </fieldset>
-      {errors.events !== undefined && <p role="alert">{t('eventsInvalid')}</p>}
+      {errors.events !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('eventsInvalid')}
+        </p>
+      )}
 
-      {submitError !== null && <p role="alert">{submitError}</p>}
+      {submitError !== null && (
+        <p role="alert" className="text-sm text-red-600">
+          {submitError}
+        </p>
+      )}
 
-      <button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? t('creating') : t('submit')}
-      </button>
+      </Button>
     </form>
   );
 }

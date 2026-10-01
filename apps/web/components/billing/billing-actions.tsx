@@ -6,6 +6,7 @@ import type { ReactElement } from 'react';
 import { useState } from 'react';
 
 import { apiFetch } from '../../lib/api-client';
+import { Button } from '../ui';
 
 interface BillingActionsProps {
   orgSlug: string;
@@ -44,15 +45,19 @@ export function BillingActions({ orgSlug, plan }: BillingActionsProps): ReactEle
   return (
     <div>
       {plan === 'FREE' ? (
-        <button type="button" disabled={isRedirecting} onClick={() => void startSession('checkout')}>
+        <Button disabled={isRedirecting} onClick={() => void startSession('checkout')}>
           {isRedirecting ? t('redirecting') : t('upgrade')}
-        </button>
+        </Button>
       ) : (
-        <button type="button" disabled={isRedirecting} onClick={() => void startSession('portal')}>
+        <Button disabled={isRedirecting} onClick={() => void startSession('portal')}>
           {isRedirecting ? t('redirecting') : t('managePortal')}
-        </button>
+        </Button>
       )}
-      {error !== null && <p role="alert">{error}</p>}
+      {error !== null && (
+        <p role="alert" className="mt-2 text-sm text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

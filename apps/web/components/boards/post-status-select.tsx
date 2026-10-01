@@ -6,6 +6,7 @@ import {
   updatePostStatusSchema,
   type Post,
 } from '@feedback-board/shared';
+import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ChangeEvent, ReactElement } from 'react';
 import { useState } from 'react';
@@ -48,12 +49,13 @@ export function PostStatusSelect({
   }
 
   return (
-    <label>
+    <label className="relative inline-block">
       <span className="sr-only">{tLabel('statusLabel')}</span>
       <select
         value={post.status}
         onChange={(event) => void handleChange(event)}
         disabled={isSubmitting}
+        className="h-10 appearance-none rounded-control border border-zinc-300 bg-white py-2 pl-4 pr-9 text-body text-zinc-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {POST_STATUSES.map((status) => (
           <option key={status} value={status}>
@@ -61,6 +63,10 @@ export function PostStatusSelect({
           </option>
         ))}
       </select>
+      <ChevronDown
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+      />
     </label>
   );
 }

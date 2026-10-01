@@ -2,6 +2,8 @@ import type { PostCategory, PostPriority } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
+import { Badge } from '../ui';
+
 interface PostClassificationBadgeProps {
   category: PostCategory | null;
   priority: PostPriority | null;
@@ -25,16 +27,8 @@ export function PostClassificationBadge({
 
   return (
     <span className="inline-flex gap-1">
-      {category !== null && (
-        <span className="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-          {tCategory(category)}
-        </span>
-      )}
-      {priority !== null && (
-        <span className="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-          {tPriority(priority)}
-        </span>
-      )}
+      {category !== null && <Badge variant="soft">{tCategory(category)}</Badge>}
+      {priority !== null && <Badge variant="soft">{tPriority(priority)}</Badge>}
     </span>
   );
 }

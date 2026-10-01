@@ -2,6 +2,8 @@ import type { PostStatus } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
+import { Badge } from '../ui';
+
 interface PostStatusBadgeProps {
   status: PostStatus;
 }
@@ -14,9 +16,5 @@ interface PostStatusBadgeProps {
 export function PostStatusBadge({ status }: PostStatusBadgeProps): ReactElement {
   const t = useTranslations('publicBoard.status');
 
-  return (
-    <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">
-      {t(status)}
-    </span>
-  );
+  return <Badge>{t(status)}</Badge>;
 }

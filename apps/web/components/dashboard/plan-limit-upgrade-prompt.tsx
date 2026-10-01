@@ -2,6 +2,8 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
 
+import { Alert } from '../ui';
+
 interface PlanLimitUpgradePromptProps {
   /** The org slug the "Upgrade to Pro" link routes to (TDD §3.9, §12). */
   orgSlug: string;
@@ -18,15 +20,10 @@ export function PlanLimitUpgradePrompt({ orgSlug }: PlanLimitUpgradePromptProps)
   const t = useTranslations('dashboard.orgOverview.planLimit.boards');
 
   return (
-    <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-4">
-      <h3 className="font-medium">{t('title')}</h3>
-      <p className="mt-1 text-sm">{t('description')}</p>
-      <Link
-        href={`/dashboard/${orgSlug}/billing`}
-        className="mt-2 inline-block font-medium text-brand-700 underline"
-      >
+    <Alert title={t('title')} description={t('description')}>
+      <Link href={`/dashboard/${orgSlug}/billing`} className="font-medium text-brand-700 underline">
         {t('cta')}
       </Link>
-    </div>
+    </Alert>
   );
 }

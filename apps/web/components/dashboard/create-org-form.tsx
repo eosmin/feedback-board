@@ -11,9 +11,11 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { apiFetch, ApiError } from '../../lib/api-client';
+import { useSlugAutofill } from '../../lib/use-slug-autofill';
+import { Button, Input } from '../ui';
 
 interface CreateOrgFormProps {
   /** Called after a successful creation, so the parent can refresh its org list. */
@@ -35,10 +37,15 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
   const {
     register,
     handleSubmit,
+    control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateOrgInput>({
     resolver: zodResolver(createOrgSchema),
   });
+
+  const nameValue = useWatch({ control, name: 'name' });
+  const { onSlugChange } = useSlugAutofill(nameValue, setValue);
 
   async function onSubmit(values: CreateOrgInput): Promise<void> {
     setSubmitError(null);
@@ -58,32 +65,50 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} noValidate>
-      <h2>{t('title')}</h2>
-      <label htmlFor="org-name">{t('nameLabel')}</label>
-      <input
-        id="org-name"
-        type="text"
-        aria-invalid={errors.name !== undefined}
-        {...register('name')}
-      />
-      {errors.name !== undefined && <p role="alert">{t('nameInvalid')}</p>}
+    <form
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      noValidate
+      className="flex flex-col gap-3"
+    >
+      <label htmlFor="org-name" className="text-sm font-medium text-zinc-700">
+        {t('nameLabel')}
+      </label>
+      <Input id="org-name" type="text" aria-invalid={errors.name !== undefined} {...register('name')} />
+      {errors.name !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('nameInvalid')}
+        </p>
+      )}
 
-      <label htmlFor="org-slug">{t('slugLabel')}</label>
-      <input
+      <label htmlFor="org-slug" className="text-sm font-medium text-zinc-700">
+        {t('slugLabel')}
+      </label>
+      <Input
         id="org-slug"
         type="text"
         aria-invalid={errors.slug !== undefined || slugTaken}
-        {...register('slug')}
+        {...register('slug', { onChange: onSlugChange })}
       />
-      <p>{t('slugHelp')}</p>
-      {errors.slug !== undefined && <p role="alert">{t('slugInvalid')}</p>}
-      {slugTaken && <p role="alert">{t('slugReserved')}</p>}
-      {submitError !== null && <p role="alert">{submitError}</p>}
+      <p className="text-sm text-zinc-500">{t('slugHelp')}</p>
+      {errors.slug !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('slugInvalid')}
+        </p>
+      )}
+      {slugTaken && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('slugReserved')}
+        </p>
+      )}
+      {submitError !== null && (
+        <p role="alert" className="text-sm text-red-600">
+          {submitError}
+        </p>
+      )}
 
-      <button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? t('creating') : t('submit')}
-      </button>
+      </Button>
     </form>
   );
 }

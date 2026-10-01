@@ -1,11 +1,34 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { AiService, Prisma } from '@feedback-board/core';
 import type { AiService as Ai, DigestPostInput } from '@feedback-board/core';
 import { ERROR_CODES } from '@feedback-board/shared';
-import type { Board, BoardDetail, BoardDigest } from '@feedback-board/shared';
+import type { AiDigestQuota, Board, BoardDetail, BoardDigest } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import { buildRateLimitKey } from '../orgs/guards/org-rate-limit.guard';
+import { RateLimitStore } from '../queue/rate-limit.store';
 import type { CreateBoardDto } from './dto/create-board.dto';
+
+/**
+ * The single source for the `ai-digest` route's hourly budget (TDD §3.8) — `BoardsController`'s
+ * `@RateLimit(...)` decorator, this service's own refund/peek calls, and
+ * `getDigestQuota()`'s response all read this instead of each repeating the literal `5`/
+ * `3_600_000`.
+ */
+export const AI_DIGEST_RATE_LIMIT = { limit: 5, ttlMs: 3_600_000, route: 'ai-digest' } as const;
+
+/**
+ * `OrgRateLimitGuard` reads `AI_DIGEST_RATE_LIMIT.route` via `@RateLimit(AI_DIGEST_RATE_LIMIT)`,
+ * so this is guaranteed to match the guard's counter key — not the handler's `.name`, which a
+ * future rename of `BoardsController.generateDigest` would silently desync.
+ */
+const AI_DIGEST_RATE_LIMIT_ROUTE = AI_DIGEST_RATE_LIMIT.route;
 
 /**
  * Prisma's error code for a violated `@@unique` (here, `@@unique([orgId, slug])` on `Board`,
@@ -39,6 +62,7 @@ export class BoardsService {
   constructor(
     private readonly tenantPrisma: TenantPrismaService,
     @Inject(AiService) private readonly aiService: Ai,
+    private readonly rateLimitStore: RateLimitStore,
   ) {}
 
   /**
@@ -124,7 +148,11 @@ export class BoardsService {
    * propagate, because the digest is an on-demand, user-visible action, not a background
    * enhancement (§3.8).
    */
-  async generateDigest(boardSlug: string): Promise<BoardDigest> {
+  async generateDigest(
+    orgId: string,
+    boardSlug: string,
+    acceptLanguage?: string,
+  ): Promise<BoardDigest> {
     const board = await this.tenantPrisma.run((tx) =>
       tx.board.findFirst({ where: { slug: boardSlug }, select: { id: true } }),
     );
@@ -141,6 +169,15 @@ export class BoardsService {
       }),
     );
 
+    // Nothing to summarize — never spend a model call on a prompt with no posts, which is also
+    // exactly what led the model to ask the caller to paste some instead of producing a digest.
+    // `OrgRateLimitGuard` already counted this request before this method could know that, so
+    // refund it: a no-op attempt should not cost part of the org's hourly budget (§3.8).
+    if (posts.length === 0) {
+      await this.rateLimitStore.release(buildRateLimitKey(AI_DIGEST_RATE_LIMIT_ROUTE, orgId));
+      throw new BadRequestException({ error: ERROR_CODES.DIGEST_NO_POSTS });
+    }
+
     const input: DigestPostInput[] = posts.map((post) => ({
       title: post.title,
       body: post.body,
@@ -149,8 +186,23 @@ export class BoardsService {
       priority: post.aiPriority,
     }));
 
-    const summary = await this.aiService.generateDigest(input);
+    const summary = await this.aiService.generateDigest(input, acceptLanguage);
 
     return { summary };
+  }
+
+  /**
+   * `GET .../ai-digest/quota` (TDD §3.8) — a read-only peek at the org's remaining hourly budget,
+   * so the dashboard can show it before the caller ever generates a digest. `RateLimitStore.peek`
+   * never increments the counter, so calling this never costs an attempt.
+   */
+  async getDigestQuota(orgId: string): Promise<AiDigestQuota> {
+    const key = buildRateLimitKey(AI_DIGEST_RATE_LIMIT_ROUTE, orgId);
+    const count = await this.rateLimitStore.peek(key);
+
+    return {
+      remaining: Math.max(0, AI_DIGEST_RATE_LIMIT.limit - count),
+      limit: AI_DIGEST_RATE_LIMIT.limit,
+    };
   }
 }

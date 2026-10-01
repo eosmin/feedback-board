@@ -9,13 +9,19 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { createSupabaseBrowserClient } from '../../lib/supabase/client';
+import { Button, Input } from '../ui';
+
+export interface MagicLinkFormProps {
+  /** Carried through `emailRedirectTo` so `/auth/callback` lands back on the originating page. */
+  redirectTo?: string | undefined;
+}
 
 /**
  * The only sign-in surface in this project (TDD §3.4, §12): magic-link email, no password field
  * and no OAuth button. `signInWithOtp` runs against Supabase Auth directly from the browser — it
  * never goes through `apps/api`, which carries no auth endpoints of its own (TDD §2.6.5).
  */
-export function MagicLinkForm(): ReactElement {
+export function MagicLinkForm({ redirectTo }: MagicLinkFormProps): ReactElement {
   const t = useTranslations('login');
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -31,9 +37,14 @@ export function MagicLinkForm(): ReactElement {
   async function onSubmit(values: MagicLinkRequestInput): Promise<void> {
     setSubmitError(null);
     const supabase = createSupabaseBrowserClient();
+    const callbackUrl = new URL('/auth/callback', window.location.origin);
+    if (redirectTo !== undefined) {
+      callbackUrl.searchParams.set('next', redirectTo);
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email: values.email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: callbackUrl.toString() },
     });
 
     if (error) {
@@ -54,20 +65,34 @@ export function MagicLinkForm(): ReactElement {
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} noValidate>
-      <label htmlFor="email">{t('emailLabel')}</label>
-      <input
+    <form
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      noValidate
+      className="flex flex-col gap-3"
+    >
+      <label htmlFor="email" className="text-sm font-medium text-zinc-700">
+        {t('emailLabel')}
+      </label>
+      <Input
         id="email"
         type="email"
         autoComplete="email"
         aria-invalid={errors.email !== undefined}
         {...register('email')}
       />
-      {errors.email !== undefined && <p role="alert">{t('emailInvalid')}</p>}
-      {submitError !== null && <p role="alert">{submitError}</p>}
-      <button type="submit" disabled={isSubmitting}>
+      {errors.email !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('emailInvalid')}
+        </p>
+      )}
+      {submitError !== null && (
+        <p role="alert" className="text-sm text-red-600">
+          {submitError}
+        </p>
+      )}
+      <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? t('sending') : t('submit')}
-      </button>
+      </Button>
     </form>
   );
 }

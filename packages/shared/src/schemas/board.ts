@@ -49,3 +49,16 @@ export const boardDigestSchema = z.object({
 });
 
 export type BoardDigest = z.infer<typeof boardDigestSchema>;
+
+/**
+ * `GET /orgs/:orgSlug/boards/:boardSlug/ai-digest/quota` (TDD §3.8) — a read-only peek at the
+ * org's remaining hourly AI-digest budget, so the dashboard can show it before the caller ever
+ * generates one. Deliberately a separate route from the `POST` itself: querying it must never
+ * count as an attempt, which is also why it carries no `@RateLimit` of its own.
+ */
+export const aiDigestQuotaSchema = z.object({
+  remaining: z.number().int().nonnegative(),
+  limit: z.number().int().positive(),
+});
+
+export type AiDigestQuota = z.infer<typeof aiDigestQuotaSchema>;

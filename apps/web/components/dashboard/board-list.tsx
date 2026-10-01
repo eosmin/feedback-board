@@ -3,6 +3,8 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
 
+import { Badge, Card, EmptyState } from '../ui';
+
 interface BoardListProps {
   orgSlug: string;
   boards: Board[];
@@ -17,23 +19,21 @@ export function BoardList({ orgSlug, boards }: BoardListProps): ReactElement {
   const t = useTranslations('dashboard.orgOverview');
 
   if (boards.length === 0) {
-    return <p>{t('boardsEmpty')}</p>;
+    return <EmptyState>{t('boardsEmpty')}</EmptyState>;
   }
 
   return (
     <ul className="flex flex-col gap-2">
       {boards.map((board) => (
-        <li key={board.id} className="rounded-lg border border-brand-100 p-4">
+        <Card as="li" key={board.id}>
           <Link
             href={`/dashboard/${orgSlug}/boards/${board.slug}`}
             className="flex items-center justify-between gap-2"
           >
             <span className="font-medium">{board.name}</span>
-            <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">
-              {board.isPublic ? t('visibility.public') : t('visibility.private')}
-            </span>
+            <Badge>{board.isPublic ? t('visibility.public') : t('visibility.private')}</Badge>
           </Link>
-        </li>
+        </Card>
       ))}
     </ul>
   );

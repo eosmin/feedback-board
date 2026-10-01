@@ -3,25 +3,28 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
   Post,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import type { Board, BoardDetail, BoardDigest } from '@feedback-board/shared';
+import type { AiDigestQuota, Board, BoardDetail, BoardDigest } from '@feedback-board/shared';
 
 import { OrgGuard } from '../orgs/guards/org.guard';
 import { RolesGuard } from '../orgs/guards/roles.guard';
 import { PlanGuard } from '../orgs/guards/plan.guard';
 import { OrgRateLimitGuard } from '../orgs/guards/org-rate-limit.guard';
+import { OrgRateLimitHeaderInterceptor } from '../orgs/guards/org-rate-limit.interceptor';
 import { Roles } from '../orgs/roles.decorator';
 import { LimitedByPlan } from '../orgs/plan.decorator';
 import { RateLimit } from '../orgs/rate-limit.decorator';
 import type { AuthenticatedRequest } from '../database/tenant-prisma.service';
-import { BoardsService } from './boards.service';
+import { AI_DIGEST_RATE_LIMIT, BoardsService } from './boards.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 
 /**
@@ -75,16 +78,47 @@ export class BoardsController {
    * third-party money, so a MEMBER must not be able to trigger it (TDD §3.8, §11).
    * `@RateLimit({ limit: 5, ttlMs: 3_600_000 })` keys the counter on the org via
    * `OrgRateLimitGuard`/`RateLimitStore` — the unit is the org, not the caller, and the counter
-   * lives in Redis so it holds across replicas (§3.8).
+   * lives in Redis so it holds across replicas (§3.8). `Accept-Language` is apps/web's own
+   * `NEXT_LOCALE` cookie value forwarded as a plain header (TDD §2.6.13 — there is no i18n
+   * middleware, so the client sends its resolved locale itself); the service falls back to
+   * English for anything it does not recognize.
    */
   @Roles('OWNER', 'ADMIN')
-  @RateLimit({ limit: 5, ttlMs: 3_600_000 })
+  @RateLimit(AI_DIGEST_RATE_LIMIT)
+  @UseInterceptors(OrgRateLimitHeaderInterceptor)
   @Post(':boardSlug/ai-digest')
   @HttpCode(HttpStatus.OK)
   async generateDigest(
+    @Req() request: AuthenticatedRequest,
     @Param('orgSlug') _orgSlug: string,
     @Param('boardSlug') boardSlug: string,
+    @Headers('accept-language') acceptLanguage: string | undefined,
   ): Promise<BoardDigest> {
-    return this.boardsService.generateDigest(boardSlug);
+    // Same narrowing as `create()` above — OrgGuard, which ran first in the class-level
+    // `@UseGuards` chain, always sets this.
+    if (request.orgId === undefined) {
+      throw new ForbiddenException();
+    }
+    return this.boardsService.generateDigest(request.orgId, boardSlug, acceptLanguage);
+  }
+
+  /**
+   * Deliberately carries no `@RateLimit`: this is a read-only peek at the budget `ai-digest`
+   * itself enforces, so the dashboard can show "3 of 5 left" before the caller has generated
+   * anything — querying it must never itself count as an attempt (TDD §3.8). `boardSlug` is
+   * unused: the quota is per-org, not per-board, but the route still nests under the board the
+   * same way `ai-digest` does, since that is where `AiDigestPanel` renders.
+   */
+  @Roles('OWNER', 'ADMIN')
+  @Get(':boardSlug/ai-digest/quota')
+  async getDigestQuota(
+    @Req() request: AuthenticatedRequest,
+    @Param('orgSlug') _orgSlug: string,
+    @Param('boardSlug') _boardSlug: string,
+  ): Promise<AiDigestQuota> {
+    if (request.orgId === undefined) {
+      throw new ForbiddenException();
+    }
+    return this.boardsService.getDigestQuota(request.orgId);
   }
 }

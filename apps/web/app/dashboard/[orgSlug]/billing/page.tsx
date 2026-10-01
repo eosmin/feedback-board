@@ -1,11 +1,11 @@
-import { orgDetailSchema } from '@feedback-board/shared';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactElement } from 'react';
 
 import { BillingActions } from '../../../../components/billing/billing-actions';
 import { UsageSummary } from '../../../../components/billing/usage-summary';
-import { serverApiFetch } from '../../../../lib/api-client-server';
+import { Badge, PageHeader } from '../../../../components/ui';
+import { getOrgDetail } from '../../../../lib/org-detail';
 import { requireUser } from '../../../../lib/supabase/require-user';
 
 interface BillingPageProps {
@@ -28,24 +28,25 @@ export default async function BillingPage({
   params,
   searchParams,
 }: BillingPageProps): Promise<ReactElement> {
-  await requireUser();
   const { orgSlug } = await params;
+  await requireUser(`/dashboard/${orgSlug}/billing`);
   const { success } = await searchParams;
   const t = await getTranslations('dashboard.billing');
 
-  const org = await serverApiFetch(`/orgs/${orgSlug}`, orgDetailSchema);
+  const org = await getOrgDetail(orgSlug);
 
   if (org.role !== 'OWNER') {
     notFound();
   }
 
   return (
-    <main>
-      <h1>{t('title')}</h1>
-      {success === '1' && <p role="status">{t('checkoutSuccess')}</p>}
-      <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">
-        {org.plan}
-      </span>
+    <main className="flex flex-col gap-6 p-6">
+      <PageHeader title={t('title')} badge={<Badge>{org.plan}</Badge>} />
+      {success === '1' && (
+        <p role="status" className="rounded-control border border-green-300 bg-green-50 p-3 text-body text-green-800">
+          {t('checkoutSuccess')}
+        </p>
+      )}
       <UsageSummary usage={org.usage} />
       <BillingActions orgSlug={orgSlug} plan={org.plan} />
     </main>

@@ -8,15 +8,18 @@ import {
   type OrgDetail,
   type Post,
 } from '@feedback-board/shared';
+import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
+import { Button, Dialog, PageHeader } from '../ui';
 import { AiDigestPanel } from './ai-digest-panel';
 import { CreatePostForm } from './create-post-form';
 import { PostList } from './post-list';
+import { ShareBoardButton } from './share-board-button';
 
 const postListSchema = z.array(postSchema);
 
@@ -36,9 +39,11 @@ interface BoardDetailViewProps {
  */
 export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): ReactElement {
   const tCommon = useTranslations('common');
+  const tCreatePost = useTranslations('dashboard.boardDetail.createPost');
   const [org, setOrg] = useState<OrgDetail | null>(null);
   const [board, setBoard] = useState<BoardDetail | null>(null);
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +71,7 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
 
   function handlePostCreated(post: Post): void {
     setPosts((current) => (current === null ? [post] : [...current, post]));
+    setDialogOpen(false);
   }
 
   function handlePostUpdated(updated: Post): void {
@@ -75,15 +81,25 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
   }
 
   if (org === null || board === null || posts === null) {
-    return <p>{tCommon('loading')}</p>;
+    return <p className="text-sm text-zinc-500">{tCommon('loading')}</p>;
   }
 
   const canManage = org.role === 'OWNER' || org.role === 'ADMIN';
 
   return (
     <main>
-      <h1>{board.name}</h1>
-      <CreatePostForm orgSlug={orgSlug} boardSlug={boardSlug} onCreated={handlePostCreated} />
+      <PageHeader
+        title={board.name}
+        action={
+          <div className="flex items-center gap-2">
+            <ShareBoardButton orgSlug={orgSlug} boardSlug={boardSlug} isPublic={board.isPublic} />
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              {tCreatePost('trigger')}
+            </Button>
+          </div>
+        }
+      />
       {canManage && <AiDigestPanel orgSlug={orgSlug} boardSlug={boardSlug} />}
       <PostList
         orgSlug={orgSlug}
@@ -91,6 +107,14 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
         canManage={canManage}
         onUpdated={handlePostUpdated}
       />
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        title={tCreatePost('title')}
+        closeLabel={tCommon('close')}
+      >
+        <CreatePostForm orgSlug={orgSlug} boardSlug={boardSlug} onCreated={handlePostCreated} />
+      </Dialog>
     </main>
   );
 }

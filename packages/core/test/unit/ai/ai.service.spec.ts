@@ -150,4 +150,41 @@ describe('AiService.generateDigest', () => {
 
     await expect(service.generateDigest([])).rejects.toThrow('model unavailable');
   });
+
+  it('defaults to an English system prompt that forbids asking the caller for posts', async () => {
+    mockGenerateText.mockResolvedValue({
+      text: 'Users mostly want dark mode.',
+    } as unknown as Awaited<ReturnType<typeof generateText>>);
+
+    const service = new AiService(baseOptions);
+    await service.generateDigest([]);
+
+    const [call] = mockGenerateText.mock.calls[0] as [{ system: string }];
+    expect(call.system).toContain('English');
+    expect(call.system).toContain('never ask for');
+  });
+
+  it('asks the model to answer in the language mapped from the Accept-Language header', async () => {
+    mockGenerateText.mockResolvedValue({
+      text: 'A los usuarios les gustaría el modo oscuro.',
+    } as unknown as Awaited<ReturnType<typeof generateText>>);
+
+    const service = new AiService(baseOptions);
+    await service.generateDigest([], 'es-MX,es;q=0.9,en;q=0.8');
+
+    const [call] = mockGenerateText.mock.calls[0] as [{ system: string }];
+    expect(call.system).toContain('Spanish');
+  });
+
+  it('falls back to English for an unrecognized or missing Accept-Language', async () => {
+    mockGenerateText.mockResolvedValue({ text: 'Digest.' } as unknown as Awaited<
+      ReturnType<typeof generateText>
+    >);
+
+    const service = new AiService(baseOptions);
+    await service.generateDigest([], 'fr-FR');
+
+    const [call] = mockGenerateText.mock.calls[0] as [{ system: string }];
+    expect(call.system).toContain('English');
+  });
 });

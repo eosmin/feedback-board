@@ -5,10 +5,14 @@ declare const messages: {
   "common": {
     "appName": "FeedbackBoard",
     "loading": "Loading…",
+    "close": "Close",
     "error": {
       "generic": "Something went wrong. Please try again.",
       "unauthorized": "You need to sign in to continue.",
       "notFound": "We could not find what you were looking for."
+    },
+    "language": {
+      "label": "Language"
     }
   },
   "login": {
@@ -53,7 +57,22 @@ declare const messages: {
       "FREE": "Free plan",
       "PRO": "Pro plan"
     },
+    "shell": {
+      "backToOrgs": "All organizations",
+      "nav": {
+        "boards": "Boards",
+        "billing": "Billing",
+        "webhooks": "Webhooks"
+      },
+      "signOut": "Sign out",
+      "orgSwitcher": {
+        "label": "Switch organization",
+        "viewAll": "View all organizations ({count} more)",
+        "createNew": "Create new organization"
+      }
+    },
     "createOrg": {
+      "trigger": "New organization",
       "title": "Create an organization",
       "nameLabel": "Organization name",
       "nameInvalid": "Enter a name between 2 and 60 characters.",
@@ -73,6 +92,7 @@ declare const messages: {
         "private": "Private"
       },
       "createBoard": {
+        "trigger": "New board",
         "title": "Create a board",
         "nameLabel": "Board name",
         "nameInvalid": "Enter a name between 2 and 60 characters.",
@@ -97,7 +117,14 @@ declare const messages: {
       "postsEmpty": "No feedback has been posted yet.",
       "voteButton": "Vote ({count, number})",
       "statusLabel": "Status",
+      "share": {
+        "trigger": "Share board",
+        "copied": "Copied!",
+        "publicLink": "Public board link",
+        "memberLink": "Member link (sign-in required)"
+      },
       "createPost": {
+        "trigger": "New feedback",
         "title": "Share feedback",
         "titleLabel": "Title",
         "titleInvalid": "Enter a title between 3 and 200 characters.",
@@ -128,7 +155,10 @@ declare const messages: {
         "submit": "Generate AI Summary",
         "generating": "Generating…",
         "error": "We could not generate a summary. Please try again.",
-        "rateLimited": "You've reached the hourly limit for AI summaries. Try again later."
+        "rateLimited": "You've reached the hourly limit for AI summaries. Try again later.",
+        "noPosts": "There's no open feedback on this board yet, so there's nothing to summarize.",
+        "quotaRemaining": "{remaining} of {limit} AI summaries left this hour",
+        "quotaExhausted": "You've used all your AI summaries for this hour. Try again later."
       }
     },
     "billing": {
@@ -152,6 +182,7 @@ declare const messages: {
     "webhooks": {
       "title": "Webhooks",
       "createForm": {
+        "trigger": "Add webhook",
         "title": "Add a webhook",
         "targetUrlLabel": "Target URL",
         "targetUrlInvalid": "Enter a valid URL.",
@@ -185,6 +216,7 @@ declare const messages: {
       },
       "deliveries": {
         "show": "View delivery log",
+        "hide": "Hide delivery log",
         "loading": "Loading…",
         "empty": "No delivery attempts yet.",
         "error": "We could not load the delivery log. Please try again.",

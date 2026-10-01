@@ -7,6 +7,9 @@
  */
 
 @theme {
+  /* Accent — used deliberately for primary actions, focus rings, active/current state and
+     links. Structural chrome (borders, card surfaces, dropdown panels) uses Tailwind's zinc
+     scale instead, so the accent stays legible as "this is interactive" rather than decoration. */
   --color-brand-50: oklch(0.97 0.02 260);
   --color-brand-100: oklch(0.93 0.04 260);
   --color-brand-200: oklch(0.86 0.08 260);
@@ -17,8 +20,43 @@
   --color-brand-700: oklch(0.38 0.17 260);
   --color-brand-800: oklch(0.3 0.13 260);
   --color-brand-900: oklch(0.24 0.1 260);
+
+  /* Type scale — each step pairs a size with a deliberate line-height/tracking, so every
+     PageHeader/Card title/body/caption maps to exactly one step instead of ad hoc text-sm/lg. */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--letter-spacing: 0.01em;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.375rem;
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.5rem;
+  --text-title--letter-spacing: -0.011em;
+  --text-title--font-weight: 600;
+  --text-display: 1.5rem;
+  --text-display--line-height: 2rem;
+  --text-display--letter-spacing: -0.017em;
+  --text-display--font-weight: 600;
+
+  /* One radius, used everywhere a corner needs rounding — dropdown panels, dialogs, cards,
+     buttons, fields all read as the same shape language instead of a mix of md/lg/xl. */
+  --radius-control: 0.5rem;
+
+  --shadow-surface: 0 1px 2px 0 oklch(0.2 0.02 260 / 0.04);
+  --shadow-popover: 0 4px 16px -4px oklch(0.2 0.02 260 / 0.12), 0 1px 2px 0 oklch(0.2 0.02 260 / 0.06);
+  --shadow-modal: 0 20px 48px -12px oklch(0.2 0.02 260 / 0.22), 0 2px 6px 0 oklch(0.2 0.02 260 / 0.08);
 }
 
 body {
   min-height: 100dvh;
+  background-color: var(--color-zinc-50);
+  color: var(--color-zinc-900);
+}
+
+main {
+  margin-inline: auto;
+  max-width: 80rem;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }

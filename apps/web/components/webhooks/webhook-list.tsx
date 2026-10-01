@@ -6,6 +6,7 @@ import type { ReactElement } from 'react';
 import { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
+import { Badge, Button, Card, EmptyState } from '../ui';
 import { WebhookDeliveries } from './webhook-deliveries';
 
 /** `DELETE` returns `204 No Content`, which `apiFetch` surfaces as `null` (TDD §7.1). */
@@ -27,7 +28,7 @@ export function WebhookList({ orgSlug, webhooks, onDeleted }: WebhookListProps):
   const t = useTranslations('dashboard.webhooks.list');
 
   if (webhooks.length === 0) {
-    return <p>{t('empty')}</p>;
+    return <EmptyState>{t('empty')}</EmptyState>;
   }
 
   async function handleDelete(webhookId: string): Promise<void> {
@@ -40,20 +41,23 @@ export function WebhookList({ orgSlug, webhooks, onDeleted }: WebhookListProps):
   return (
     <ul className="flex flex-col gap-3">
       {webhooks.map((webhook) => (
-        <li
-          key={webhook.id}
-          className={`rounded-lg border border-brand-100 p-4 ${webhook.isActive ? '' : 'opacity-50'}`}
-        >
-          <p className="font-medium">{webhook.targetUrl}</p>
-          <p className="text-sm">{webhook.events.join(', ')}</p>
-          <p className="text-sm">
-            {webhook.isActive ? t('status.active') : t('status.disabled')}
-          </p>
-          <button type="button" onClick={() => void handleDelete(webhook.id)}>
-            {t('delete')}
-          </button>
-          <WebhookDeliveries orgSlug={orgSlug} webhookId={webhook.id} />
-        </li>
+        <Card as="li" key={webhook.id} className={webhook.isActive ? undefined : 'opacity-50'}>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="font-medium text-zinc-900">{webhook.targetUrl}</p>
+              <p className="text-sm text-zinc-500">{webhook.events.join(', ')}</p>
+            </div>
+            <Badge variant={webhook.isActive ? 'solid' : 'soft'}>
+              {webhook.isActive ? t('status.active') : t('status.disabled')}
+            </Badge>
+          </div>
+          <div className="mt-3 flex flex-wrap items-start gap-3">
+            <Button variant="secondary" onClick={() => void handleDelete(webhook.id)}>
+              {t('delete')}
+            </Button>
+            <WebhookDeliveries orgSlug={orgSlug} webhookId={webhook.id} />
+          </div>
+        </Card>
       ))}
     </ul>
   );

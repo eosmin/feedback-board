@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { apiFetch, ApiError } from '../../lib/api-client';
+import { Button, Input, Textarea } from '../ui';
 import { PostLimitUpgradePrompt } from './post-limit-upgrade-prompt';
 
 interface CreatePostFormProps {
@@ -71,26 +72,45 @@ export function CreatePostForm({
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} noValidate>
-      <h2>{t('title')}</h2>
-      <label htmlFor="post-title">{t('titleLabel')}</label>
-      <input
+    <form
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      noValidate
+      className="flex flex-col gap-3"
+    >
+      <label htmlFor="post-title" className="text-sm font-medium text-zinc-700">
+        {t('titleLabel')}
+      </label>
+      <Input
         id="post-title"
         type="text"
         aria-invalid={errors.title !== undefined}
         {...register('title')}
       />
-      {errors.title !== undefined && <p role="alert">{t('titleInvalid')}</p>}
+      {errors.title !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('titleInvalid')}
+        </p>
+      )}
 
-      <label htmlFor="post-body">{t('bodyLabel')}</label>
-      <textarea id="post-body" aria-invalid={errors.body !== undefined} {...register('body')} />
-      {errors.body !== undefined && <p role="alert">{t('bodyInvalid')}</p>}
+      <label htmlFor="post-body" className="text-sm font-medium text-zinc-700">
+        {t('bodyLabel')}
+      </label>
+      <Textarea id="post-body" aria-invalid={errors.body !== undefined} {...register('body')} />
+      {errors.body !== undefined && (
+        <p role="alert" className="text-sm text-red-600">
+          {t('bodyInvalid')}
+        </p>
+      )}
 
-      {submitError !== null && <p role="alert">{submitError}</p>}
+      {submitError !== null && (
+        <p role="alert" className="text-sm text-red-600">
+          {submitError}
+        </p>
+      )}
 
-      <button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? t('creating') : t('submit')}
-      </button>
+      </Button>
     </form>
   );
 }

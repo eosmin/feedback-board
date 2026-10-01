@@ -26,7 +26,13 @@ export async function signInViaMagicLink(page: Page, email: string): Promise<voi
   await page.waitForURL('**/dashboard');
 }
 
+/**
+ * Creation forms open in a `Dialog` instead of sitting inline in the page (TDD §13 step 19.7
+ * follow-up), so every `create*` helper below opens its trigger first. The dialog closes itself
+ * on a successful submit — no explicit close step is needed.
+ */
 export async function createOrg(page: Page, name: string, slug: string): Promise<void> {
+  await page.getByRole('button', { name: 'New organization' }).click();
   await page.getByLabel('Organization name').fill(name);
   await page.getByLabel('URL slug').fill(slug);
   await page.getByRole('button', { name: 'Create organization' }).click();
@@ -35,6 +41,7 @@ export async function createOrg(page: Page, name: string, slug: string): Promise
 }
 
 export async function createBoard(page: Page, name: string, slug: string): Promise<void> {
+  await page.getByRole('button', { name: 'New board' }).click();
   await page.getByLabel('Board name').fill(name);
   await page.getByLabel('URL slug').fill(slug);
   await page.getByRole('button', { name: 'Create board' }).click();
@@ -43,6 +50,7 @@ export async function createBoard(page: Page, name: string, slug: string): Promi
 }
 
 export async function createPost(page: Page, title: string, body: string): Promise<void> {
+  await page.getByRole('button', { name: 'New feedback' }).click();
   await page.getByLabel('Title').fill(title);
   await page.getByLabel('Description').fill(body);
   await page.getByRole('button', { name: 'Post feedback' }).click();

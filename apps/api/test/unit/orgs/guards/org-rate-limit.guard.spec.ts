@@ -7,7 +7,7 @@ import type { AuthenticatedRequest } from '../../../../src/database/tenant-prism
 
 function buildContext(request: Partial<AuthenticatedRequest>): ExecutionContext {
   return {
-    switchToHttp: () => ({ getRequest: () => request }),
+    switchToHttp: () => ({ getRequest: () => request, getResponse: () => Symbol('response') }),
     getHandler: () => function digest(): void {},
     getClass: () => class {},
   } as unknown as ExecutionContext;

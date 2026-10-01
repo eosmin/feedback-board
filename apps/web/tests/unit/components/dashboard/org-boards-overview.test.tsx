@@ -76,9 +76,18 @@ describe('OrgBoardsOverview', () => {
     expect(container.textContent).toContain('Feature Requests');
     expect(container.textContent).not.toContain('Bugs');
 
-    const nameInput = container.querySelector('#board-name') as HTMLInputElement;
-    const slugInput = container.querySelector('#board-slug') as HTMLInputElement;
-    const form = container.querySelector('form') as HTMLFormElement;
+    const trigger = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === messages.dashboard.orgOverview.createBoard.trigger,
+    ) as HTMLButtonElement;
+
+    act(() => {
+      trigger.click();
+    });
+
+    // The dialog is rendered via a portal into document.body, not into `container`.
+    const nameInput = document.querySelector('#board-name') as HTMLInputElement;
+    const slugInput = document.querySelector('#board-slug') as HTMLInputElement;
+    const form = document.querySelector('#board-name')?.closest('form') as HTMLFormElement;
 
     await act(async () => {
       Object.defineProperty(nameInput, 'value', { value: 'Bugs', configurable: true });
