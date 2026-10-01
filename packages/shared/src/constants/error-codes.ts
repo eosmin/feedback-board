@@ -14,6 +14,8 @@ export const ERROR_CODES = {
   NOT_FOUND: 'NOT_FOUND',
   CONFLICT: 'CONFLICT',
   RATE_LIMITED: 'RATE_LIMITED',
+  /** The board has no OPEN/PLANNED/IN_PROGRESS post to summarize (TDD §3.8). */
+  DIGEST_NO_POSTS: 'DIGEST_NO_POSTS',
   /**
    * A signed inbound webhook whose signature is missing or does not verify. Distinct from
    * VALIDATION_FAILED, whose body promises a `fields` list this refusal cannot carry.

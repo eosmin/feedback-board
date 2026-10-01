@@ -1,4 +1,5 @@
 export * from './constants/error-codes';
+export * from './constants/locales';
 export * from './constants/plans';
 export * from './constants/post-enums';
 export * from './constants/roles';
