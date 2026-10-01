@@ -84,7 +84,10 @@ export class WebhooksService {
       throw new NotFoundException({ error: ERROR_CODES.NOT_FOUND });
     }
 
-    await this.tenantPrisma.run((tx) => tx.webhook.delete({ where: { id: webhookId } }));
+    await this.tenantPrisma.run(async (tx) => {
+      await tx.webhookDelivery.deleteMany({ where: { webhookId } });
+      await tx.webhook.delete({ where: { id: webhookId } });
+    });
   }
 
   /**

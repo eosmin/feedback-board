@@ -14,6 +14,7 @@ function buildTenantPrisma(overrides: {
   findMany?: jest.Mock;
   findFirst?: jest.Mock;
   deleteWebhook?: jest.Mock;
+  deleteManyDeliveries?: jest.Mock;
   findManyDeliveries?: jest.Mock;
 }): TenantPrismaService {
   const run = jest.fn(async (fn: (tx: unknown) => unknown) => {
@@ -26,6 +27,7 @@ function buildTenantPrisma(overrides: {
       },
       webhookDelivery: {
         findMany: overrides.findManyDeliveries ?? jest.fn(),
+        deleteMany: overrides.deleteManyDeliveries ?? jest.fn().mockResolvedValue({ count: 0 }),
       },
     };
     return fn(tx);
@@ -104,13 +106,19 @@ describe('WebhooksService', () => {
     expect(result[0]).not.toHaveProperty('secret');
   });
 
-  it('deletes an existing webhook', async () => {
+  it('deletes an existing webhook and its delivery history', async () => {
     const findFirst = jest.fn().mockResolvedValue({ id: WEBHOOK_ID });
     const deleteWebhook = jest.fn().mockResolvedValue(undefined);
-    const service = new WebhooksService(buildTenantPrisma({ findFirst, deleteWebhook }));
+    const deleteManyDeliveries = jest.fn().mockResolvedValue({ count: 3 });
+    const service = new WebhooksService(
+      buildTenantPrisma({ findFirst, deleteWebhook, deleteManyDeliveries }),
+    );
 
     await service.delete(WEBHOOK_ID);
 
+    // deliveries must be removed first, or the FK from webhook_deliveries.webhook_id
+    // rejects the webhook delete with a P2003 constraint violation.
+    expect(deleteManyDeliveries).toHaveBeenCalledWith({ where: { webhookId: WEBHOOK_ID } });
     expect(deleteWebhook).toHaveBeenCalledWith({ where: { id: WEBHOOK_ID } });
   });
 
