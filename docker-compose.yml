@@ -1,0 +1,148 @@
+# `docker compose up --build` — api + worker + web + redis, against EITHER `supabase start`
+# (local) OR a hosted Supabase project. Both are configured purely through the root `.env`.
+#
+# Why each service lists its variables instead of using `env_file: .env`: apps/api and
+# apps/worker REJECT variables that belong to the other (TDD §16 — e.g. the worker's schema
+# refuses ADMIN_DATABASE_URL, the api's refuses DIRECT_URL and any NEXT_PUBLIC_*). One shared
+# `.env` handed to every container would abort their boot by design.
+#
+# Local Supabase: containers cannot reach the host's 127.0.0.1 (inside a container that is the
+# container itself), and the URLs cannot simply be rewritten to host.docker.internal — the
+# browser, the API's JWKS fetch and the JWT `iss` claim must all agree on ONE Supabase URL. So
+# each service runs inside the network namespace of its own `*-bridge` container, which forwards
+# 127.0.0.1:<port> to host.docker.internal:<port>; the same 127.0.0.1 URLs from `.env` then work
+# inside and outside Docker. `extra_hosts` maps host.docker.internal on Linux (Docker Desktop
+# defines it already). With a hosted project the bridges simply sit idle.
+#
+# The bridge OWNS the namespace and the service joins it, never the other way round: a service
+# that crashes and restarts re-attaches to the same, still-running bridge. A bridge attached to
+# the service instead would be left pointing at the dead container's namespace after a restart,
+# and the forwards would silently die while the service kept crash-looping. Consequences: ports
+# are published on the bridge, and `extra_hosts` belongs to the bridge too (a container that joins
+# another's namespace shares its /etc/hosts and may not set its own).
+
+x-bridge: &bridge
+  image: alpine/socat
+  restart: unless-stopped
+  entrypoint: ['/bin/sh', '-c']
+  extra_hosts:
+    - 'host.docker.internal:host-gateway'
+
+services:
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api-bridge:
+    <<: *bridge
+    ports:
+      - '3001:3001'
+    command:
+      - |
+        socat TCP-LISTEN:54321,fork,reuseaddr TCP:host.docker.internal:54321 &
+        socat TCP-LISTEN:54322,fork,reuseaddr TCP:host.docker.internal:54322 &
+        wait
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    network_mode: 'service:api-bridge'
+    restart: unless-stopped
+    depends_on:
+      api-bridge:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: '3001'
+      WEB_ORIGIN: ${WEB_ORIGIN:?set WEB_ORIGIN in .env}
+      SUPABASE_URL: ${SUPABASE_URL:?set SUPABASE_URL in .env}
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+      ADMIN_DATABASE_URL: ${ADMIN_DATABASE_URL:?set ADMIN_DATABASE_URL in .env}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?set STRIPE_SECRET_KEY in .env}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?set STRIPE_WEBHOOK_SECRET in .env}
+      STRIPE_PRO_PRICE_ID: ${STRIPE_PRO_PRICE_ID:?set STRIPE_PRO_PRICE_ID in .env}
+      AI_DIGEST_MODEL: ${AI_DIGEST_MODEL:?set AI_DIGEST_MODEL in .env}
+      # Redis is a compose service here, whatever `.env` says for a host-run dev setup.
+      REDIS_URL: redis://redis:6379
+      # Optional — passed through only when set, because the env schema rejects an empty string.
+      AI_GATEWAY_API_KEY:
+      AI_CUSTOM_BASE_URL:
+      AI_CUSTOM_API_KEY:
+      AI_CUSTOM_PROVIDER_NAME:
+      AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS:
+      BULL_BOARD_ENABLED:
+      BULL_BOARD_ADMIN_EMAILS:
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  worker-bridge:
+    <<: *bridge
+    # No `ports`: the worker has no HTTP adapter.
+    command:
+      - |
+        socat TCP-LISTEN:54322,fork,reuseaddr TCP:host.docker.internal:54322 &
+        wait
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    network_mode: 'service:worker-bridge'
+    restart: unless-stopped
+    depends_on:
+      worker-bridge:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    # No PORT: the worker's env schema rejects it outright.
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+      AI_CLASSIFY_MODEL: ${AI_CLASSIFY_MODEL:?set AI_CLASSIFY_MODEL in .env}
+      REDIS_URL: redis://redis:6379
+      AI_GATEWAY_API_KEY:
+      AI_CUSTOM_BASE_URL:
+      AI_CUSTOM_API_KEY:
+      AI_CUSTOM_PROVIDER_NAME:
+      AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS:
+
+  # Server-side rendering calls the API and Supabase from inside this namespace, using the same
+  # NEXT_PUBLIC_* URLs the browser uses (they are one inlined value) — hence both forwards.
+  web-bridge:
+    <<: *bridge
+    ports:
+      - '3000:3000'
+    command:
+      - |
+        socat TCP-LISTEN:3001,fork,reuseaddr TCP:host.docker.internal:3001 &
+        socat TCP-LISTEN:54321,fork,reuseaddr TCP:host.docker.internal:54321 &
+        wait
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      # Inlined into the browser bundle at build time — public by design, not secrets.
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?set NEXT_PUBLIC_SUPABASE_URL in .env}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:?set NEXT_PUBLIC_SUPABASE_ANON_KEY in .env}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL in .env}
+    network_mode: 'service:web-bridge'
+    restart: unless-stopped
+    depends_on:
+      web-bridge:
+        condition: service_started
+      api:
+        condition: service_healthy
