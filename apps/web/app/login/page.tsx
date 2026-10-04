@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import type { ReactElement } from 'react';
 
 import { MagicLinkForm } from '../../components/auth/magic-link-form';
-import { PageHeader } from '../../components/ui';
+import { Card, PageHeader } from '../../components/ui';
 import { safeRedirectPath } from '../../lib/safe-redirect';
 import { getOptionalUser } from '../../lib/supabase/require-user';
 
@@ -30,9 +30,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps): Promi
   const t = await getTranslations('login');
 
   return (
-    <main>
-      <PageHeader title={t('title')} />
-      <MagicLinkForm redirectTo={redirectTo} />
+    <main className="flex min-h-dvh items-center justify-center p-4">
+      <Card className="flex w-full max-w-sm flex-col gap-4 p-6">
+        <PageHeader title={t('title')} />
+        <MagicLinkForm redirectTo={redirectTo} />
+      </Card>
     </main>
   );
 }

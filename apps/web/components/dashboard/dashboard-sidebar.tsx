@@ -26,7 +26,7 @@ export async function DashboardSidebar({ orgSlug, org }: DashboardSidebarProps):
   return (
     <nav
       aria-label={t('shell.nav.boards')}
-      className="flex w-full shrink-0 flex-col gap-1 border-b border-zinc-200 bg-white p-4 md:h-dvh md:w-56 md:border-b-0 md:border-r"
+      className="flex w-full shrink-0 flex-col gap-1 border-b border-zinc-200 bg-white p-4 md:sticky md:top-0 md:h-dvh md:w-56 md:self-start md:overflow-y-auto md:border-b-0 md:border-r"
     >
       <div className="mb-3 flex min-w-0 items-center justify-between gap-2 px-2">
         <span className="min-w-0 truncate text-title text-zinc-900">{org.name}</span>
