@@ -1,0 +1,25 @@
+name: Coverage summary
+description: Surface the coverage table of a saved test log in the job summary
+
+inputs:
+  title:
+    description: Heading for the summary section
+    required: true
+  log:
+    description: Path to the captured test output
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        TITLE: ${{ inputs.title }}
+        LOG: ${{ inputs.log }}
+      run: |
+        {
+          echo "### ${TITLE}"
+          echo '```'
+          grep -E '\|.*\|.*\|' "$LOG" || echo 'no coverage table found'
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"

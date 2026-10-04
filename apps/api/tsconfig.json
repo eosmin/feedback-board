@@ -5,5 +5,5 @@
     "types": ["node", "jest"],
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "jest.config.ts", "jest.e2e.config.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "jest.config.ts", "jest.e2e.config.ts", "jest.ci.config.ts"]
 }

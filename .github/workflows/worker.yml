@@ -1,0 +1,85 @@
+name: worker
+
+on:
+  pull_request:
+    paths:
+      - apps/worker/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - eslint.config.js
+      - scripts/**
+      - .github/actions/**
+      - .github/workflows/worker.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/worker/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - eslint.config.js
+      - scripts/**
+      - .github/actions/**
+      - .github/workflows/worker.yml
+
+concurrency:
+  group: worker-${{ github.ref }}
+  # Never cancel a run on main: a quick second merge would leave the first commit without a result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+# `shell: bash` implies -eo pipefail; the default `bash -e` does not, so a failing test piped
+# into `tee` would leave the step green.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    # Real Redis for the BullMQ retry tests; no Supabase, the worker's DB access is mocked here
+    # and covered end to end by api.yml.
+    services:
+      redis:
+        image: redis:8-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Lint
+        run: |
+          pnpm --filter @feedback-board/worker lint
+          pnpm check:deprecations
+
+      - name: Typecheck
+        run: pnpm --filter @feedback-board/worker typecheck
+
+      - name: Unit tests with coverage
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+        run: pnpm --filter @feedback-board/worker test:cov 2>&1 | tee "$RUNNER_TEMP/worker-cov.log"
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/coverage-summary
+        with:
+          title: apps/worker coverage
+          log: ${{ runner.temp }}/worker-cov.log
+
+      - name: Build
+        run: pnpm --filter "@feedback-board/worker..." build
+
+      - name: Build Docker image
+        run: docker build -f apps/worker/Dockerfile -t feedback-board-worker:ci .

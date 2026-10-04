@@ -1,0 +1,47 @@
+name: Local Supabase stack
+description: >-
+  supabase start, bootstrap the app role, migrate, and export the connection strings the e2e
+  suites need. Requires the repo to be checked out and installed (uses scripts/bootstrap-db.sh
+  and the Prisma CLI).
+
+runs:
+  using: composite
+  steps:
+    - uses: supabase/setup-cli@v1
+      with:
+        version: 2.116.0
+
+    # A real GoTrue and JWKS endpoint are the point: a bare postgres container could not run the
+    # auth or RLS suites (TDD §15).
+    - name: supabase start
+      shell: bash
+      run: supabase start -x studio,imgproxy,edge-runtime,vector,logflare,supavisor
+
+    - name: Bootstrap role, migrate, export env
+      shell: bash
+      run: |
+        set -euo pipefail
+        status="$(supabase status -o env)"
+        get() { printf '%s\n' "$status" | sed -n "s/^$1=\"\(.*\)\"$/\1/p"; }
+
+        db_url="$(get DB_URL)"
+        # Throwaway per run, never a repository secret. Hex keeps it URL-safe.
+        app_password="$(openssl rand -hex 16)"
+        echo "::add-mask::$app_password"
+
+        # Bootstrap BEFORE migrate: the grants migration references the role this creates.
+        DIRECT_URL="$db_url" APP_DB_PASSWORD="$app_password" bash scripts/bootstrap-db.sh
+        DIRECT_URL="$db_url" pnpm --filter @feedback-board/core exec prisma migrate deploy
+
+        # DIRECT_URL and APP_DB_PASSWORD are deliberately NOT exported: apps/api and apps/worker
+        # reject them at boot. Three connection strings, three roles (§2.6.11): the app runs as
+        # feedbackboard_app so the RLS suite proves something; the admin client uses the
+        # BYPASSRLS owner.
+        host_and_db="${db_url#*@}"
+        {
+          echo "SUPABASE_URL=$(get API_URL)"
+          echo "TEST_SUPABASE_ANON_KEY=$(get ANON_KEY)"
+          echo "SUPABASE_INBUCKET_URL=$(get INBUCKET_URL)"
+          echo "DATABASE_URL=postgresql://feedbackboard_app:${app_password}@${host_and_db}"
+          echo "ADMIN_DATABASE_URL=${db_url}"
+        } >> "$GITHUB_ENV"

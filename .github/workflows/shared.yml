@@ -1,0 +1,77 @@
+name: shared
+
+on:
+  pull_request:
+    paths:
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - eslint.config.js
+      - scripts/**
+      - .github/actions/**
+      - .github/workflows/shared.yml
+  push:
+    branches: [main]
+    paths:
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - eslint.config.js
+      - scripts/**
+      - .github/actions/**
+      - .github/workflows/shared.yml
+
+concurrency:
+  group: shared-${{ github.ref }}
+  # Never cancel a run on main: a quick second merge would leave the first commit without a result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+# `shell: bash` implies -eo pipefail; the default `bash -e` does not, so a failing test piped
+# into `tee` would leave the step green.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  shared:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      # `pnpm --filter <pkg> lint` does not run the §7.6 scan: it lives in the root lint script.
+      - name: Lint
+        run: |
+          pnpm --filter @feedback-board/shared --filter @feedback-board/core lint
+          pnpm check:deprecations
+
+      - name: Typecheck
+        run: pnpm --filter @feedback-board/shared --filter @feedback-board/core typecheck
+
+      # Both packages carry 90/85/90 (§14.1); neither needs a database to run.
+      - name: Test shared
+        run: pnpm --filter @feedback-board/shared test:cov 2>&1 | tee "$RUNNER_TEMP/shared-cov.log"
+      - name: Test core
+        run: pnpm --filter @feedback-board/core test:cov 2>&1 | tee "$RUNNER_TEMP/core-cov.log"
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/coverage-summary
+        with:
+          title: packages/shared coverage
+          log: ${{ runner.temp }}/shared-cov.log
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/coverage-summary
+        with:
+          title: packages/core coverage
+          log: ${{ runner.temp }}/core-cov.log
+
+      # Also built by the setup action; kept as its own step so the §15 build gate is explicit.
+      - name: Build
+        run: pnpm --filter "@feedback-board/core..." build

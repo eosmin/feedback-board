@@ -1,0 +1,31 @@
+name: Setup workspace
+description: Node (from .nvmrc), pnpm (from package.json#packageManager) and a frozen-lockfile install
+
+runs:
+  using: composite
+  steps:
+    # No `version` input: pnpm/action-setup reads package.json#packageManager (pnpm@12.4.1), so the
+    # pin lives in one place. Passing a second, different version would abort the step.
+    - uses: pnpm/action-setup@v6
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+
+    # The root `postinstall` runs `prisma generate`, so the gitignored client exists in every job
+    # that installs. `prisma.config.ts` reads DIRECT_URL while loading even though `generate`
+    # never connects, hence the placeholder (not a credential; same trick as the Dockerfiles).
+    - name: Install dependencies
+      shell: bash
+      env:
+        DIRECT_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+      run: pnpm install --frozen-lockfile
+
+    # Apps and packages resolve @feedback-board/shared and /core through their built dist/, which
+    # a clean checkout lacks. Without this, lint (type-aware) and typecheck fail on unresolved
+    # imports. pnpm builds the two packages in dependency order.
+    - name: Build workspace libraries
+      shell: bash
+      run: pnpm --filter "./packages/*" build
