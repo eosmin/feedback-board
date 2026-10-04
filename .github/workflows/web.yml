@@ -33,10 +33,17 @@ on:
 
 concurrency:
   group: web-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on main: a quick second merge would leave the first commit without a result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
+
+# `shell: bash` implies -eo pipefail; the default `bash -e` does not, so a failing test piped
+# into `tee` would leave the step green.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   web:
@@ -54,7 +61,6 @@ jobs:
     # no NEXT_PUBLIC_* here: apps/api rejects that prefix at boot, so those are set per web step.
     # Placeholders only, no live credential (§17).
     env:
-      NODE_ENV: test
       WEB_ORIGIN: http://localhost:3000
       STRIPE_SECRET_KEY: sk_test_ci_placeholder
       STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
@@ -94,7 +100,10 @@ jobs:
       # Playwright drives the real stack: GoTrue + mailbox for sign-in, apps/api for data.
       - uses: ./.github/actions/supabase-stack
 
+      # NODE_ENV is set here only: Next.js misbuilds under a non-standard value.
       - name: Start API
+        env:
+          NODE_ENV: test
         run: |
           pnpm --filter "@feedback-board/api..." build
           nohup pnpm --filter @feedback-board/api start > "$RUNNER_TEMP/api.log" 2>&1 &

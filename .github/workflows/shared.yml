@@ -27,10 +27,17 @@ on:
 
 concurrency:
   group: shared-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on main: a quick second merge would leave the first commit without a result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
+
+# `shell: bash` implies -eo pipefail; the default `bash -e` does not, so a failing test piped
+# into `tee` would leave the step green.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   shared:
