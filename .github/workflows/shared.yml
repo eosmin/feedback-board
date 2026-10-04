@@ -65,6 +65,6 @@ jobs:
           title: packages/core coverage
           log: ${{ runner.temp }}/core-cov.log
 
-      # `core...` builds shared first (topological order), then core.
+      # Also built by the setup action; kept as its own step so the §15 build gate is explicit.
       - name: Build
         run: pnpm --filter "@feedback-board/core..." build

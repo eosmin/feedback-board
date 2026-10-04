@@ -66,10 +66,6 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
 
-      # apps/web resolves @feedback-board/shared through its built dist/.
-      - name: Build shared
-        run: pnpm --filter @feedback-board/shared build
-
       - name: Lint
         run: |
           pnpm --filter @feedback-board/web lint

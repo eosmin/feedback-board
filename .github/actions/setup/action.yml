@@ -22,3 +22,10 @@ runs:
       env:
         DIRECT_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
       run: pnpm install --frozen-lockfile
+
+    # Apps and packages resolve @feedback-board/shared and /core through their built dist/, which
+    # a clean checkout lacks. Without this, lint (type-aware) and typecheck fail on unresolved
+    # imports. pnpm builds the two packages in dependency order.
+    - name: Build workspace libraries
+      shell: bash
+      run: pnpm --filter "./packages/*" build
