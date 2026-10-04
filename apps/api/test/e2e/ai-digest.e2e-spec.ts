@@ -118,9 +118,11 @@ describe('ai-digest (e2e)', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ summary: 'A mocked digest summary.' });
-      expect(generateDigest).toHaveBeenCalledWith([
-        expect.objectContaining({ title: 'Add dark mode', body: 'Please add a dark theme.' }),
-      ]);
+      // No Accept-Language header was sent, so the locale argument is undefined.
+      expect(generateDigest).toHaveBeenCalledWith(
+        [expect.objectContaining({ title: 'Add dark mode', body: 'Please add a dark theme.' })],
+        undefined,
+      );
     },
     SIGN_IN_TEST_TIMEOUT_MS,
   );
@@ -166,6 +168,13 @@ describe('ai-digest (e2e)', () => {
         orgId,
         role: 'ADMIN',
       });
+
+      // An empty board refunds the attempt and answers 400 (DIGEST_NO_POSTS), which would never
+      // exhaust the budget, so the board needs one post to digest.
+      await request(app.getHttpServer())
+        .post(`/orgs/${orgSlugValue}/boards/${boardSlugValue}/posts`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'Add dark mode', body: 'Please add a dark theme.' });
 
       const tokens = [token, token, token, token, secondOwnerToken];
 

@@ -1,0 +1,92 @@
+name: api
+
+on:
+  pull_request:
+    paths:
+      - apps/api/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - eslint.config.js
+      - scripts/**
+      - supabase/**
+      - .github/actions/**
+      - .github/workflows/api.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/api/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - eslint.config.js
+      - scripts/**
+      - supabase/**
+      - .github/actions/**
+      - .github/workflows/api.yml
+
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:8-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    # No live credential anywhere (§17): Stripe is overridden in the suite and signs its own
+    # webhook events with this secret; the AI SDK is mocked, so the gateway key is a placeholder
+    # that only satisfies the env schema. DATABASE_URL / ADMIN_DATABASE_URL / SUPABASE_URL /
+    # TEST_SUPABASE_ANON_KEY / SUPABASE_INBUCKET_URL come from the supabase-stack action.
+    env:
+      NODE_ENV: test
+      WEB_ORIGIN: http://localhost:3000
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+      STRIPE_PRO_PRICE_ID: price_ci_placeholder
+      AI_GATEWAY_API_KEY: ci-placeholder
+      AI_DIGEST_MODEL: anthropic/claude-sonnet-4.5
+      # Dedicated Redis database index, so a leftover job from another run is never a flaky rerun.
+      REDIS_URL: redis://127.0.0.1:6379/1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/supabase-stack
+
+      - name: Lint
+        run: |
+          pnpm --filter @feedback-board/api lint
+          pnpm check:deprecations
+
+      - name: Typecheck
+        run: pnpm --filter @feedback-board/api typecheck
+
+      # Unit + e2e as one Jest run, so coverage is merged before the §14.1 thresholds apply.
+      - name: Unit and e2e tests with merged coverage
+        run: pnpm --filter @feedback-board/api test:ci 2>&1 | tee "$RUNNER_TEMP/api-cov.log"
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/coverage-summary
+        with:
+          title: apps/api coverage (unit + e2e)
+          log: ${{ runner.temp }}/api-cov.log
+
+      - name: Build
+        run: pnpm --filter "@feedback-board/api..." build
+
+      - name: Build Docker image
+        run: docker build -f apps/api/Dockerfile -t feedback-board-api:ci .

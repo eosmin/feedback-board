@@ -1,0 +1,133 @@
+name: web
+
+on:
+  pull_request:
+    paths:
+      - apps/web/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - eslint.config.js
+      - scripts/**
+      - .github/actions/**
+      - .github/workflows/web.yml
+      - apps/api/**
+      - supabase/**
+  push:
+    branches: [main]
+    paths:
+      - apps/web/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - eslint.config.js
+      - scripts/**
+      - .github/actions/**
+      - .github/workflows/web.yml
+      - apps/api/**
+      - supabase/**
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:8-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    # Server-side variables for the apps/api process the Playwright suite talks to. Deliberately
+    # no NEXT_PUBLIC_* here: apps/api rejects that prefix at boot, so those are set per web step.
+    # Placeholders only, no live credential (§17).
+    env:
+      NODE_ENV: test
+      WEB_ORIGIN: http://localhost:3000
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+      STRIPE_PRO_PRICE_ID: price_ci_placeholder
+      AI_GATEWAY_API_KEY: ci-placeholder
+      AI_DIGEST_MODEL: anthropic/claude-sonnet-4.5
+      REDIS_URL: redis://127.0.0.1:6379/2
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      # apps/web resolves @feedback-board/shared through its built dist/.
+      - name: Build shared
+        run: pnpm --filter @feedback-board/shared build
+
+      - name: Lint
+        run: |
+          pnpm --filter @feedback-board/web lint
+          pnpm check:deprecations
+
+      - name: Typecheck
+        run: pnpm --filter @feedback-board/web typecheck
+
+      - name: Unit tests with coverage
+        run: pnpm --filter @feedback-board/web test:cov 2>&1 | tee "$RUNNER_TEMP/web-cov.log"
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/coverage-summary
+        with:
+          title: apps/web coverage
+          log: ${{ runner.temp }}/web-cov.log
+
+      # NEXT_PUBLIC_* are inlined at build time; these dummy values only have to be well-formed.
+      - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+        run: pnpm --filter @feedback-board/web build
+
+      # Playwright drives the real stack: GoTrue + mailbox for sign-in, apps/api for data.
+      - uses: ./.github/actions/supabase-stack
+
+      - name: Start API
+        run: |
+          pnpm --filter "@feedback-board/api..." build
+          nohup pnpm --filter @feedback-board/api start > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:3001/health && exit 0
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
+
+      - name: Install Playwright browser
+        run: pnpm --filter @feedback-board/web exec playwright install --with-deps chromium
+
+      # Not counted toward coverage (§14.1). Playwright builds and starts the app itself.
+      - name: Playwright e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.TEST_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+        run: pnpm --filter @feedback-board/web test:e2e
+
+      - name: API log
+        if: ${{ failure() }}
+        run: cat "$RUNNER_TEMP/api.log"
+
+      - name: Build Docker image
+        run: >-
+          docker build -f apps/web/Dockerfile -t feedback-board-web:ci
+          --build-arg NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+          --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder
+          --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001
+          .
