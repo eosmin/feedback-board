@@ -19,20 +19,28 @@ MAX_POLLS=75 # 25 minutes: the API's CI run plus its deploy
 # consistent, and a missing run must not be mistaken for a worker-only change.
 EMPTY_POLLS_BEFORE_NONE=3
 
-# Prints "<status>/<conclusion>" for the newest push run of a workflow on this commit, or nothing
-# when there is none. `conclusion` is empty until the run completes. A `gh` failure (auth, rate
-# limit, network) fails the call: bash drops `set -e` inside `$(...)`, so the caller must check.
+# Prints "<status>/<conclusion>" for the newest run of a workflow on this commit, or nothing when
+# there is none. `conclusion` is empty until the run completes. $2 optionally restricts the
+# triggering event: `api.yml` runs on `push`, but `deploy-api.yml` runs on `workflow_run` (or
+# `workflow_dispatch` when re-run by hand), so it must NOT be filtered to `push` — doing so made
+# the gate wait for a run it could never see. A `gh` failure (auth, rate limit, network) fails the
+# call: bash drops `set -e` inside `$(...)`, so the caller must check.
 run_state() {
-  gh run list --workflow "$1" --commit "$SHA" --event push --limit 1 --json status,conclusion \
-    --jq '.[0] // empty | "\(.status)/\(.conclusion)"'
+  local event_filter=()
+  if [ -n "${2:-}" ]; then
+    event_filter=(--event "$2")
+  fi
+  gh run list --workflow "$1" --commit "$SHA" ${event_filter[@]+"${event_filter[@]}"} --limit 1 \
+    --json status,conclusion --jq '.[0] // empty | "\(.status)/\(.conclusion)"'
 }
 
 # Waits until the workflow has a completed run on this commit; echoes its conclusion.
 # $2 = "optional": no run at all is a valid answer (echoes "none") instead of a wait.
+# $3 = triggering event to filter on, or empty for any.
 await_completed() {
-  local workflow="$1" mode="${2:-required}" state empty_polls=0
+  local workflow="$1" mode="${2:-required}" event="${3:-}" state empty_polls=0
   for _ in $(seq 1 "$MAX_POLLS"); do
-    if ! state="$(run_state "$workflow")"; then
+    if ! state="$(run_state "$workflow" "$event")"; then
       echo "gh failed while listing $workflow runs for $SHA" >&2
       return 1
     fi
@@ -56,7 +64,7 @@ await_completed() {
 }
 
 # The assignments run in this shell, not a subshell, so a failing call stops the script here.
-api_ci="$(await_completed api.yml optional)"
+api_ci="$(await_completed api.yml optional push)"
 if [ "$api_ci" = "none" ]; then
   echo "No api.yml run for $SHA: worker-only change, nothing to wait for."
   exit 0
