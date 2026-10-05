@@ -1,18 +1,10 @@
 name: worker
 
 on:
+  # No path filter on pull_request: this job is a required status check on main. A required check
+  # that a path filter skips never reports, and the PR waits on it forever. The push trigger keeps
+  # its filter so a merge to main only runs (and deploys) what changed.
   pull_request:
-    paths:
-      - apps/worker/**
-      - packages/**
-      - package.json
-      - pnpm-lock.yaml
-      - pnpm-workspace.yaml
-      - tsconfig.base.json
-      - eslint.config.js
-      - scripts/**
-      - .github/actions/**
-      - .github/workflows/worker.yml
   push:
     branches: [main]
     paths:
