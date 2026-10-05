@@ -108,6 +108,59 @@ describe('row-level security (e2e)', () => {
     }
   });
 
+  // Supabase's Data API (PostgREST) runs as `anon`/`authenticated` and the `anon` key is public.
+  // This app never uses that API, so those roles must hold nothing in `public` (migration
+  // 20261006120000_revoke_data_api_access). Asserted from the catalog rather than by calling the
+  // API: it fails for the right reason if a later migration creates a table that re-grants.
+  describe.each(['anon', 'authenticated'])('Data API role %s', (role) => {
+    it('holds no privilege on any table in public', async () => {
+      const rows = await admin.client.$queryRaw<{ relname: string }[]>`
+        SELECT c.relname
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+          AND has_table_privilege(${role}, c.oid,
+                'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+      `;
+
+      expect(rows).toEqual([]);
+    });
+
+    it('cannot execute the SECURITY DEFINER auth-mirror function', async () => {
+      const rows = await admin.client.$queryRaw<{ allowed: boolean }[]>`
+        SELECT has_function_privilege(${role}, 'public.handle_new_auth_user()', 'EXECUTE') AS allowed
+      `;
+
+      expect(rows[0]?.allowed).toBe(false);
+    });
+  });
+
+  it('RLS is enabled on the three tables outside the tenant set, so none is open to a role that is later granted access', async () => {
+    const rows = await admin.client.$queryRaw<{ relname: string; relrowsecurity: boolean }[]>`
+      SELECT c.relname, c.relrowsecurity
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public'
+        AND c.relname IN ('users', 'stripe_events', '_prisma_migrations')
+    `;
+
+    expect(rows).toHaveLength(3);
+    for (const row of rows) {
+      expect(row.relrowsecurity).toBe(true);
+    }
+  });
+
+  it('the tenant app role reads nothing from users: that table is reached only through the admin client', async () => {
+    await createOrgWithMember('users-denied');
+
+    const rows = await appClient.client.$transaction(async (tx: Prisma.TransactionClient) => {
+      return tx.user.findMany();
+    });
+
+    expect(rows).toEqual([]);
+  });
+
   it('a query issued with no app.org_id set returns zero rows, not an error', async () => {
     await createOrgWithMember('no-session-var');
 
