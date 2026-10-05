@@ -1,0 +1,49 @@
+name: deploy-worker
+
+# Runs NO migrations: exactly one workflow owns the schema, and it is deploy-api.yml. Two
+# deployments racing `prisma migrate deploy` is a corrupted migration history (TDD §15.1).
+#
+# `workflow_dispatch` is the recovery path (a cancelled or failed run); run it from `main`.
+on:
+  workflow_run:
+    workflows: [worker]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production-worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read # scripts/await-api-deploy.sh lists the API pipeline's runs
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      # Never ahead of the API pipeline for the same commit (the schema it migrates).
+      - name: Wait for the API pipeline
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: bash scripts/await-api-deploy.sh
+
+      - name: Deploy worker
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: npx --yes @railway/cli@5.63.1 up --ci --service worker

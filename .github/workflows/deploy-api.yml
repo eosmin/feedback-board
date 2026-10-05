@@ -1,0 +1,69 @@
+name: deploy-api
+
+# The ONLY workflow that touches the production schema (TDD §15.1). Order is load-bearing:
+# `railway up` publishes a revision that serves immediately and Railway has no release phase to
+# gate it, so the migration has to run on this runner BEFORE the deploy command.
+#
+# `workflow_dispatch` is the recovery path: GitHub keeps one running and one pending run per
+# concurrency group, so a third commit arriving while two are queued cancels the pending one, and
+# a failed build needs a retry too. Run it from `main` and it deploys that tip.
+#
+# DIRECT_URL must be reachable from a GitHub runner, which has no IPv6 route. Supabase's direct
+# host is IPv6-only unless the IPv4 add-on is bought, so use the session-mode pooler connection
+# string for this secret (it speaks IPv4 and supports what Prisma Migrate needs).
+on:
+  workflow_run:
+    workflows: [api]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: {}
+
+# Serialised, never cancelled in flight: a deploy interrupted between the migration and
+# `railway up` would leave the old revision on a new schema for longer than necessary.
+concurrency:
+  group: deploy-production-api
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    # Only a green push to main deploys. `workflow_run` also fires for pull requests and for
+    # failed runs, and runs with this repository's secrets, so both are filtered out here.
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: ./.github/actions/setup
+
+      # bootstrap-db.sh shells out to psql and fails with a bare "command not found" otherwise.
+      - name: Ensure psql
+        run: command -v psql >/dev/null || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+
+      - name: Bootstrap database roles
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          APP_DB_PASSWORD: ${{ secrets.APP_DB_PASSWORD }}
+        run: bash scripts/bootstrap-db.sh
+
+      # Migrations must be additive: between this step and the deploy below, the old revision runs
+      # against the new schema.
+      - name: Apply migrations
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: pnpm --filter @feedback-board/core exec prisma migrate deploy
+
+      - name: Deploy api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: npx --yes @railway/cli@5.63.1 up --ci --service api
