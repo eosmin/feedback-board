@@ -39,4 +39,8 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
 USER node
-CMD ["node", "dist/main.js"]
+# Railway injects PORT into every service, including ones with no HTTP listener, and the worker's
+# env schema rejects it by design. Dropping it here keeps that check meaningful everywhere else
+# (local, CI, compose) instead of loosening it. `exec` keeps node as PID 1 so SIGTERM still reaches
+# `enableShutdownHooks()` and closes the BullMQ workers cleanly.
+CMD ["sh", "-c", "unset PORT && exec node dist/main.js"]
