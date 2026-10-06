@@ -172,6 +172,24 @@ describe('row-level security (e2e)', () => {
     }
   });
 
+  // The advisor reads text, not plans: lint 0003 only accepts a policy whose stored text contains
+  // `select current_setting(`, so `(SELECT nullif(current_setting(...)))` is reported although it
+  // is evaluated once. This is that lint's own rule (splinter 0003_auth_rls_initplan), so a policy
+  // that is fine for the planner but invisible to the advisor fails here instead of in the
+  // dashboard. `\_` is LIKE's escape for a literal underscore.
+  it("every tenant_isolation policy is in the form Supabase's auth_rls_initplan advisor accepts", async () => {
+    const rows = await admin.client.$queryRaw<{ policyname: string }[]>`
+      SELECT policyname
+      FROM pg_policies
+      WHERE schemaname = 'public'
+        AND policyname LIKE 'tenant_isolation_%'
+        AND (   lower(qual)       NOT LIKE '%select current\\_setting(%)%'
+             OR lower(with_check) NOT LIKE '%select current\\_setting(%)%')
+    `;
+
+    expect(rows).toEqual([]);
+  });
+
   it('memberships has an index led by org_id, because its RLS policy filters on it', async () => {
     const rows = await admin.client.$queryRaw<{ indexdef: string }[]>`
       SELECT indexdef FROM pg_indexes
