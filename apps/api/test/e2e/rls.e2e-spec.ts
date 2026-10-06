@@ -151,6 +151,41 @@ describe('row-level security (e2e)', () => {
     }
   });
 
+  // The same rule as Supabase's `rls_enabled_no_policy` advisor: "RLS on, no policy" reads as an
+  // unfinished table even when, as here, it is deliberate. Any table that enables RLS must say how.
+  it('no table in public has RLS enabled without a policy', async () => {
+    const rows = await admin.client.$queryRaw<{ relname: string }[]>`
+      SELECT c.relname
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public'
+        AND c.relkind = 'r'
+        AND c.relrowsecurity
+        AND NOT EXISTS (SELECT 1 FROM pg_policy p WHERE p.polrelid = c.oid)
+    `;
+
+    expect(rows).toEqual([]);
+  });
+
+  it('users, stripe_events and _prisma_migrations explicitly deny every command to anon and authenticated', async () => {
+    const rows = await admin.client.$queryRaw<
+      { tablename: string; roles: string[]; cmd: string; qual: string; with_check: string }[]
+    >`
+      SELECT tablename, roles::text[] AS roles, cmd, qual, with_check
+      FROM pg_policies
+      WHERE schemaname = 'public' AND policyname = 'deny_data_api'
+      ORDER BY tablename
+    `;
+
+    expect(rows.map((row) => row.tablename)).toEqual(['_prisma_migrations', 'stripe_events', 'users']);
+    for (const row of rows) {
+      expect([...row.roles].sort()).toEqual(['anon', 'authenticated']);
+      expect(row.cmd).toBe('ALL');
+      expect(row.qual).toBe('false');
+      expect(row.with_check).toBe('false');
+    }
+  });
+
   it('the tenant app role reads nothing from users: that table is reached only through the admin client', async () => {
     await createOrgWithMember('users-denied');
 
