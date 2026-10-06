@@ -151,6 +151,71 @@ describe('row-level security (e2e)', () => {
     }
   });
 
+  // Supabase's `auth_rls_initplan` advisor: a bare `current_setting()` in a policy may be
+  // re-evaluated for every row, so each must be wrapped in `(SELECT ...)` to become an InitPlan.
+  // Without a usable index that was ~5x slower on 300k rows (migration 20261006150000).
+  it('every tenant_isolation policy reads app.org_id through a (SELECT ...) so it is evaluated once', async () => {
+    const rows = await admin.client.$queryRaw<
+      { policyname: string; qual: string; with_check: string }[]
+    >`
+      SELECT policyname, qual, with_check
+      FROM pg_policies
+      WHERE schemaname = 'public' AND policyname LIKE 'tenant_isolation_%'
+      ORDER BY policyname
+    `;
+
+    expect(rows).toHaveLength(9);
+    for (const row of rows) {
+      // Postgres stores the wrapper as `( SELECT ...`, with a space after the parenthesis.
+      expect(row.qual).toMatch(/\(\s*SELECT\s/i);
+      expect(row.with_check).toMatch(/\(\s*SELECT\s/i);
+    }
+  });
+
+  it('memberships has an index led by org_id, because its RLS policy filters on it', async () => {
+    const rows = await admin.client.$queryRaw<{ indexdef: string }[]>`
+      SELECT indexdef FROM pg_indexes
+      WHERE schemaname = 'public' AND tablename = 'memberships'
+    `;
+
+    expect(rows.some((row) => /\(org_id\)/.test(row.indexdef))).toBe(true);
+  });
+
+  // The same rule as Supabase's `rls_enabled_no_policy` advisor: "RLS on, no policy" reads as an
+  // unfinished table even when, as here, it is deliberate. Any table that enables RLS must say how.
+  it('no table in public has RLS enabled without a policy', async () => {
+    const rows = await admin.client.$queryRaw<{ relname: string }[]>`
+      SELECT c.relname
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public'
+        AND c.relkind = 'r'
+        AND c.relrowsecurity
+        AND NOT EXISTS (SELECT 1 FROM pg_policy p WHERE p.polrelid = c.oid)
+    `;
+
+    expect(rows).toEqual([]);
+  });
+
+  it('users, stripe_events and _prisma_migrations explicitly deny every command to anon and authenticated', async () => {
+    const rows = await admin.client.$queryRaw<
+      { tablename: string; roles: string[]; cmd: string; qual: string; with_check: string }[]
+    >`
+      SELECT tablename, roles::text[] AS roles, cmd, qual, with_check
+      FROM pg_policies
+      WHERE schemaname = 'public' AND policyname = 'deny_data_api'
+      ORDER BY tablename
+    `;
+
+    expect(rows.map((row) => row.tablename)).toEqual(['_prisma_migrations', 'stripe_events', 'users']);
+    for (const row of rows) {
+      expect([...row.roles].sort()).toEqual(['anon', 'authenticated']);
+      expect(row.cmd).toBe('ALL');
+      expect(row.qual).toBe('false');
+      expect(row.with_check).toBe('false');
+    }
+  });
+
   it('the tenant app role reads nothing from users: that table is reached only through the admin client', async () => {
     await createOrgWithMember('users-denied');
 

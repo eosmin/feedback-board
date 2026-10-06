@@ -94,6 +94,7 @@ model Membership {
   org       Org      @relation(fields: [orgId], references: [id])
 
   @@unique([userId, orgId])
+  @@index([orgId]) // the tenant RLS policy filters on org_id; the unique above cannot serve it
   @@map("memberships")
 }
 
