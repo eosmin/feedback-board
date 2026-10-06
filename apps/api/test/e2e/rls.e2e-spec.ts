@@ -151,6 +151,36 @@ describe('row-level security (e2e)', () => {
     }
   });
 
+  // Supabase's `auth_rls_initplan` advisor: a bare `current_setting()` in a policy may be
+  // re-evaluated for every row, so each must be wrapped in `(SELECT ...)` to become an InitPlan.
+  // Without a usable index that was ~5x slower on 300k rows (migration 20261006150000).
+  it('every tenant_isolation policy reads app.org_id through a (SELECT ...) so it is evaluated once', async () => {
+    const rows = await admin.client.$queryRaw<
+      { policyname: string; qual: string; with_check: string }[]
+    >`
+      SELECT policyname, qual, with_check
+      FROM pg_policies
+      WHERE schemaname = 'public' AND policyname LIKE 'tenant_isolation_%'
+      ORDER BY policyname
+    `;
+
+    expect(rows).toHaveLength(9);
+    for (const row of rows) {
+      // Postgres stores the wrapper as `( SELECT ...`, with a space after the parenthesis.
+      expect(row.qual).toMatch(/\(\s*SELECT\s/i);
+      expect(row.with_check).toMatch(/\(\s*SELECT\s/i);
+    }
+  });
+
+  it('memberships has an index led by org_id, because its RLS policy filters on it', async () => {
+    const rows = await admin.client.$queryRaw<{ indexdef: string }[]>`
+      SELECT indexdef FROM pg_indexes
+      WHERE schemaname = 'public' AND tablename = 'memberships'
+    `;
+
+    expect(rows.some((row) => /\(org_id\)/.test(row.indexdef))).toBe(true);
+  });
+
   // The same rule as Supabase's `rls_enabled_no_policy` advisor: "RLS on, no policy" reads as an
   // unfinished table even when, as here, it is deliberate. Any table that enables RLS must say how.
   it('no table in public has RLS enabled without a policy', async () => {
