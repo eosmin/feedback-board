@@ -70,7 +70,8 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
   }, [orgSlug, boardSlug]);
 
   function handlePostCreated(post: Post): void {
-    setPosts((current) => (current === null ? [post] : [...current, post]));
+    // The API lists posts newest first (createdAt desc), so prepend to match a reload.
+    setPosts((current) => (current === null ? [post] : [post, ...current]));
     setDialogOpen(false);
   }
 

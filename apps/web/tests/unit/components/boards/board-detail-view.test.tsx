@@ -58,6 +58,11 @@ const post = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
+function setInputValue(input: HTMLInputElement | HTMLTextAreaElement, value: string): void {
+  Object.defineProperty(input, 'value', { value, configurable: true });
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 function mockFetchByPath(role: 'OWNER' | 'ADMIN' | 'MEMBER'): void {
   mockApiFetch.mockImplementation((path: string) => {
     if (path === '/orgs/acme') {
@@ -150,5 +155,61 @@ describe('BoardDetailView', () => {
     });
 
     expect(container.textContent).toContain(messages.dashboard.boardDetail.aiDigest.submit);
+  });
+
+  it('puts a newly created post first, matching the API order (createdAt desc), not last', async () => {
+    const created = {
+      ...post,
+      id: 'post-2',
+      title: 'Brand new request',
+      createdAt: '2026-02-01T00:00:00.000Z',
+    };
+    mockApiFetch.mockImplementation(
+      (path: string, _schema: unknown, init?: { method?: string }) => {
+        if (path === '/orgs/acme') {
+          return Promise.resolve({ ...orgDetail, role: 'MEMBER' });
+        }
+        if (path === '/orgs/acme/boards/feature-requests') {
+          return Promise.resolve(boardDetail);
+        }
+        if (path === '/orgs/acme/boards/feature-requests/posts') {
+          return Promise.resolve(init?.method === 'POST' ? created : [post]);
+        }
+        return Promise.resolve([]);
+      },
+    );
+
+    await act(async () => {
+      root.render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <BoardDetailView orgSlug="acme" boardSlug="feature-requests" />
+        </NextIntlClientProvider>,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const trigger = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === messages.dashboard.boardDetail.createPost.trigger,
+    );
+    await act(async () => {
+      trigger?.click();
+    });
+
+    // The dialog renders through a portal into document.body, outside `container`.
+    const titleInput = document.querySelector('#post-title') as HTMLInputElement;
+    const bodyInput = document.querySelector('#post-body') as HTMLTextAreaElement;
+    const form = titleInput.closest('form') as HTMLFormElement;
+    await act(async () => {
+      setInputValue(titleInput, created.title);
+      setInputValue(bodyInput, created.body);
+      form.requestSubmit();
+      // react-hook-form validates through an async resolver; a macrotask outlasts its microtask chain.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const text = container.textContent ?? '';
+    expect(text.indexOf(created.title)).toBeGreaterThanOrEqual(0);
+    expect(text.indexOf(created.title)).toBeLessThan(text.indexOf(post.title));
   });
 });
