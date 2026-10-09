@@ -198,6 +198,20 @@ describe('WebhookDeliveryProcessor', () => {
     );
   });
 
+  it('names the job’s webhook in the retry error when the outcome carries no webhook id', async () => {
+    const runAs = jest.fn().mockResolvedValue({ shouldRetry: true });
+    const runner = { runAs } as unknown as TenantRunner;
+    const delivery = { deliver: jest.fn() } as unknown as WebhookDeliveryService;
+    const { logger } = buildLogger();
+    const processor = new WebhookDeliveryProcessor(runner, delivery, logger);
+
+    await expect(
+      processor.process(
+        buildJob({ orgId: ORG_ID, webhookId: WEBHOOK_ID, event: 'post.created', postId: POST_ID }),
+      ),
+    ).rejects.toThrow(`deliver: webhook ${WEBHOOK_ID} responded undefined`);
+  });
+
   it('writes a null-status row and throws on a network error', async () => {
     const findFirstWebhook = jest.fn().mockResolvedValue({
       id: WEBHOOK_ID,
