@@ -40,7 +40,7 @@ jobs:
     # and covered end to end by api.yml.
     services:
       redis:
-        image: redis:8-alpine
+        image: public.ecr.aws/docker/library/redis:8-alpine
         ports: ['6379:6379']
         options: >-
           --health-cmd "redis-cli ping"
