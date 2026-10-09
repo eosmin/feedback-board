@@ -23,6 +23,10 @@ import { ShareBoardButton } from './share-board-button';
 
 const postListSchema = z.array(postSchema);
 
+function fetchPosts(orgSlug: string, boardSlug: string): Promise<Post[]> {
+  return apiFetch(`/orgs/${orgSlug}/boards/${boardSlug}/posts`, postListSchema);
+}
+
 interface BoardDetailViewProps {
   orgSlug: string;
   boardSlug: string;
@@ -44,21 +48,29 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
   const [board, setBoard] = useState<BoardDetail | null>(null);
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load(): Promise<void> {
-      const [orgResult, boardResult, postsResult] = await Promise.all([
-        apiFetch(`/orgs/${orgSlug}`, orgDetailSchema),
-        apiFetch(`/orgs/${orgSlug}/boards/${boardSlug}`, boardDetailSchema),
-        apiFetch(`/orgs/${orgSlug}/boards/${boardSlug}/posts`, postListSchema),
-      ]);
+      try {
+        const [orgResult, boardResult, postsResult] = await Promise.all([
+          apiFetch(`/orgs/${orgSlug}`, orgDetailSchema),
+          apiFetch(`/orgs/${orgSlug}/boards/${boardSlug}`, boardDetailSchema),
+          fetchPosts(orgSlug, boardSlug),
+        ]);
 
-      if (!cancelled) {
-        setOrg(orgResult);
-        setBoard(boardResult);
-        setPosts(postsResult);
+        if (!cancelled) {
+          setOrg(orgResult);
+          setBoard(boardResult);
+          setPosts(postsResult);
+          setLoadFailed(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setLoadFailed(true);
+        }
       }
     }
 
@@ -70,13 +82,27 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
   }, [orgSlug, boardSlug]);
 
   function handlePostCreated(post: Post): void {
-    setPosts((current) => (current === null ? [post] : [...current, post]));
+    // Show it at once at the top, then reconcile with the server, which owns the ordering.
+    setPosts((current) => (current === null ? [post] : [post, ...current]));
     setDialogOpen(false);
+    void fetchPosts(orgSlug, boardSlug)
+      .then(setPosts)
+      .catch(() => {
+        // The optimistic entry stays; the next load reconciles it.
+      });
   }
 
   function handlePostUpdated(updated: Post): void {
     setPosts((current) =>
       current === null ? current : current.map((post) => (post.id === updated.id ? updated : post)),
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <p role="alert" className="text-sm text-red-600">
+        {tCommon('error.generic')}
+      </p>
     );
   }
 

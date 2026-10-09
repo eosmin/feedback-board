@@ -58,6 +58,11 @@ const post = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
+function setInputValue(input: HTMLInputElement | HTMLTextAreaElement, value: string): void {
+  Object.defineProperty(input, 'value', { value, configurable: true });
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 function mockFetchByPath(role: 'OWNER' | 'ADMIN' | 'MEMBER'): void {
   mockApiFetch.mockImplementation((path: string) => {
     if (path === '/orgs/acme') {
@@ -150,5 +155,111 @@ describe('BoardDetailView', () => {
     });
 
     expect(container.textContent).toContain(messages.dashboard.boardDetail.aiDigest.submit);
+  });
+
+  describe('creating a post', () => {
+    const created = {
+      ...post,
+      id: 'post-2',
+      title: 'Brand new request',
+      createdAt: '2026-02-01T00:00:00.000Z',
+    };
+
+    // `listAfterCreate` is what the API returns when the list is re-fetched after the POST.
+    function mockCreateFlow(listAfterCreate: (typeof post)[]): void {
+      let createdOnServer = false;
+      mockApiFetch.mockImplementation(
+        (path: string, _schema: unknown, init?: { method?: string }) => {
+          if (path === '/orgs/acme') {
+            return Promise.resolve({ ...orgDetail, role: 'MEMBER' });
+          }
+          if (path === '/orgs/acme/boards/feature-requests') {
+            return Promise.resolve(boardDetail);
+          }
+          if (path === '/orgs/acme/boards/feature-requests/posts') {
+            if (init?.method === 'POST') {
+              createdOnServer = true;
+              return Promise.resolve(created);
+            }
+            return Promise.resolve(createdOnServer ? listAfterCreate : [post]);
+          }
+          return Promise.resolve([]);
+        },
+      );
+    }
+
+    async function renderAndCreate(): Promise<void> {
+      await act(async () => {
+        root.render(
+          <NextIntlClientProvider locale="en" messages={messages}>
+            <BoardDetailView orgSlug="acme" boardSlug="feature-requests" />
+          </NextIntlClientProvider>,
+        );
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      const trigger = Array.from(container.querySelectorAll('button')).find(
+        (button) => button.textContent === messages.dashboard.boardDetail.createPost.trigger,
+      );
+      await act(async () => {
+        trigger?.click();
+      });
+
+      // The dialog renders through a portal into document.body, outside `container`.
+      const titleInput = document.querySelector('#post-title') as HTMLInputElement;
+      const bodyInput = document.querySelector('#post-body') as HTMLTextAreaElement;
+      const form = titleInput.closest('form') as HTMLFormElement;
+      await act(async () => {
+        setInputValue(titleInput, created.title);
+        setInputValue(bodyInput, created.body);
+        form.requestSubmit();
+        // react-hook-form validates through an async resolver; a macrotask outlasts its microtasks.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    }
+
+    it('sends the POST and shows the new post first, not last', async () => {
+      mockCreateFlow([created, post]);
+
+      await renderAndCreate();
+
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        '/orgs/acme/boards/feature-requests/posts',
+        expect.anything(),
+        expect.objectContaining({ method: 'POST' }),
+      );
+      const text = container.textContent ?? '';
+      expect(text.indexOf(created.title)).toBeGreaterThanOrEqual(0);
+      expect(text.indexOf(created.title)).toBeLessThan(text.indexOf(post.title));
+    });
+
+    it('lets the server order win once the list is re-fetched', async () => {
+      mockCreateFlow([post, created]);
+
+      await renderAndCreate();
+
+      const text = container.textContent ?? '';
+      expect(text.indexOf(post.title)).toBeLessThan(text.indexOf(created.title));
+    });
+  });
+
+  it('shows the generic error instead of loading forever when a fetch fails', async () => {
+    mockApiFetch.mockRejectedValue(new Error('network down'));
+
+    await act(async () => {
+      root.render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <BoardDetailView orgSlug="acme" boardSlug="feature-requests" />
+        </NextIntlClientProvider>,
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe(
+      messages.common.error.generic,
+    );
+    expect(container.textContent).not.toContain(messages.common.loading);
   });
 });
