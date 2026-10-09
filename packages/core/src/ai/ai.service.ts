@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { generateText, Output } from 'ai';
+import { Injectable, Logger } from '@nestjs/common';
+import { APICallError, generateText, NoObjectGeneratedError, Output, RetryError } from 'ai';
 import { SUPPORTED_LOCALES } from '@feedback-board/shared';
 
 import { postClassificationSchema } from '../schemas/ai';
@@ -41,13 +41,17 @@ export interface DigestPostInput {
  */
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
+
   constructor(private readonly options: AiServiceOptions) {}
 
   /**
    * Returns `null` on any failure — rate limit, network, refusal, or a response that fails
    * `postClassificationSchema` — rather than throwing. AI classification is an enhancement,
    * never a blocking dependency (TDD §3.8): the caller (the worker's processor) leaves
-   * `aiCategory`/`aiPriority` `null` and logs, but never fails the job because of this.
+   * `aiCategory`/`aiPriority` `null`, but never fails the job because of this. This method logs
+   * the cause (`describeAiFailure`); the caller's own log only records that the post stays
+   * unclassified.
    */
   async classifyPost(title: string, body: string): Promise<PostClassification | null> {
     try {
@@ -68,7 +72,15 @@ export class AiService {
         });
 
         const parsed = postClassificationSchema.safeParse(JSON.parse(result.text) as unknown);
-        return parsed.success ? parsed.data : null;
+        if (!parsed.success) {
+          // Issue paths and codes name the offending field, never its value (no tenant content).
+          const issues = parsed.error.issues
+            .map((issue) => `${issue.path.map(String).join('.')}:${issue.code}`)
+            .join(', ');
+          this.logger.warn(`classification response failed schema validation (${issues})`);
+          return null;
+        }
+        return parsed.data;
       }
 
       const result = await generateText({
@@ -78,7 +90,8 @@ export class AiService {
       });
 
       return result.output;
-    } catch {
+    } catch (error) {
+      this.logger.warn(`classification failed: ${describeAiFailure(error)}`);
       return null;
     }
   }
@@ -109,6 +122,36 @@ export class AiService {
 
     return result.text;
   }
+}
+
+/** Caps a provider message so an endpoint that echoes part of the request cannot flood the log. */
+const MAX_PROVIDER_MESSAGE_LENGTH = 200;
+
+/**
+ * What is safe to log about a failed model call. A provider's own error message (bad model id,
+ * quota, unsupported parameter) is diagnostic, so `APICallError` keeps it, truncated: a custom
+ * endpoint may still quote part of the request, so this lowers the risk of post content reaching
+ * the log rather than removing it. `RetryError` is what the SDK throws once its retries run out
+ * (429, 5xx), so it is unwrapped to the error that caused it. `NoObjectGeneratedError` reports
+ * only its finish reason, because its message and cause can quote the model output. Anything
+ * else is reduced to its class name: a `JSON.parse` `SyntaxError` quotes a slice of the model
+ * output, which echoes post content.
+ */
+function describeAiFailure(error: unknown): string {
+  if (RetryError.isInstance(error)) {
+    return `${error.name} (${error.reason}): ${describeAiFailure(error.lastError)}`;
+  }
+  if (APICallError.isInstance(error)) {
+    const message =
+      error.message.length > MAX_PROVIDER_MESSAGE_LENGTH
+        ? `${error.message.slice(0, MAX_PROVIDER_MESSAGE_LENGTH)}...`
+        : error.message;
+    return `${error.name} (status ${error.statusCode ?? 'unknown'}): ${message}`;
+  }
+  if (NoObjectGeneratedError.isInstance(error)) {
+    return `${error.name} (finish reason ${error.finishReason ?? 'unknown'})`;
+  }
+  return error instanceof Error ? error.name : 'unknown error';
 }
 
 /**
