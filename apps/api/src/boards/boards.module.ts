@@ -47,7 +47,6 @@ import { BoardsService } from './boards.service';
           transport: buildAiTransportConfig({
             AI_CUSTOM_BASE_URL: config.get('AI_CUSTOM_BASE_URL', { infer: true }),
             AI_CUSTOM_API_KEY: config.get('AI_CUSTOM_API_KEY', { infer: true }),
-            AI_CUSTOM_PROVIDER_NAME: config.get('AI_CUSTOM_PROVIDER_NAME', { infer: true }),
             AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS: config.get(
               'AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS',
               { infer: true },

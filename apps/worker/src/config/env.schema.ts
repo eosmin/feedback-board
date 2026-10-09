@@ -1,3 +1,4 @@
+import { refineAiTransportEnv } from '@feedback-board/core';
 import { z } from 'zod';
 
 /**
@@ -39,22 +40,11 @@ export const envSchema = z
     AI_CLASSIFY_MODEL: z.string().min(1),
     AI_CUSTOM_BASE_URL: z.url().optional(),
     AI_CUSTOM_API_KEY: z.string().min(1).optional(),
-    AI_CUSTOM_PROVIDER_NAME: z.string().min(1).optional(),
     AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS: booleanFromString.default(true),
 
     REDIS_URL: z.string().min(1),
   })
-  .superRefine((env, ctx) => {
-    // Same rule as apps/api's schema (§2.6.8b): AI_CUSTOM_BASE_URL is the only transport
-    // switch. Unset it and the Gateway is used, which then needs its credential.
-    if (env.AI_CUSTOM_BASE_URL === undefined && env.AI_GATEWAY_API_KEY === undefined) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['AI_GATEWAY_API_KEY'],
-        message: 'required unless AI_CUSTOM_BASE_URL is set',
-      });
-    }
-  });
+  .superRefine(refineAiTransportEnv);
 
 export type Env = z.infer<typeof envSchema>;
 
@@ -71,7 +61,12 @@ export function validateEnv(raw: Record<string, unknown>): Env {
 
   if (!result.success) {
     const details = result.error.issues
-      .map((issue) => `${issue.path.join('.')}: ${issue.code}`)
+      // `custom` issues carry our own constant message; every other code stays message-free so a
+      // rejected value can never be echoed into a log.
+      .map(
+        (issue) =>
+          `${issue.path.join('.')}: ${issue.code === 'custom' ? issue.message : issue.code}`,
+      )
       .join('; ');
     throw new Error(`Invalid environment for apps/worker: ${details}`);
   }

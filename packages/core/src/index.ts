@@ -10,6 +10,7 @@ export * from './database/database.module';
 export * from './database/is-uuid';
 
 export * from './ai/resolve-model';
+export * from './ai/ai-transport-env';
 export * from './ai/ai.service';
 export * from './ai/ai.module';
 
