@@ -31,14 +31,19 @@ describe('validateEnv', () => {
     expect(() => validateEnv(raw)).toThrow(/DATABASE_URL/);
   });
 
-  it('requires the Gateway credential only when no custom base URL is configured', () => {
-    const raw = validEnv();
-    delete raw.AI_GATEWAY_API_KEY;
+  it('applies the AI transport rules: one credential per mode, the other mode’s is rejected', () => {
+    const noGateway = validEnv();
+    delete noGateway.AI_GATEWAY_API_KEY;
+    const custom = { ...noGateway, AI_CUSTOM_BASE_URL: 'http://localhost:11434/v1' };
 
-    expect(() => validateEnv(raw)).toThrow(/AI_GATEWAY_API_KEY/);
-    expect(
-      validateEnv({ ...raw, AI_CUSTOM_BASE_URL: 'http://localhost:11434/v1' }).AI_CUSTOM_BASE_URL,
-    ).toBe('http://localhost:11434/v1');
+    expect(() => validateEnv(noGateway)).toThrow(/AI_GATEWAY_API_KEY/);
+    expect(() => validateEnv(custom)).toThrow(
+      /AI_CUSTOM_API_KEY: required when AI_CUSTOM_BASE_URL is set/,
+    );
+    expect(validateEnv({ ...custom, AI_CUSTOM_API_KEY: 'ck' }).AI_CUSTOM_API_KEY).toBe('ck');
+    expect(() =>
+      validateEnv({ ...custom, AI_CUSTOM_API_KEY: 'ck', AI_GATEWAY_API_KEY: 'gw_x' }),
+    ).toThrow(/AI_GATEWAY_API_KEY: not used when AI_CUSTOM_BASE_URL is set/);
   });
 
   it('rejects ADMIN_DATABASE_URL — the worker has no admin caller (TDD §3.2, §3.10)', () => {

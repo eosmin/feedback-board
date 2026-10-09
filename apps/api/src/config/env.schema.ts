@@ -1,3 +1,4 @@
+import { formatEnvIssues, refineAiTransportEnv } from '@feedback-board/core';
 import { z } from 'zod';
 
 /**
@@ -32,25 +33,13 @@ export const envSchema = z
     AI_DIGEST_MODEL: z.string().min(1),
     AI_CUSTOM_BASE_URL: z.url().optional(),
     AI_CUSTOM_API_KEY: z.string().min(1).optional(),
-    AI_CUSTOM_PROVIDER_NAME: z.string().min(1).optional(),
     AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS: booleanFromString.default(true),
 
     REDIS_URL: z.string().min(1),
     BULL_BOARD_ENABLED: booleanFromString.default(false),
     BULL_BOARD_ADMIN_EMAILS: z.string().default(''),
   })
-  .superRefine((env, ctx) => {
-    // AI_CUSTOM_BASE_URL is the only transport switch (§2.6.8b): unset it and the Gateway is
-    // used, which then needs its credential. Requiring both unconditionally would make the
-    // custom-endpoint deployment impossible to configure.
-    if (env.AI_CUSTOM_BASE_URL === undefined && env.AI_GATEWAY_API_KEY === undefined) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['AI_GATEWAY_API_KEY'],
-        message: 'required unless AI_CUSTOM_BASE_URL is set',
-      });
-    }
-  });
+  .superRefine(refineAiTransportEnv);
 
 export type Env = z.infer<typeof envSchema>;
 
@@ -66,9 +55,7 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   const result = envSchema.safeParse(raw);
 
   if (!result.success) {
-    const details = result.error.issues
-      .map((issue) => `${issue.path.join('.')}: ${issue.code}`)
-      .join('; ');
+    const details = formatEnvIssues(result.error);
     throw new Error(`Invalid environment for apps/api: ${details}`);
   }
 

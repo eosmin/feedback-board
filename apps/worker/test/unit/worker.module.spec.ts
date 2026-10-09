@@ -4,7 +4,10 @@
 const REQUIRED_ENV = {
   NODE_ENV: 'test',
   DATABASE_URL: 'postgresql://app:pw@localhost:5432/postgres',
-  AI_GATEWAY_API_KEY: 'gw_x',
+  // Custom AI transport, set explicitly: worker.module.ts also loads apps/worker/.env, which on a
+  // dev machine selects it, and `loadEnvFile` never overrides a variable that is already set.
+  AI_CUSTOM_BASE_URL: 'http://localhost:11434/v1',
+  AI_CUSTOM_API_KEY: 'ck_x',
   AI_CLASSIFY_MODEL: 'anthropic/claude-haiku-4.5',
   REDIS_URL: 'redis://localhost:6379',
 };

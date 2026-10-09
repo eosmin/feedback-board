@@ -9,7 +9,6 @@ import type { LanguageModel } from 'ai';
 export interface AiTransportConfig {
   readonly customBaseUrl?: string;
   readonly customApiKey?: string;
-  readonly customProviderName?: string;
   readonly customSupportsStructuredOutputs: boolean;
 }
 
@@ -17,18 +16,17 @@ export interface AiTransportConfig {
  * The subset of each app's own validated env this function needs — a structural shape, not an
  * import of either `apps/api/src/config/env.schema.ts` or `apps/worker/src/config/env.schema.ts`
  * (`packages/core` cannot depend on either app, TDD §3.10, §17). `?: string` matches exactly
- * what Zod's `.optional()` infers for these three keys under `exactOptionalPropertyTypes: true`
+ * what Zod's `.optional()` infers for these optional keys under `exactOptionalPropertyTypes: true`
  * (tsconfig.base.json): an optional key whose value, when present, may still be `undefined`.
  */
 export interface AiCustomTransportEnv {
   readonly AI_CUSTOM_BASE_URL?: string | undefined;
   readonly AI_CUSTOM_API_KEY?: string | undefined;
-  readonly AI_CUSTOM_PROVIDER_NAME?: string | undefined;
   readonly AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS: boolean;
 }
 
 /**
- * Builds an `AiTransportConfig` from the four `AI_CUSTOM_*` env vars both `apps/api`
+ * Builds an `AiTransportConfig` from the three `AI_CUSTOM_*` env vars both `apps/api`
  * (`boards.module.ts`) and `apps/worker` (`worker.module.ts`) read from their own validated env
  * (TDD §3.8's second flow). Extracted here rather than duplicated in each module file (§7.1):
  * the conditional-spread shape below exists solely to satisfy `exactOptionalPropertyTypes` —
@@ -39,9 +37,6 @@ export function buildAiTransportConfig(env: AiCustomTransportEnv): AiTransportCo
   return {
     ...(env.AI_CUSTOM_BASE_URL !== undefined && { customBaseUrl: env.AI_CUSTOM_BASE_URL }),
     ...(env.AI_CUSTOM_API_KEY !== undefined && { customApiKey: env.AI_CUSTOM_API_KEY }),
-    ...(env.AI_CUSTOM_PROVIDER_NAME !== undefined && {
-      customProviderName: env.AI_CUSTOM_PROVIDER_NAME,
-    }),
     customSupportsStructuredOutputs: env.AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS,
   };
 }
@@ -68,7 +63,7 @@ export function resolveModel(
 ): LanguageModel {
   if (cfg.customBaseUrl !== undefined) {
     const provider = createOpenAICompatible({
-      name: cfg.customProviderName ?? 'custom',
+      name: 'custom',
       baseURL: cfg.customBaseUrl,
       // exactOptionalPropertyTypes treats an explicit `undefined` as distinct from "key
       // absent" — spreading only assigns the key when there is a real value.

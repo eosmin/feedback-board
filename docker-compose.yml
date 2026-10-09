@@ -76,7 +76,6 @@ services:
       AI_GATEWAY_API_KEY:
       AI_CUSTOM_BASE_URL:
       AI_CUSTOM_API_KEY:
-      AI_CUSTOM_PROVIDER_NAME:
       AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS:
       BULL_BOARD_ENABLED:
       BULL_BOARD_ADMIN_EMAILS:
@@ -115,7 +114,6 @@ services:
       AI_GATEWAY_API_KEY:
       AI_CUSTOM_BASE_URL:
       AI_CUSTOM_API_KEY:
-      AI_CUSTOM_PROVIDER_NAME:
       AI_CUSTOM_SUPPORTS_STRUCTURED_OUTPUTS:
 
   # Server-side rendering calls the API and Supabase from inside this namespace, using the same
