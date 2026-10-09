@@ -58,7 +58,7 @@ export function MagicLinkForm({ redirectTo }: MagicLinkFormProps): ReactElement 
   if (sentTo !== null) {
     return (
       <div className="flex flex-col items-center gap-2 text-center" role="status">
-        <CheckCircle2 className="size-8 text-brand-500" aria-hidden="true" />
+        <CheckCircle2 className="size-8 text-accent-text" aria-hidden="true" />
         <p>{t('checkEmail', { email: sentTo })}</p>
       </div>
     );
@@ -70,7 +70,7 @@ export function MagicLinkForm({ redirectTo }: MagicLinkFormProps): ReactElement 
       noValidate
       className="flex flex-col gap-3"
     >
-      <label htmlFor="email" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="email" className="text-sm font-medium text-text">
         {t('emailLabel')}
       </label>
       <Input
@@ -81,12 +81,12 @@ export function MagicLinkForm({ redirectTo }: MagicLinkFormProps): ReactElement 
         {...register('email')}
       />
       {errors.email !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('emailInvalid')}
         </p>
       )}
       {submitError !== null && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {submitError}
         </p>
       )}

@@ -10,3 +10,4 @@ export { Dialog } from './dialog';
 export { EmptyState } from './empty-state';
 export { Input, Textarea } from './input';
 export { PageHeader } from './page-header';
+export { ThemeToggle } from './theme-toggle';

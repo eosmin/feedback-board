@@ -72,9 +72,9 @@ export function ShareBoardButton({
         <div
           role="dialog"
           aria-label={linkLabel}
-          className="absolute right-0 z-40 mt-1 w-80 rounded-control border border-zinc-200 bg-white p-3 shadow-popover"
+          className="absolute right-0 z-40 mt-1 w-80 rounded-control border border-border bg-surface-raised p-3 shadow-popover"
         >
-          <label htmlFor="share-board-url" className="text-caption text-zinc-500">
+          <label htmlFor="share-board-url" className="text-caption text-text-muted">
             {linkLabel}
           </label>
           <div className="mt-1.5 flex items-center gap-2">
@@ -85,22 +85,22 @@ export function ShareBoardButton({
               readOnly
               value={url}
               onFocus={(event) => event.currentTarget.select()}
-              className="min-w-0 flex-1 rounded-control border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-body text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+              className="min-w-0 flex-1 rounded-control border border-border bg-surface px-2 py-1.5 text-body text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             />
             <button
               type="button"
               aria-label={copied ? t('copied') : t('trigger')}
               onClick={() => void handleCopy()}
-              className="flex shrink-0 items-center gap-1.5 rounded-control border border-zinc-200 px-2 py-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+              className="flex shrink-0 items-center gap-1.5 rounded-control border border-border px-2 py-1.5 text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               {copied ? (
-                <Check className="h-4 w-4 text-brand-600" aria-hidden="true" />
+                <Check className="h-4 w-4 text-accent-text" aria-hidden="true" />
               ) : (
                 <Copy className="h-4 w-4" aria-hidden="true" />
               )}
             </button>
           </div>
-          {copied && <p className="mt-1.5 text-caption text-brand-600">{t('copied')}</p>}
+          {copied && <p className="mt-1.5 text-caption text-accent-text">{t('copied')}</p>}
         </div>
       )}
     </div>

@@ -43,7 +43,7 @@ export default async function BillingPage({
     <main className="flex flex-col gap-6 p-6">
       <PageHeader title={t('title')} badge={<Badge>{org.plan}</Badge>} />
       {success === '1' && (
-        <p role="status" className="rounded-control border border-green-300 bg-green-50 p-3 text-body text-green-800">
+        <p role="status" className="rounded-control border border-success-border bg-success-soft p-3 text-body text-success">
           {t('checkoutSuccess')}
         </p>
       )}

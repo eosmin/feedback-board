@@ -62,7 +62,7 @@ export function WebhookDeliveries({ orgSlug, webhookId }: WebhookDeliveriesProps
       {isOpen && (
         <div className="mt-3 w-full basis-full">
           {loadError !== null && (
-            <p role="alert" className="text-sm text-red-600">
+            <p role="alert" className="text-sm text-danger">
               {loadError}
             </p>
           )}
@@ -72,7 +72,7 @@ export function WebhookDeliveries({ orgSlug, webhookId }: WebhookDeliveriesProps
           {loadError === null && deliveries !== null && deliveries.length > 0 && (
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-xs uppercase text-zinc-500">
+                <tr className="border-b border-border text-xs uppercase text-text-muted">
                   <th className="py-1 pr-2 font-medium">{t('columns.attempt')}</th>
                   <th className="py-1 pr-2 font-medium">{t('columns.event')}</th>
                   <th className="py-1 pr-2 font-medium">{t('columns.status')}</th>
@@ -81,7 +81,7 @@ export function WebhookDeliveries({ orgSlug, webhookId }: WebhookDeliveriesProps
               </thead>
               <tbody>
                 {deliveries.map((delivery) => (
-                  <tr key={delivery.id} className="border-b border-zinc-100 text-zinc-700">
+                  <tr key={delivery.id} className="border-b border-border text-text">
                     <td className="py-1 pr-2">{delivery.attempt}</td>
                     <td className="py-1 pr-2">{delivery.event}</td>
                     <td className="py-1 pr-2">{delivery.responseStatus ?? t('noResponse')}</td>

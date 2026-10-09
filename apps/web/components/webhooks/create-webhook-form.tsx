@@ -67,7 +67,7 @@ export function CreateWebhookForm({ orgSlug, onCreated }: CreateWebhookFormProps
       noValidate
       className="flex flex-col gap-3"
     >
-      <label htmlFor="webhook-target-url" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="webhook-target-url" className="text-sm font-medium text-text">
         {t('targetUrlLabel')}
       </label>
       <Input
@@ -77,18 +77,18 @@ export function CreateWebhookForm({ orgSlug, onCreated }: CreateWebhookFormProps
         {...register('targetUrl')}
       />
       {errors.targetUrl !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('targetUrlInvalid')}
         </p>
       )}
 
       <fieldset className="flex flex-col gap-1">
-        <legend className="text-sm font-medium text-zinc-700">{t('eventsLabel')}</legend>
+        <legend className="text-sm font-medium text-text">{t('eventsLabel')}</legend>
         {(WEBHOOK_EVENTS as WebhookEvent[]).map((event) => (
           <label
             key={event}
             htmlFor={`webhook-event-${event}`}
-            className="flex items-center gap-2 text-sm text-zinc-700"
+            className="flex items-center gap-2 text-sm text-text"
           >
             <input
               id={`webhook-event-${event}`}
@@ -101,13 +101,13 @@ export function CreateWebhookForm({ orgSlug, onCreated }: CreateWebhookFormProps
         ))}
       </fieldset>
       {errors.events !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('eventsInvalid')}
         </p>
       )}
 
       {submitError !== null && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {submitError}
         </p>
       )}

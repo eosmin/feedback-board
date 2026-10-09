@@ -3,6 +3,13 @@ import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
 import { Badge } from '../ui';
+import type { BadgeTone } from '../ui/badge';
+
+const PRIORITY_TONE: Record<PostPriority, BadgeTone> = {
+  LOW: 'priority-low',
+  MEDIUM: 'priority-medium',
+  HIGH: 'priority-high',
+};
 
 interface PostClassificationBadgeProps {
   category: PostCategory | null;
@@ -27,8 +34,8 @@ export function PostClassificationBadge({
 
   return (
     <span className="inline-flex gap-1">
-      {category !== null && <Badge variant="soft">{tCategory(category)}</Badge>}
-      {priority !== null && <Badge variant="soft">{tPriority(priority)}</Badge>}
+      {category !== null && <Badge tone="neutral">{tCategory(category)}</Badge>}
+      {priority !== null && <Badge tone={PRIORITY_TONE[priority]}>{tPriority(priority)}</Badge>}
     </span>
   );
 }

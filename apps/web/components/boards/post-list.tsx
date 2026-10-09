@@ -34,8 +34,8 @@ export function PostList({ orgSlug, posts, canManage, onUpdated }: PostListProps
     <ul className="flex flex-col gap-4">
       {posts.map((post) => (
         <Card as="li" key={post.id}>
-          <h2 className="font-medium text-zinc-900">{post.title}</h2>
-          <p className="mt-1 text-sm text-zinc-700">{post.body}</p>
+          <h2 className="font-medium text-text">{post.title}</h2>
+          <p className="mt-1 text-sm text-text">{post.body}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {canManage ? (
               <PostStatusSelect orgSlug={orgSlug} post={post} onUpdated={onUpdated} />

@@ -20,20 +20,20 @@ export function UsageSummary({ usage }: UsageSummaryProps): ReactElement {
   return (
     <Card as="dl" className="grid grid-cols-3 gap-4">
       <div>
-        <dt className="text-xs font-medium uppercase text-zinc-500">{t('boards')}</dt>
-        <dd className="mt-1 text-sm text-zinc-900">
+        <dt className="text-xs font-medium uppercase text-text-muted">{t('boards')}</dt>
+        <dd className="mt-1 text-sm text-text">
           {usage.boards.used} / {usage.boards.cap === null ? t('unlimited') : usage.boards.cap}
         </dd>
       </div>
       <div>
-        <dt className="text-xs font-medium uppercase text-zinc-500">{t('posts')}</dt>
-        <dd className="mt-1 text-sm text-zinc-900">
+        <dt className="text-xs font-medium uppercase text-text-muted">{t('posts')}</dt>
+        <dd className="mt-1 text-sm text-text">
           {usage.posts.used} / {usage.posts.cap === null ? t('unlimited') : usage.posts.cap}
         </dd>
       </div>
       <div>
-        <dt className="text-xs font-medium uppercase text-zinc-500">{t('webhooks')}</dt>
-        <dd className="mt-1 text-sm text-zinc-900">
+        <dt className="text-xs font-medium uppercase text-text-muted">{t('webhooks')}</dt>
+        <dd className="mt-1 text-sm text-text">
           {usage.webhooks.available ? t('available') : t('unavailable')}
         </dd>
       </div>

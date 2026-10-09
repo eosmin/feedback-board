@@ -13,6 +13,11 @@ declare const messages: {
     },
     "language": {
       "label": "Language"
+    },
+    "theme": {
+      "label": "Theme",
+      "switchToLight": "Switch to light theme",
+      "switchToDark": "Switch to dark theme"
     }
   },
   "login": {

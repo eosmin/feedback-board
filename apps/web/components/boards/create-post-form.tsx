@@ -77,7 +77,7 @@ export function CreatePostForm({
       noValidate
       className="flex flex-col gap-3"
     >
-      <label htmlFor="post-title" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="post-title" className="text-sm font-medium text-text">
         {t('titleLabel')}
       </label>
       <Input
@@ -87,23 +87,23 @@ export function CreatePostForm({
         {...register('title')}
       />
       {errors.title !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('titleInvalid')}
         </p>
       )}
 
-      <label htmlFor="post-body" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="post-body" className="text-sm font-medium text-text">
         {t('bodyLabel')}
       </label>
       <Textarea id="post-body" aria-invalid={errors.body !== undefined} {...register('body')} />
       {errors.body !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('bodyInvalid')}
         </p>
       )}
 
       {submitError !== null && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {submitError}
         </p>
       )}

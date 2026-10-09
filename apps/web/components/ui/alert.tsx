@@ -15,9 +15,9 @@ export interface AlertProps {
  */
 export function Alert({ title, description, children }: AlertProps): ReactElement {
   return (
-    <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-4">
-      <h3 className="font-medium text-amber-900">{title}</h3>
-      <p className="mt-1 text-sm text-amber-800">{description}</p>
+    <div role="alert" className="rounded-control border border-warning-border bg-warning-soft p-4">
+      <h3 className="font-medium text-warning">{title}</h3>
+      <p className="mt-1 text-body text-warning">{description}</p>
       {children !== undefined && <div className="mt-2">{children}</div>}
     </div>
   );

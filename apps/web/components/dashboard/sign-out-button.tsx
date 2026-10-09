@@ -30,7 +30,7 @@ export function SignOutButton(): ReactElement {
       type="button"
       disabled={isSigningOut}
       onClick={() => void handleSignOut()}
-      className="inline-flex items-center gap-1.5 rounded-control px-3 py-2 text-body font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-control px-3 py-2 text-body font-medium text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50"
     >
       <LogOut className="h-4 w-4" aria-hidden="true" />
       {t('signOut')}

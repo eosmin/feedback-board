@@ -70,17 +70,17 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
       noValidate
       className="flex flex-col gap-3"
     >
-      <label htmlFor="org-name" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="org-name" className="text-sm font-medium text-text">
         {t('nameLabel')}
       </label>
       <Input id="org-name" type="text" aria-invalid={errors.name !== undefined} {...register('name')} />
       {errors.name !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('nameInvalid')}
         </p>
       )}
 
-      <label htmlFor="org-slug" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="org-slug" className="text-sm font-medium text-text">
         {t('slugLabel')}
       </label>
       <Input
@@ -89,19 +89,19 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
         aria-invalid={errors.slug !== undefined || slugTaken}
         {...register('slug', { onChange: onSlugChange })}
       />
-      <p className="text-sm text-zinc-500">{t('slugHelp')}</p>
+      <p className="text-sm text-text-muted">{t('slugHelp')}</p>
       {errors.slug !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('slugInvalid')}
         </p>
       )}
       {slugTaken && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('slugReserved')}
         </p>
       )}
       {submitError !== null && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {submitError}
         </p>
       )}

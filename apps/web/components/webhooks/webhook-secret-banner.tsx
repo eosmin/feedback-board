@@ -20,7 +20,7 @@ export function WebhookSecretBanner({ secret, onDismiss }: WebhookSecretBannerPr
 
   return (
     <Alert title={t('title')} description={t('description')}>
-      <code className="mb-2 block break-all rounded bg-white px-2 py-1 text-sm">{secret}</code>
+      <code className="mb-2 block break-all rounded bg-surface-raised px-2 py-1 text-body text-text">{secret}</code>
       <Button variant="secondary" onClick={onDismiss}>
         {t('dismiss')}
       </Button>

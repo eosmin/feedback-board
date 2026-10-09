@@ -106,8 +106,8 @@ export function AiDigestPanel({ orgSlug, boardSlug }: AiDigestPanelProps): React
 
   return (
     <Card as="section">
-      <h2 className="flex items-center gap-1.5 font-medium text-zinc-900">
-        <Sparkles className="h-4 w-4 text-brand-600" aria-hidden="true" />
+      <h2 className="flex items-center gap-1.5 font-medium text-text">
+        <Sparkles className="h-4 w-4 text-accent-text" aria-hidden="true" />
         {t('title')}
       </h2>
       <Button
@@ -120,7 +120,7 @@ export function AiDigestPanel({ orgSlug, boardSlug }: AiDigestPanelProps): React
         {isGenerating ? t('generating') : t('submit')}
       </Button>
       {quota !== null && error === null && (
-        <p className="mt-1.5 text-caption text-zinc-500">
+        <p className="mt-1.5 text-caption text-text-muted">
           {exhausted
             ? t('quotaExhausted')
             : t('quotaRemaining', {
@@ -130,12 +130,12 @@ export function AiDigestPanel({ orgSlug, boardSlug }: AiDigestPanelProps): React
         </p>
       )}
       {error !== null && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <p role="alert" className="mt-2 text-sm text-danger">
           {error}
         </p>
       )}
       {summary !== null && (
-        <div className="mt-2 text-sm text-zinc-700 [&_h2]:mt-3 [&_h2]:font-medium [&_h3]:mt-2 [&_h3]:font-medium [&_li]:ml-4 [&_li]:list-disc [&_p]:mt-1">
+        <div className="mt-2 text-sm text-text [&_h2]:mt-3 [&_h2]:font-medium [&_h3]:mt-2 [&_h3]:font-medium [&_li]:ml-4 [&_li]:list-disc [&_p]:mt-1">
           <Markdown>{summary}</Markdown>
         </div>
       )}

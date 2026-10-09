@@ -26,12 +26,12 @@ export function PublicPostList({ posts }: PublicPostListProps): ReactElement {
     <ul className="flex flex-col gap-4">
       {posts.map((post) => (
         <Card as="li" key={post.id}>
-          <h2 className="font-medium text-zinc-900">{post.title}</h2>
-          <p className="mt-1 text-sm text-zinc-700">{post.body}</p>
+          <h2 className="font-medium text-text">{post.title}</h2>
+          <p className="mt-1 text-sm text-text">{post.body}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <PostStatusBadge status={post.status} />
             <PostClassificationBadge category={post.aiCategory} priority={post.aiPriority} />
-            <span className="text-xs text-zinc-500">{t('voteCount', { count: post.voteCount })}</span>
+            <span className="text-xs text-text-muted">{t('voteCount', { count: post.voteCount })}</span>
           </div>
         </Card>
       ))}

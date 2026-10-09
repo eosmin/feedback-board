@@ -71,16 +71,16 @@ export function PostComments({ orgSlug, postId }: PostCommentsProps): ReactEleme
   }
 
   return (
-    <section className="mt-3 border-t border-zinc-100 pt-3">
-      <h4 className="text-sm font-medium text-zinc-700">{t('title')}</h4>
+    <section className="mt-3 border-t border-border pt-3">
+      <h4 className="text-sm font-medium text-text">{t('title')}</h4>
       {comments === null ? (
-        <p className="text-sm text-zinc-500">{t('loading')}</p>
+        <p className="text-sm text-text-muted">{t('loading')}</p>
       ) : comments.length === 0 ? (
-        <p className="text-sm text-zinc-500">{t('empty')}</p>
+        <p className="text-sm text-text-muted">{t('empty')}</p>
       ) : (
         <ul className="flex flex-col gap-1">
           {comments.map((comment) => (
-            <li key={comment.id} className="text-sm text-zinc-700">
+            <li key={comment.id} className="text-sm text-text">
               {comment.body}
             </li>
           ))}
@@ -105,7 +105,7 @@ export function PostComments({ orgSlug, postId }: PostCommentsProps): ReactEleme
         </Button>
       </form>
       {errors.body !== undefined && (
-        <p role="alert" className="mt-1 text-sm text-red-600">
+        <p role="alert" className="mt-1 text-sm text-danger">
           {t('bodyInvalid')}
         </p>
       )}

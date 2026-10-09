@@ -38,7 +38,7 @@ export function LocaleSwitcher(): ReactElement {
         aria-expanded={open}
         aria-label={t('label')}
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-1.5 rounded-control p-2 text-body text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+        className="flex items-center gap-1.5 rounded-control p-2 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         <Globe className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -47,7 +47,7 @@ export function LocaleSwitcher(): ReactElement {
         <ul
           role="menu"
           aria-label={t('label')}
-          className="absolute right-0 z-40 mt-1 w-40 rounded-control border border-zinc-200 bg-white py-1 shadow-popover"
+          className="absolute right-0 z-40 mt-1 w-40 rounded-control border border-border bg-surface-raised py-1 shadow-popover"
         >
           {AVAILABLE_LOCALES.map((option) => (
             <li key={option.code} role="none">
@@ -56,10 +56,10 @@ export function LocaleSwitcher(): ReactElement {
                 role="menuitemradio"
                 aria-checked={option.code === locale}
                 onClick={() => selectLocale(option.code)}
-                className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-body text-zinc-700 hover:bg-zinc-50"
+                className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-body text-text hover:bg-surface"
               >
                 {option.label}
-                {option.code === locale && <Check className="h-4 w-4 text-brand-600" aria-hidden="true" />}
+                {option.code === locale && <Check className="h-4 w-4 text-accent-text" aria-hidden="true" />}
               </button>
             </li>
           ))}

@@ -41,7 +41,7 @@ export default async function OrgOverviewPage({
     <main className="flex flex-col gap-6 p-6">
       <PageHeader title={org.name} badge={<Badge>{org.plan}</Badge>} />
       <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium text-zinc-900">{t('boardsTitle')}</h2>
+        <h2 className="text-lg font-medium text-text">{t('boardsTitle')}</h2>
         <OrgBoardsOverview orgSlug={orgSlug} initialBoards={boards} />
       </div>
     </main>

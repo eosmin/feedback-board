@@ -21,7 +21,7 @@ export function PlanLimitUpgradePrompt({ orgSlug }: PlanLimitUpgradePromptProps)
 
   return (
     <Alert title={t('title')} description={t('description')}>
-      <Link href={`/dashboard/${orgSlug}/billing`} className="font-medium text-brand-700 underline">
+      <Link href={`/dashboard/${orgSlug}/billing`} className="font-medium text-accent-text underline">
         {t('cta')}
       </Link>
     </Alert>
