@@ -1,4 +1,5 @@
-import { generateText } from 'ai';
+import { Logger } from '@nestjs/common';
+import { APICallError, generateText, NoObjectGeneratedError, RetryError } from 'ai';
 
 import { AiService } from '../../../src/ai/ai.service';
 import type { DigestPostInput } from '../../../src/ai/ai.service';
@@ -11,6 +12,17 @@ jest.mock('ai', () => ({
 }));
 
 const mockGenerateText = generateText as jest.MockedFunction<typeof generateText>;
+
+let warn: jest.SpyInstance;
+
+beforeEach(() => {
+  mockGenerateText.mockReset();
+  warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+});
+
+afterEach(() => {
+  warn.mockRestore();
+});
 
 const baseOptions = {
   classifyModel: 'anthropic/claude-haiku-4.5',
@@ -28,10 +40,6 @@ function promptContaining(substring: string): { prompt: unknown } {
 }
 
 describe('AiService.classifyPost', () => {
-  beforeEach(() => {
-    mockGenerateText.mockReset();
-  });
-
   it('returns the parsed classification on success (Gateway / structured-output path)', async () => {
     mockGenerateText.mockResolvedValue({
       output: { category: 'BUG', priority: 'HIGH' },
@@ -110,11 +118,126 @@ describe('AiService.classifyPost', () => {
   });
 });
 
-describe('AiService.generateDigest', () => {
-  beforeEach(() => {
-    mockGenerateText.mockReset();
+describe('AiService.classifyPost failure logging', () => {
+  const fallbackOptions = {
+    ...baseOptions,
+    transport: {
+      customBaseUrl: 'http://localhost:11434/v1',
+      customSupportsStructuredOutputs: false,
+    },
+  };
+  const apiCallError = (message: string, statusCode: number): APICallError =>
+    new APICallError({
+      message,
+      url: 'https://proxy.example.com/v1/chat/completions',
+      requestBodyValues: {},
+      statusCode,
+    });
+
+  it('unwraps the provider error behind a RetryError once retries run out', async () => {
+    mockGenerateText.mockRejectedValue(
+      new RetryError({
+        message: 'Failed after 3 attempts',
+        reason: 'maxRetriesExceeded',
+        errors: [apiCallError('rate limit exceeded', 429)],
+      }),
+    );
+
+    await new AiService(baseOptions).classifyPost('Title', 'Body');
+
+    expect(warn).toHaveBeenCalledWith(
+      'classification failed: AI_RetryError (maxRetriesExceeded): AI_APICallError (status 429): rate limit exceeded',
+    );
   });
 
+  it('truncates a long provider message', async () => {
+    mockGenerateText.mockRejectedValue(apiCallError('x'.repeat(500), 400));
+
+    await new AiService(baseOptions).classifyPost('Title', 'Body');
+
+    expect(warn).toHaveBeenCalledWith(
+      `classification failed: AI_APICallError (status 400): ${'x'.repeat(200)}...`,
+    );
+  });
+
+  it('logs only the finish reason of a NoObjectGeneratedError, not its message or text', async () => {
+    mockGenerateText.mockRejectedValue(
+      new NoObjectGeneratedError({
+        message: 'could not parse: secret post content',
+        text: 'secret post content',
+        response: { id: 'r', timestamp: new Date(0), modelId: 'm' },
+        usage: {
+          inputTokens: 1,
+          inputTokenDetails: {
+            noCacheTokens: undefined,
+            cacheReadTokens: undefined,
+            cacheWriteTokens: undefined,
+          },
+          outputTokens: 1,
+          outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
+          totalTokens: 2,
+        },
+        finishReason: 'length',
+      }),
+    );
+
+    await new AiService(baseOptions).classifyPost('Title', 'Body');
+
+    expect(warn).toHaveBeenCalledWith(
+      'classification failed: AI_NoObjectGeneratedError (finish reason length)',
+    );
+  });
+
+  it('logs the status and message of a provider error', async () => {
+    mockGenerateText.mockRejectedValue(apiCallError('response_format is not supported', 400));
+
+    await new AiService(baseOptions).classifyPost('Title', 'Body');
+
+    expect(warn).toHaveBeenCalledWith(
+      'classification failed: AI_APICallError (status 400): response_format is not supported',
+    );
+  });
+
+  it('logs only the class name of any other error, never its message', async () => {
+    mockGenerateText.mockRejectedValue(new Error('secret post content'));
+
+    await new AiService(baseOptions).classifyPost('Title', 'Body');
+
+    expect(warn).toHaveBeenCalledWith('classification failed: Error');
+  });
+
+  it('logs a generic label when the thrown value is not an Error', async () => {
+    mockGenerateText.mockRejectedValue('boom');
+
+    await new AiService(baseOptions).classifyPost('Title', 'Body');
+
+    expect(warn).toHaveBeenCalledWith('classification failed: unknown error');
+  });
+
+  it('does not echo model output when the fallback response is not valid JSON', async () => {
+    mockGenerateText.mockResolvedValue({
+      text: '```json {"category":"UX"} ```',
+    } as unknown as Awaited<ReturnType<typeof generateText>>);
+
+    await new AiService(fallbackOptions).classifyPost('Title', 'Body');
+
+    expect(warn).toHaveBeenCalledWith('classification failed: SyntaxError');
+  });
+
+  it('logs a schema failure from the fallback response', async () => {
+    mockGenerateText.mockResolvedValue({
+      text: '{"category":"NOT_A_CATEGORY","priority":"LOW"}',
+    } as unknown as Awaited<ReturnType<typeof generateText>>);
+
+    await new AiService(fallbackOptions).classifyPost('Title', 'Body');
+
+    expect(warn).toHaveBeenCalledWith(
+      'classification response failed schema validation (category:invalid_value)',
+    );
+  });
+});
+
+describe('AiService.generateDigest', () => {
   it('returns plain text built from the given posts', async () => {
     mockGenerateText.mockResolvedValue({
       text: 'Users mostly want dark mode.',
