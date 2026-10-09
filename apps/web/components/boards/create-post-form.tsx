@@ -19,7 +19,7 @@ import { PostLimitUpgradePrompt } from './post-limit-upgrade-prompt';
 interface CreatePostFormProps {
   orgSlug: string;
   boardSlug: string;
-  /** Called after a successful creation, so the parent can append it to the post list. */
+  /** Called after a successful creation, so the parent can add it to the top of the post list. */
   onCreated: (post: Post) => void;
 }
 
