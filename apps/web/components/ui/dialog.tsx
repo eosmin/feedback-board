@@ -86,7 +86,7 @@ export function Dialog({ open, onClose, title, closeLabel, children }: DialogPro
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4 backdrop-blur-[2px]"
       onClick={onClose}
     >
       <div
@@ -95,16 +95,16 @@ export function Dialog({ open, onClose, title, closeLabel, children }: DialogPro
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="flex max-h-[90vh] w-full max-w-md flex-col gap-4 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-modal outline-none"
+        className="flex max-h-[90vh] w-full max-w-md flex-col gap-4 overflow-y-auto rounded-xl border border-border bg-surface-raised p-6 shadow-modal outline-none"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-title text-zinc-900">{title}</h2>
+          <h2 className="text-title text-text">{title}</h2>
           <button
             type="button"
             aria-label={closeLabel}
             onClick={onClose}
-            className="rounded-control p-1 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+            className="rounded-control p-1 text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           >
             <X className="h-5 w-5" />
           </button>

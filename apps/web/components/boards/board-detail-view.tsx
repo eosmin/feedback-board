@@ -100,14 +100,14 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
 
   if (loadFailed) {
     return (
-      <p role="alert" className="text-sm text-red-600">
+      <p role="alert" className="text-sm text-danger">
         {tCommon('error.generic')}
       </p>
     );
   }
 
   if (org === null || board === null || posts === null) {
-    return <p className="text-sm text-zinc-500">{tCommon('loading')}</p>;
+    return <p className="text-sm text-text-muted">{tCommon('loading')}</p>;
   }
 
   const canManage = org.role === 'OWNER' || org.role === 'ADMIN';

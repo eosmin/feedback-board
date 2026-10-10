@@ -44,10 +44,10 @@ export function WebhookList({ orgSlug, webhooks, onDeleted }: WebhookListProps):
         <Card as="li" key={webhook.id} className={webhook.isActive ? undefined : 'opacity-50'}>
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="font-medium text-zinc-900">{webhook.targetUrl}</p>
-              <p className="text-sm text-zinc-500">{webhook.events.join(', ')}</p>
+              <p className="font-medium text-text">{webhook.targetUrl}</p>
+              <p className="text-sm text-text-muted">{webhook.events.join(', ')}</p>
             </div>
-            <Badge variant={webhook.isActive ? 'solid' : 'soft'}>
+            <Badge tone={webhook.isActive ? 'accent' : 'neutral'}>
               {webhook.isActive ? t('status.active') : t('status.disabled')}
             </Badge>
           </div>

@@ -17,7 +17,7 @@ export function PageHeader({ title, badge, action }: PageHeaderProps): ReactElem
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <h1 className="text-display text-zinc-900">{title}</h1>
+        <h1 className="text-display text-text">{title}</h1>
         {badge}
       </div>
       {action}

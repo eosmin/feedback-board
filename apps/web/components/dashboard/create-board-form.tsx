@@ -92,7 +92,7 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
       noValidate
       className="flex flex-col gap-3"
     >
-      <label htmlFor="board-name" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="board-name" className="text-sm font-medium text-text">
         {t('nameLabel')}
       </label>
       <Input
@@ -102,12 +102,12 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
         {...register('name')}
       />
       {errors.name !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('nameInvalid')}
         </p>
       )}
 
-      <label htmlFor="board-slug" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="board-slug" className="text-sm font-medium text-text">
         {t('slugLabel')}
       </label>
       <Input
@@ -116,25 +116,25 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
         aria-invalid={errors.slug !== undefined || slugTaken}
         {...register('slug', { onChange: onSlugChange })}
       />
-      <p className="text-sm text-zinc-500">{t('slugHelp')}</p>
+      <p className="text-sm text-text-muted">{t('slugHelp')}</p>
       {errors.slug !== undefined && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('slugInvalid')}
         </p>
       )}
       {slugTaken && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {t('slugTaken')}
         </p>
       )}
 
-      <label htmlFor="board-is-public" className="flex items-center gap-2 text-sm text-zinc-700">
+      <label htmlFor="board-is-public" className="flex items-center gap-2 text-sm text-text">
         <input id="board-is-public" type="checkbox" {...register('isPublic')} />
         {t('isPublicLabel')}
       </label>
 
       {submitError !== null && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger">
           {submitError}
         </p>
       )}

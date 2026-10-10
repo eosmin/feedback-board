@@ -10,7 +10,7 @@ export interface EmptyStateProps {
  */
 export function EmptyState({ children }: EmptyStateProps): ReactElement {
   return (
-    <p className="rounded-control border border-dashed border-zinc-300 bg-zinc-50/60 p-4 text-body text-zinc-500">
+    <p className="rounded-control border border-dashed border-border-strong bg-surface p-4 text-body text-text-muted">
       {children}
     </p>
   );

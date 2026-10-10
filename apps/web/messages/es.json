@@ -10,6 +10,11 @@
     },
     "language": {
       "label": "Idioma"
+    },
+    "theme": {
+      "label": "Tema",
+      "switchToLight": "Cambiar a tema claro",
+      "switchToDark": "Cambiar a tema oscuro"
     }
   },
   "login": {

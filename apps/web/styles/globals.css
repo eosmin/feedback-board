@@ -1,25 +1,79 @@
 @import 'tailwindcss';
 
+/* Class-based dark mode: `.dark` on <html>, set before first paint by the inline script in
+   app/layout.tsx (lib/theme.ts). Tailwind's default would follow only the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /**
- * CSS-first Tailwind 4 config (TDD §2.6.9) — no JS config file. A small, deliberate palette:
- * this project is a portfolio demo, not a design system, so the namespace is extended rather
- * than reset.
+ * CSS-first Tailwind 4 config (TDD §2.6.9) — no JS config file. Colors are semantic tokens only
+ * (no raw palette steps in components): the accent marks what is interactive, everything else is
+ * structural surface/border/text, and each theme is a value swap.
  */
 
+@theme inline {
+  /* `inline` so the utilities read var(--elev-*) at runtime; a plain @theme would bake the light
+     values into `.shadow-*` and the `.dark` overrides would never apply. */
+  --shadow-surface: var(--elev-surface);
+  --shadow-popover: var(--elev-popover);
+  --shadow-modal: var(--elev-modal);
+}
+
+:root {
+  --elev-surface: 0 1px 2px 0 oklch(0.2 0.02 260 / 0.04);
+  --elev-popover: 0 4px 16px -4px oklch(0.2 0.02 260 / 0.12), 0 1px 2px 0 oklch(0.2 0.02 260 / 0.06);
+  --elev-modal: 0 20px 48px -12px oklch(0.2 0.02 260 / 0.22), 0 2px 6px 0 oklch(0.2 0.02 260 / 0.08);
+}
+
 @theme {
-  /* Accent — used deliberately for primary actions, focus rings, active/current state and
-     links. Structural chrome (borders, card surfaces, dropdown panels) uses Tailwind's zinc
-     scale instead, so the accent stays legible as "this is interactive" rather than decoration. */
-  --color-brand-50: oklch(0.97 0.02 260);
-  --color-brand-100: oklch(0.93 0.04 260);
-  --color-brand-200: oklch(0.86 0.08 260);
-  --color-brand-300: oklch(0.76 0.12 260);
-  --color-brand-400: oklch(0.65 0.16 260);
-  --color-brand-500: oklch(0.55 0.19 260);
-  --color-brand-600: oklch(0.46 0.19 260);
-  --color-brand-700: oklch(0.38 0.17 260);
-  --color-brand-800: oklch(0.3 0.13 260);
-  --color-brand-900: oklch(0.24 0.1 260);
+  /* Semantic colors. Components use ONLY these, never raw palette steps, so a theme is a value
+     swap in the `.dark` block below. Light values here;
+     tests/unit/lib/theme-contrast.test.ts asserts every text/UI pair meets WCAG AA in both. */
+  --color-surface: oklch(0.985 0 0);
+  --color-surface-raised: oklch(1 0 0);
+  --color-surface-sunken: oklch(0.967 0.001 286.375);
+  --color-border: oklch(0.92 0.004 286.32);
+  /* Borders of interactive controls (fields, secondary buttons): WCAG 1.4.11 wants 3:1. */
+  --color-border-strong: oklch(0.6 0.014 286);
+  --color-text: oklch(0.21 0.006 285.885);
+  --color-text-muted: oklch(0.47 0.016 285.8);
+  --color-text-subtle: oklch(0.5 0.016 285.9);
+  --color-overlay: oklch(0.21 0.006 285.885 / 0.5);
+
+  --color-accent: oklch(0.46 0.19 260);
+  --color-accent-hover: oklch(0.38 0.17 260);
+  --color-accent-fg: oklch(1 0 0);
+  --color-accent-text: oklch(0.46 0.19 260);
+  --color-accent-soft: oklch(0.93 0.04 260);
+  --color-accent-soft-text: oklch(0.3 0.13 260);
+  --color-focus: oklch(0.55 0.19 260);
+
+  --color-success: oklch(0.4 0.1 150);
+  --color-success-soft: oklch(0.96 0.04 150);
+  --color-success-border: oklch(0.8 0.1 150);
+  --color-warning: oklch(0.4 0.09 70);
+  --color-warning-soft: oklch(0.97 0.05 85);
+  --color-warning-border: oklch(0.82 0.12 85);
+  --color-danger: oklch(0.5 0.2 27);
+  --color-danger-soft: oklch(0.97 0.02 20);
+  --color-danger-border: oklch(0.7 0.19 22);
+
+  /* One tone per post status and per AI priority (Badge `tone`). Text on its -soft fill. */
+  --color-status-open: oklch(0.42 0.15 255);
+  --color-status-open-soft: oklch(0.95 0.03 255);
+  --color-status-planned: oklch(0.42 0.15 300);
+  --color-status-planned-soft: oklch(0.95 0.03 300);
+  --color-status-in-progress: oklch(0.4 0.09 70);
+  --color-status-in-progress-soft: oklch(0.96 0.05 85);
+  --color-status-done: oklch(0.4 0.1 150);
+  --color-status-done-soft: oklch(0.95 0.04 150);
+  --color-status-closed: oklch(0.45 0.016 285.8);
+  --color-status-closed-soft: oklch(0.95 0.002 286);
+  --color-priority-low: oklch(0.42 0.08 200);
+  --color-priority-low-soft: oklch(0.95 0.03 200);
+  --color-priority-medium: oklch(0.43 0.12 55);
+  --color-priority-medium-soft: oklch(0.95 0.04 55);
+  --color-priority-high: oklch(0.45 0.18 25);
+  --color-priority-high-soft: oklch(0.95 0.03 25);
 
   /* Type scale — each step pairs a size with a deliberate line-height/tracking, so every
      PageHeader/Card title/body/caption maps to exactly one step instead of ad hoc text-sm/lg. */
@@ -41,15 +95,66 @@
      buttons, fields all read as the same shape language instead of a mix of md/lg/xl. */
   --radius-control: 0.5rem;
 
-  --shadow-surface: 0 1px 2px 0 oklch(0.2 0.02 260 / 0.04);
-  --shadow-popover: 0 4px 16px -4px oklch(0.2 0.02 260 / 0.12), 0 1px 2px 0 oklch(0.2 0.02 260 / 0.06);
-  --shadow-modal: 0 20px 48px -12px oklch(0.2 0.02 260 / 0.22), 0 2px 6px 0 oklch(0.2 0.02 260 / 0.08);
+}
+
+/* Dark values for every semantic token above; same names, so no component changes per theme. */
+.dark {
+  color-scheme: dark;
+
+  --color-surface: oklch(0.141 0.005 285.823);
+  --color-surface-raised: oklch(0.21 0.006 285.885);
+  --color-surface-sunken: oklch(0.274 0.006 286.033);
+  --color-border: oklch(0.32 0.008 286);
+  --color-border-strong: oklch(0.58 0.014 286);
+  --color-text: oklch(0.967 0.001 286.375);
+  --color-text-muted: oklch(0.75 0.015 286);
+  --color-text-subtle: oklch(0.7 0.015 286);
+  --color-overlay: oklch(0 0 0 / 0.65);
+
+  --color-accent: oklch(0.55 0.19 260);
+  --color-accent-hover: oklch(0.5 0.19 260);
+  --color-accent-fg: oklch(1 0 0);
+  --color-accent-text: oklch(0.76 0.12 260);
+  --color-accent-soft: oklch(0.3 0.09 260);
+  --color-accent-soft-text: oklch(0.9 0.05 260);
+  --color-focus: oklch(0.7 0.15 260);
+
+  --color-success: oklch(0.85 0.12 150);
+  --color-success-soft: oklch(0.28 0.05 150);
+  --color-success-border: oklch(0.45 0.09 150);
+  --color-warning: oklch(0.88 0.11 85);
+  --color-warning-soft: oklch(0.29 0.05 80);
+  --color-warning-border: oklch(0.5 0.1 80);
+  --color-danger: oklch(0.78 0.14 22);
+  --color-danger-soft: oklch(0.29 0.06 22);
+  --color-danger-border: oklch(0.55 0.15 22);
+
+  --color-status-open: oklch(0.85 0.09 255);
+  --color-status-open-soft: oklch(0.3 0.07 255);
+  --color-status-planned: oklch(0.86 0.09 300);
+  --color-status-planned-soft: oklch(0.3 0.07 300);
+  --color-status-in-progress: oklch(0.88 0.11 85);
+  --color-status-in-progress-soft: oklch(0.29 0.05 80);
+  --color-status-done: oklch(0.85 0.12 150);
+  --color-status-done-soft: oklch(0.28 0.05 150);
+  --color-status-closed: oklch(0.8 0.012 286);
+  --color-status-closed-soft: oklch(0.3 0.006 286);
+  --color-priority-low: oklch(0.85 0.08 200);
+  --color-priority-low-soft: oklch(0.29 0.05 200);
+  --color-priority-medium: oklch(0.86 0.1 55);
+  --color-priority-medium-soft: oklch(0.3 0.06 55);
+  --color-priority-high: oklch(0.85 0.1 22);
+  --color-priority-high-soft: oklch(0.3 0.07 22);
+
+  --elev-surface: 0 1px 2px 0 oklch(0 0 0 / 0.4);
+  --elev-popover: 0 4px 16px -4px oklch(0 0 0 / 0.6), 0 1px 2px 0 oklch(0 0 0 / 0.4);
+  --elev-modal: 0 20px 48px -12px oklch(0 0 0 / 0.7), 0 2px 6px 0 oklch(0 0 0 / 0.5);
 }
 
 body {
   min-height: 100dvh;
-  background-color: var(--color-zinc-50);
-  color: var(--color-zinc-900);
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 main {

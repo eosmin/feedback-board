@@ -26,10 +26,10 @@ export async function DashboardSidebar({ orgSlug, org }: DashboardSidebarProps):
   return (
     <nav
       aria-label={t('shell.nav.boards')}
-      className="flex w-full shrink-0 flex-col gap-1 border-b border-zinc-200 bg-white p-4 md:sticky md:top-0 md:h-dvh md:w-56 md:self-start md:overflow-y-auto md:border-b-0 md:border-r"
+      className="flex w-full shrink-0 flex-col gap-1 border-b border-border bg-surface-raised p-4 md:sticky md:top-0 md:h-dvh md:w-56 md:self-start md:overflow-y-auto md:border-b-0 md:border-r"
     >
       <div className="mb-3 flex min-w-0 items-center justify-between gap-2 px-2">
-        <span className="min-w-0 truncate text-title text-zinc-900">{org.name}</span>
+        <span className="min-w-0 truncate text-title text-text">{org.name}</span>
         <span className="shrink-0">
           <Badge>{t(`planBadge.${org.plan}`)}</Badge>
         </span>
@@ -37,18 +37,18 @@ export async function DashboardSidebar({ orgSlug, org }: DashboardSidebarProps):
 
       <Link
         href={`/dashboard/${orgSlug}`}
-        className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+        className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
-        <KanbanSquare className="h-4 w-4 text-zinc-400" aria-hidden="true" />
+        <KanbanSquare className="h-4 w-4 text-text-subtle" aria-hidden="true" />
         {t('shell.nav.boards')}
       </Link>
 
       {canBill && (
         <Link
           href={`/dashboard/${orgSlug}/billing`}
-          className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+          className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
         >
-          <CreditCard className="h-4 w-4 text-zinc-400" aria-hidden="true" />
+          <CreditCard className="h-4 w-4 text-text-subtle" aria-hidden="true" />
           {t('shell.nav.billing')}
         </Link>
       )}
@@ -56,16 +56,16 @@ export async function DashboardSidebar({ orgSlug, org }: DashboardSidebarProps):
       {canManageWebhooks && (
         <Link
           href={`/dashboard/${orgSlug}/webhooks`}
-          className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+          className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
         >
-          <Webhook className="h-4 w-4 text-zinc-400" aria-hidden="true" />
+          <Webhook className="h-4 w-4 text-text-subtle" aria-hidden="true" />
           {t('shell.nav.webhooks')}
         </Link>
       )}
 
       <Link
         href="/dashboard"
-        className="mt-auto rounded-control px-2 py-1.5 text-body text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+        className="mt-auto rounded-control px-2 py-1.5 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         {t('shell.backToOrgs')}
       </Link>
