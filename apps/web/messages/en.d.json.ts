@@ -18,6 +18,13 @@ declare const messages: {
       "label": "Theme",
       "switchToLight": "Switch to light theme",
       "switchToDark": "Switch to dark theme"
+    },
+    "toast": {
+      "region": "Notifications"
+    },
+    "copy": {
+      "copied": "Copied",
+      "failed": "Couldn't copy. Select the text instead."
     }
   },
   "login": {
@@ -204,7 +211,8 @@ declare const messages: {
       "secretBanner": {
         "title": "Signing secret",
         "description": "Copy this secret now. It will not be shown again.",
-        "dismiss": "I've saved it"
+        "dismiss": "I've saved it",
+        "copy": "Copy signing secret"
       },
       "upgradePrompt": {
         "title": "Webhooks require the Pro plan",

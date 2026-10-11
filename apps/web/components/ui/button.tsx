@@ -1,7 +1,11 @@
 import type { ButtonHTMLAttributes, ReactElement } from 'react';
 
+import { Spinner } from './spinner';
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary';
+  /** An async action is in flight: shows a spinner, sets `aria-busy` and blocks re-clicks. */
+  pending?: boolean;
 }
 
 const BASE_CLASSNAME =
@@ -21,9 +25,23 @@ export function Button({
   variant = 'primary',
   type = 'button',
   className,
+  pending = false,
+  disabled,
+  children,
   ...props
 }: ButtonProps): ReactElement {
   const classes = [BASE_CLASSNAME, VARIANT_CLASSNAME[variant], className].filter(Boolean).join(' ');
 
-  return <button type={type} className={classes} {...props} />;
+  return (
+    <button
+      type={type}
+      {...props}
+      className={classes}
+      disabled={disabled === true || pending}
+      aria-busy={pending || undefined}
+    >
+      {pending && <Spinner />}
+      {children}
+    </button>
+  );
 }

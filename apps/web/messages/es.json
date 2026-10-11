@@ -15,6 +15,13 @@
       "label": "Tema",
       "switchToLight": "Cambiar a tema claro",
       "switchToDark": "Cambiar a tema oscuro"
+    },
+    "toast": {
+      "region": "Notificaciones"
+    },
+    "copy": {
+      "copied": "Copiado",
+      "failed": "No se pudo copiar. Selecciona el texto."
     }
   },
   "login": {
@@ -201,7 +208,8 @@
       "secretBanner": {
         "title": "Secreto de firma",
         "description": "Copia este secreto ahora. No se volverá a mostrar.",
-        "dismiss": "Ya lo guardé"
+        "dismiss": "Ya lo guardé",
+        "copy": "Copiar secreto de firma"
       },
       "upgradePrompt": {
         "title": "Los webhooks requieren el plan Pro",
