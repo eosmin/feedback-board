@@ -19,6 +19,7 @@
     "@feedback-board/shared": "workspace:*",
     "@hookform/resolvers": "5.9.1",
     "@radix-ui/react-dialog": "1.2.0",
+    "@radix-ui/react-select": "2.3.8",
     "@supabase/ssr": "0.12.6",
     "@supabase/supabase-js": "2.115.0",
     "lucide-react": "1.41.0",
