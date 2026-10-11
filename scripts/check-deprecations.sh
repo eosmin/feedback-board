@@ -41,6 +41,9 @@ BANNED=(
   $'tailwind\\.config\\.js\tTailwind 4 is CSS-first — no JS config file (§2.6.9)'
   $'(queue|worker)\\.client\\b\tremoved from BullMQ 6 high-level classes — use getBackend().client (§2.6.14)'
   $'@nestjs/bull([\'"]|$)\tthe Bull v3 package — use @nestjs/bullmq (§2.6.14)'
+  $'unstable_(Provider|BubbleInput)\tunstable Radix Select parts — use Select.Root (§2.6.17)'
+  $'from [\'"]radix-ui[\'"]\tumbrella Radix package — use the pinned @radix-ui/react-* packages (§2.6.17)'
+  $'window\\.confirm\tbrowser confirm() — destructive actions confirm in a Dialog (§12.1)'
 )
 
 fail=0

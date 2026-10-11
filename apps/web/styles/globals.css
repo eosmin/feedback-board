@@ -95,6 +95,41 @@
      buttons, fields all read as the same shape language instead of a mix of md/lg/xl. */
   --radius-control: 0.5rem;
 
+  /* Enter/exit motion for the Radix overlays. Radix keeps an element mounted until its exit
+     animation ends, so these must exist as real animations, not transitions. */
+  --animate-overlay-in: overlay-in 150ms ease-out;
+  --animate-overlay-out: overlay-out 120ms ease-in;
+  --animate-dialog-in: dialog-in 150ms ease-out;
+  --animate-dialog-out: dialog-out 120ms ease-in;
+  --animate-drawer-in: drawer-in 200ms ease-out;
+  --animate-drawer-out: drawer-out 150ms ease-in;
+  --animate-toast-in: toast-in 180ms ease-out;
+  --animate-toast-out: toast-out 120ms ease-in;
+
+  @keyframes overlay-in {
+    from { opacity: 0; }
+  }
+  @keyframes overlay-out {
+    to { opacity: 0; }
+  }
+  @keyframes dialog-in {
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+  }
+  @keyframes dialog-out {
+    to { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+  }
+  @keyframes drawer-in {
+    from { transform: translateX(100%); }
+  }
+  @keyframes drawer-out {
+    to { transform: translateX(100%); }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(0.5rem); }
+  }
+  @keyframes toast-out {
+    to { opacity: 0; }
+  }
 }
 
 /* Dark values for every semantic token above; same names, so no component changes per theme. */
@@ -164,4 +199,18 @@ main {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+/* Reduced motion: every transition and animation collapses to an instant state change. Not
+   `animation: none`, because Radix waits for `animationend` before unmounting an exiting overlay;
+   a near-zero duration still fires it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
