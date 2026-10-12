@@ -5,7 +5,7 @@ import type { ReactElement } from 'react';
 import { z } from 'zod';
 
 import { PublicPostList } from '../../../../components/boards/public-post-list';
-import { PageHeader } from '../../../../components/ui';
+import { PageHeader, PreferencesBar } from '../../../../components/ui';
 import { ApiError, publicApiFetch } from '../../../../lib/api-client';
 
 const publicPostListSchema = z.array(publicPostSchema);
@@ -28,10 +28,13 @@ export default async function PublicBoardPage({
   const posts = await publicApiFetch(`/public/${orgSlug}/${boardSlug}/posts`, publicPostListSchema);
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
-      <PageHeader title={board.name} />
-      <PublicPostList posts={posts} />
-    </main>
+    <>
+      <PreferencesBar />
+      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 pb-6 pt-16">
+        <PageHeader title={board.name} />
+        <PublicPostList posts={posts} />
+      </main>
+    </>
   );
 }
 

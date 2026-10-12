@@ -4,6 +4,7 @@
 declare const messages: {
   "common": {
     "appName": "FeedbackBoard",
+    "appDescription": "Collect, vote on and prioritise product feedback in public boards.",
     "loading": "Loading…",
     "close": "Close",
     "error": {

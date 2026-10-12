@@ -3,10 +3,9 @@ import type { ReactElement, ReactNode } from 'react';
 import { z } from 'zod';
 
 import { DashboardSidebar } from '../../../components/dashboard/dashboard-sidebar';
-import { LocaleSwitcher } from '../../../components/dashboard/locale-switcher';
 import { OrgSwitcher } from '../../../components/dashboard/org-switcher';
 import { SignOutButton } from '../../../components/dashboard/sign-out-button';
-import { ThemeToggle } from '../../../components/ui';
+import { LocaleSwitcher, ThemeToggle } from '../../../components/ui';
 import { serverApiFetch } from '../../../lib/api-client-server';
 import { getOrgDetail } from '../../../lib/org-detail';
 import { requireUser } from '../../../lib/supabase/require-user';

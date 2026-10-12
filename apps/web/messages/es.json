@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "FeedbackBoard",
+    "appDescription": "Recopila, vota y prioriza el feedback de producto en tableros públicos.",
     "loading": "Cargando…",
     "close": "Cerrar",
     "error": {
