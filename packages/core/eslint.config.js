@@ -20,7 +20,7 @@ module.exports = defineConfig(
   ...root,
   ...tseslint.configs.recommendedTypeChecked,
   {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
+    files: ['src/**/*.ts', 'test/**/*.ts', 'prisma/seed/**/*.ts'],
     languageOptions: {
       parserOptions: {
         projectService: true,
