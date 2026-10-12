@@ -1,3 +1,4 @@
+import { FileQuestion } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
@@ -10,6 +11,7 @@ export function NotFoundState(): ReactElement {
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-start gap-3 p-6">
+      <FileQuestion className="h-6 w-6 text-text-muted" aria-hidden="true" />
       <h1 className="text-display text-text">{t('title')}</h1>
       <p className="text-body text-text-muted">{t('description')}</p>
       <Link href="/" className={buttonClassName('secondary')}>

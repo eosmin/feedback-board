@@ -3,12 +3,13 @@ import { redirect } from 'next/navigation';
 import type { ReactElement } from 'react';
 
 import { MagicLinkForm } from '../../components/auth/magic-link-form';
-import { Card, PageHeader, PreferencesBar } from '../../components/ui';
+import { Alert, Card, PageHeader, PreferencesBar } from '../../components/ui';
+import { LOGIN_ERROR_CALLBACK } from '../../lib/login-error';
 import { safeRedirectPath } from '../../lib/safe-redirect';
 import { getOptionalUser } from '../../lib/supabase/require-user';
 
 interface LoginPageProps {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }
 
 /**
@@ -19,7 +20,7 @@ interface LoginPageProps {
  * does need to sign in still returns to the deep link after `/auth/callback`.
  */
 export default async function LoginPage({ searchParams }: LoginPageProps): Promise<ReactElement> {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
   const redirectTo = next === undefined ? undefined : safeRedirectPath(next, '/dashboard');
 
   const user = await getOptionalUser();
@@ -35,6 +36,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps): Promi
       <main className="flex min-h-dvh items-center justify-center px-4 py-16">
         <Card className="flex w-full max-w-sm flex-col gap-4 p-6">
           <PageHeader title={t('title')} />
+          {error === LOGIN_ERROR_CALLBACK && (
+            <Alert
+              title={t('callbackError.title')}
+              description={t('callbackError.description')}
+            />
+          )}
           <MagicLinkForm redirectTo={redirectTo} />
         </Card>
       </main>

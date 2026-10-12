@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-import { NotFoundState, PageSkeleton, RouteError } from '../../../../components/ui';
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+
+import { NotFoundState, PageSkeleton, RouteError, StandaloneScreen } from '../../../../components/ui';
 import messages from '../../../../messages/en.json';
 
 let container: HTMLDivElement;
@@ -56,6 +58,19 @@ describe('NotFoundState', () => {
     render(<NotFoundState />);
 
     expect(container.querySelector('a')?.getAttribute('href')).toBe('/');
+  });
+});
+
+describe('StandaloneScreen', () => {
+  it('centres its content in <main> and keeps theme and language reachable', () => {
+    render(
+      <StandaloneScreen>
+        <NotFoundState />
+      </StandaloneScreen>,
+    );
+
+    expect(container.querySelector('main h1')?.textContent).toBe('Page not found');
+    expect(container.querySelector('button[aria-label="Language"]')).not.toBeNull();
   });
 });
 

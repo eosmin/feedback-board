@@ -42,7 +42,11 @@
     "submit": "Enviar enlace mágico",
     "sending": "Enviando…",
     "checkEmail": "Revisa {email} para encontrar tu enlace de acceso.",
-    "error": "No pudimos enviar el enlace. Intenta de nuevo."
+    "error": "No pudimos enviar el enlace. Intenta de nuevo.",
+    "callbackError": {
+      "title": "El enlace de acceso no funcionó",
+      "description": "El enlace no es válido o ya caducó. Solicita uno nuevo abajo."
+    }
   },
   "publicBoard": {
     "empty": "Todavía no se ha publicado ningún comentario.",
