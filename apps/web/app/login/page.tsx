@@ -1,15 +1,21 @@
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import type { ReactElement } from 'react';
 
 import { MagicLinkForm } from '../../components/auth/magic-link-form';
-import { Alert, Card, PageHeader, PreferencesBar } from '../../components/ui';
+import { Card, PageHeader, PreferencesBar } from '../../components/ui';
 import { LOGIN_ERROR_CALLBACK } from '../../lib/login-error';
 import { safeRedirectPath } from '../../lib/safe-redirect';
 import { getOptionalUser } from '../../lib/supabase/require-user';
 
 interface LoginPageProps {
   searchParams: Promise<{ next?: string; error?: string }>;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('login');
+  return { title: t('pageTitle') };
 }
 
 /**
@@ -34,15 +40,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps): Promi
     <>
       <PreferencesBar />
       <main className="flex min-h-dvh items-center justify-center px-4 py-16">
-        <Card className="flex w-full max-w-sm flex-col gap-4 p-6">
+        <Card className="flex w-full max-w-md flex-col gap-4 p-6">
           <PageHeader title={t('title')} />
-          {error === LOGIN_ERROR_CALLBACK && (
-            <Alert
-              title={t('callbackError.title')}
-              description={t('callbackError.description')}
-            />
-          )}
-          <MagicLinkForm redirectTo={redirectTo} />
+          <MagicLinkForm redirectTo={redirectTo} callbackFailed={error === LOGIN_ERROR_CALLBACK} />
         </Card>
       </main>
     </>

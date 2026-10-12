@@ -37,15 +37,21 @@
   },
   "login": {
     "title": "Inicia sesión en FeedbackBoard",
+    "pageTitle": "Iniciar sesión",
     "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "tu@ejemplo.com",
     "emailInvalid": "Ingresa un correo electrónico válido.",
     "submit": "Enviar enlace mágico",
     "sending": "Enviando…",
+    "checkEmailTitle": "Revisa tu correo",
     "checkEmail": "Revisa {email} para encontrar tu enlace de acceso.",
+    "resend": "Reenviar enlace",
+    "resendIn": "Reenviar en {seconds} s",
+    "changeEmail": "Usar otro correo",
     "error": "No pudimos enviar el enlace. Intenta de nuevo.",
     "callbackError": {
       "title": "El enlace de acceso no funcionó",
-      "description": "El enlace no es válido o ya caducó. Solicita uno nuevo abajo."
+      "description": "El enlace no es válido o ya caducó. Solicita uno nuevo abajo. Abre el enlace en el mismo navegador donde lo solicitaste."
     }
   },
   "publicBoard": {

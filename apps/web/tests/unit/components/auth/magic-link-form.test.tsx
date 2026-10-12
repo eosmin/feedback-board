@@ -122,4 +122,139 @@ describe('MagicLinkForm', () => {
 
     expect(container.textContent).toContain(messages.login.error);
   });
+  it('shows the callback error until a new link is requested', async () => {
+    signInWithOtpMock({ error: { message: 'network down' } });
+    act(() => {
+      root.render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <MagicLinkForm callbackFailed />
+        </NextIntlClientProvider>,
+      );
+    });
+    expect(container.textContent).toContain(messages.login.callbackError.title);
+
+    const input = container.querySelector('input[type="email"]') as HTMLInputElement;
+    const form = container.querySelector('form') as HTMLFormElement;
+    await act(async () => {
+      Object.defineProperty(input, 'value', { value: 'erick@example.com', configurable: true });
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      form.requestSubmit();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).not.toContain(messages.login.callbackError.title);
+  });
+
+  describe('after the link is sent', () => {
+    async function submitValidEmail(): Promise<void> {
+      const input = container.querySelector('input[type="email"]') as HTMLInputElement;
+      const form = container.querySelector('form') as HTMLFormElement;
+      await act(async () => {
+        Object.defineProperty(input, 'value', { value: 'erick@example.com', configurable: true });
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        form.requestSubmit();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+    }
+
+    function buttonByText(text: string): HTMLButtonElement {
+      const button = Array.from(container.querySelectorAll('button')).find((candidate) =>
+        candidate.textContent?.includes(text),
+      );
+      if (button === undefined) {
+        throw new Error(`no button containing "${text}"`);
+      }
+      return button;
+    }
+
+    it('disables resend during the cooldown and re-enables it afterwards', async () => {
+      vi.useFakeTimers();
+      try {
+        signInWithOtpMock({ error: null });
+        renderForm();
+        await submitValidEmail();
+
+        expect(buttonByText('Resend in 30s').disabled).toBe(true);
+
+        // One act per tick: each re-render schedules the next one-second timer.
+        for (let second = 0; second < 30; second += 1) {
+          await act(async () => {
+            await vi.advanceTimersByTimeAsync(1000);
+          });
+        }
+
+        expect(buttonByText(messages.login.resend).disabled).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('sends a second link on resend and restarts the cooldown', async () => {
+      vi.useFakeTimers();
+      try {
+        const signInWithOtp = signInWithOtpMock({ error: null });
+        renderForm();
+        await submitValidEmail();
+        for (let second = 0; second < 30; second += 1) {
+          await act(async () => {
+            await vi.advanceTimersByTimeAsync(1000);
+          });
+        }
+
+        await act(async () => {
+          buttonByText(messages.login.resend).click();
+          await Promise.resolve();
+          await Promise.resolve();
+        });
+
+        expect(signInWithOtp).toHaveBeenCalledTimes(2);
+        expect(buttonByText('Resend in 30s').disabled).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('shows the error and releases the button when a resend throws', async () => {
+      vi.useFakeTimers();
+      try {
+        const signInWithOtp = signInWithOtpMock({ error: null });
+        renderForm();
+        await submitValidEmail();
+        for (let second = 0; second < 30; second += 1) {
+          await act(async () => {
+            await vi.advanceTimersByTimeAsync(1000);
+          });
+        }
+        signInWithOtp.mockRejectedValueOnce(new Error('offline'));
+
+        await act(async () => {
+          buttonByText(messages.login.resend).click();
+          await Promise.resolve();
+          await Promise.resolve();
+        });
+
+        expect(buttonByText(messages.login.resend).getAttribute('aria-busy')).toBeNull();
+        expect(container.textContent).toContain(messages.login.error);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('goes back to the empty form when the user picks a different email', async () => {
+      signInWithOtpMock({ error: null });
+      renderForm();
+      await submitValidEmail();
+
+      act(() => {
+        buttonByText(messages.login.changeEmail).click();
+      });
+
+      const input = container.querySelector<HTMLInputElement>('input[type="email"]');
+      expect(input).not.toBeNull();
+      expect(input?.value).toBe('');
+      expect(container.textContent).not.toContain(messages.login.checkEmailTitle);
+    });
+  });
 });

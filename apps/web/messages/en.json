@@ -37,15 +37,21 @@
   },
   "login": {
     "title": "Sign in to FeedbackBoard",
+    "pageTitle": "Sign in",
     "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
     "emailInvalid": "Enter a valid email address.",
     "submit": "Send magic link",
     "sending": "Sending…",
+    "checkEmailTitle": "Check your email",
     "checkEmail": "Check {email} for a sign-in link.",
+    "resend": "Resend link",
+    "resendIn": "Resend in {seconds}s",
+    "changeEmail": "Use a different email",
     "error": "We could not send the link. Please try again.",
     "callbackError": {
       "title": "Sign-in link didn't work",
-      "description": "The link is invalid or has expired. Request a new one below."
+      "description": "The link is invalid or has expired. Request a new one below. Open the link in the same browser where you requested it."
     }
   },
   "publicBoard": {
