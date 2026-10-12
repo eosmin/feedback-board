@@ -193,6 +193,7 @@ body {
 }
 
 main {
+  transition: opacity 150ms ease-out;
   margin-inline: auto;
   max-width: 80rem;
   padding: 2rem 1rem;
@@ -212,5 +213,24 @@ main {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Navigation feedback (`NavigationProgress`): while a client navigation is pending the page
+   content dims, and only the pressed link shows `cursor: wait`. The sidebar is a `nav`, not
+   `main`, so it stays fully interactive. */
+html[data-navigating] main {
+  opacity: 0.6;
+}
+
+a[data-nav-pending],
+a[data-nav-pending] * {
+  cursor: wait;
+}
+
+/* Reduced motion: the bar is a static full-width line for as long as the navigation is pending. */
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress-bar {
+    transform: scaleX(1) !important;
   }
 }

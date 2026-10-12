@@ -22,6 +22,16 @@
     "copy": {
       "copied": "Copiado",
       "failed": "No se pudo copiar. Selecciona el texto."
+    },
+    "routeError": {
+      "title": "Algo salió mal",
+      "description": "No pudimos cargar esta página. Revisa tu conexión e inténtalo de nuevo.",
+      "retry": "Reintentar"
+    },
+    "notFoundPage": {
+      "title": "Página no encontrada",
+      "description": "Esta página no existe o no tienes acceso a ella.",
+      "back": "Volver al inicio"
     }
   },
   "login": {

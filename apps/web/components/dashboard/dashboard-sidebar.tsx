@@ -1,10 +1,9 @@
 import type { OrgDetail } from '@feedback-board/shared';
 import { CreditCard, KanbanSquare, Webhook } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 import type { ReactElement } from 'react';
 
-import { Badge } from '../ui';
+import { Badge, NavLink } from '../ui';
 
 interface DashboardSidebarProps {
   orgSlug: string;
@@ -18,7 +17,10 @@ interface DashboardSidebarProps {
  * here, since a role check that only exists as `notFound()` inside the page reads as a broken
  * link, not a boundary.
  */
-export async function DashboardSidebar({ orgSlug, org }: DashboardSidebarProps): Promise<ReactElement> {
+export async function DashboardSidebar({
+  orgSlug,
+  org,
+}: DashboardSidebarProps): Promise<ReactElement> {
   const t = await getTranslations('dashboard');
   const canBill = org.role === 'OWNER';
   const canManageWebhooks = org.role === 'OWNER' || org.role === 'ADMIN';
@@ -35,40 +37,34 @@ export async function DashboardSidebar({ orgSlug, org }: DashboardSidebarProps):
         </span>
       </div>
 
-      <Link
+      <NavLink
         href={`/dashboard/${orgSlug}`}
-        className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        icon={<KanbanSquare className="h-4 w-4 text-text-subtle" aria-hidden="true" />}
       >
-        <KanbanSquare className="h-4 w-4 text-text-subtle" aria-hidden="true" />
         {t('shell.nav.boards')}
-      </Link>
+      </NavLink>
 
       {canBill && (
-        <Link
+        <NavLink
           href={`/dashboard/${orgSlug}/billing`}
-          className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          icon={<CreditCard className="h-4 w-4 text-text-subtle" aria-hidden="true" />}
         >
-          <CreditCard className="h-4 w-4 text-text-subtle" aria-hidden="true" />
           {t('shell.nav.billing')}
-        </Link>
+        </NavLink>
       )}
 
       {canManageWebhooks && (
-        <Link
+        <NavLink
           href={`/dashboard/${orgSlug}/webhooks`}
-          className="flex items-center gap-2 rounded-control px-2 py-1.5 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          icon={<Webhook className="h-4 w-4 text-text-subtle" aria-hidden="true" />}
         >
-          <Webhook className="h-4 w-4 text-text-subtle" aria-hidden="true" />
           {t('shell.nav.webhooks')}
-        </Link>
+        </NavLink>
       )}
 
-      <Link
-        href="/dashboard"
-        className="mt-auto rounded-control px-2 py-1.5 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      >
+      <NavLink href="/dashboard" className="mt-auto">
         {t('shell.backToOrgs')}
-      </Link>
+      </NavLink>
     </nav>
   );
 }
