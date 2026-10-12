@@ -1,4 +1,8 @@
-import { formatEnvIssues, refineAiTransportEnv } from '@feedback-board/core';
+import {
+  findSeedVarsInProduction,
+  formatEnvIssues,
+  refineAiTransportEnv,
+} from '@feedback-board/core';
 import { z } from 'zod';
 
 /**
@@ -46,10 +50,12 @@ export type Env = z.infer<typeof envSchema>;
 export function validateEnv(raw: Record<string, unknown>): Env {
   const present = FORBIDDEN_VARS.filter((name) => raw[name] !== undefined);
   const publicKeys = Object.keys(raw).filter((key) => key.startsWith(FORBIDDEN_PREFIX));
-  const rejected = [...present, ...publicKeys];
+  const seedVars = findSeedVarsInProduction(raw);
+  const rejected = [...present, ...publicKeys, ...seedVars];
 
   if (rejected.length > 0) {
-    throw new Error(`Environment rejected by apps/api: ${rejected.join(', ')}. `);
+    const hint = seedVars.length > 0 ? 'Seed-only variables must not be set in production. ' : '';
+    throw new Error(`Environment rejected by apps/api: ${rejected.join(', ')}. ${hint}`);
   }
 
   const result = envSchema.safeParse(raw);
