@@ -17,6 +17,7 @@
     "test": "pnpm -r --stream test",
     "test:e2e": "pnpm -r --stream test:e2e",
     "check:deprecations": "bash scripts/check-deprecations.sh",
+    "seed": "pnpm --filter @feedback-board/core seed",
     "check:pins": "bash scripts/verify-pins.sh"
   },
   "devDependencies": {

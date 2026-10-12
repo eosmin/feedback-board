@@ -82,4 +82,14 @@ describe('validateEnv', () => {
       /NEXT_PUBLIC_SUPABASE_ANON_KEY/,
     );
   });
+
+  it('refuses to boot in production with a seed-only variable set', () => {
+    expect(() =>
+      validateEnv({ ...validEnv(), NODE_ENV: 'production', SEED_OWNER_EMAIL: 'me@example.com' }),
+    ).toThrow(/SEED_OWNER_EMAIL/);
+  });
+
+  it('allows the seed-only variable outside production', () => {
+    expect(() => validateEnv({ ...validEnv(), SEED_OWNER_EMAIL: 'me@example.com' })).not.toThrow();
+  });
 });
