@@ -42,7 +42,11 @@
     "submit": "Send magic link",
     "sending": "Sending…",
     "checkEmail": "Check {email} for a sign-in link.",
-    "error": "We could not send the link. Please try again."
+    "error": "We could not send the link. Please try again.",
+    "callbackError": {
+      "title": "Sign-in link didn't work",
+      "description": "The link is invalid or has expired. Request a new one below."
+    }
   },
   "publicBoard": {
     "empty": "No feedback has been posted yet.",

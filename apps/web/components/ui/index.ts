@@ -22,5 +22,6 @@ export { RouteError } from './route-error';
 export { Select } from './select';
 export { Skeleton } from './skeleton';
 export { Spinner } from './spinner';
+export { StandaloneScreen } from './standalone-screen';
 export { ThemeToggle } from './theme-toggle';
 export { ToastProvider, useToast } from './toast';

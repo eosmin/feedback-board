@@ -1,16 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Suspense, type ReactElement, type ReactNode } from 'react';
 
 import { NavigationProgress, ToastProvider } from '../components/ui';
+import { inter } from '../lib/fonts';
 import { THEME_INIT_SCRIPT } from '../lib/theme';
 import '../styles/globals.css';
-
-// `--font-inter` is mapped to Tailwind's `font-sans` in globals.css. `next/font` self-hosts the
-// file at build time, so there is no request to Google and no layout shift on swap.
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common');

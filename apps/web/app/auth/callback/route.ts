@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+import { LOGIN_ERROR_CALLBACK } from '../../../lib/login-error';
 import { safeRedirectPath } from '../../../lib/safe-redirect';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
@@ -20,15 +21,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const redirectTo = (path: string): NextResponse =>
     NextResponse.redirect(new URL(path, origin(request)));
 
+  // A failed exchange goes back to the form with a code the page turns into a message, keeping
+  // `next` so the retry still lands on the deep link.
+  const failed = (): NextResponse => {
+    const query = new URLSearchParams({ error: LOGIN_ERROR_CALLBACK });
+    if (next !== '/dashboard') query.set('next', next);
+    return redirectTo(`/login?${query.toString()}`);
+  };
+
   if (code === null) {
-    return redirectTo('/login');
+    return failed();
   }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    return redirectTo('/login');
+    return failed();
   }
 
   return redirectTo(next);
