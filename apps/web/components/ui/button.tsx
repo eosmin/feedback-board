@@ -16,6 +16,14 @@ const VARIANT_CLASSNAME: Record<NonNullable<ButtonProps['variant']>, string> = {
   secondary: 'border border-border-strong bg-surface-raised text-text hover:bg-surface',
 };
 
+/** The button look for elements that are not a `<button>`, e.g. a `Link` styled as an action. */
+export function buttonClassName(
+  variant: NonNullable<ButtonProps['variant']> = 'primary',
+  className?: string,
+): string {
+  return [BASE_CLASSNAME, VARIANT_CLASSNAME[variant], className].filter(Boolean).join(' ');
+}
+
 /**
  * The one button style used across every form and action in the app (submit buttons, vote
  * toggle, webhook delete, AI digest generate, Checkout/Portal). `type="button"` is the default
@@ -30,13 +38,11 @@ export function Button({
   children,
   ...props
 }: ButtonProps): ReactElement {
-  const classes = [BASE_CLASSNAME, VARIANT_CLASSNAME[variant], className].filter(Boolean).join(' ');
-
   return (
     <button
       type={type}
       {...props}
-      className={classes}
+      className={buttonClassName(variant, className)}
       disabled={disabled === true || pending}
       aria-busy={pending || undefined}
     >

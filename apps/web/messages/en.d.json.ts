@@ -25,6 +25,16 @@ declare const messages: {
     "copy": {
       "copied": "Copied",
       "failed": "Couldn't copy. Select the text instead."
+    },
+    "routeError": {
+      "title": "Something went wrong",
+      "description": "We could not load this page. Check your connection and try again.",
+      "retry": "Try again"
+    },
+    "notFoundPage": {
+      "title": "Page not found",
+      "description": "This page does not exist, or you do not have access to it.",
+      "back": "Back to start"
     }
   },
   "login": {
