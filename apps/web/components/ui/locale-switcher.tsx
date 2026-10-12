@@ -4,16 +4,16 @@ import { Check, Globe } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
-import { useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { AVAILABLE_LOCALES, setLocaleCookie } from '../../lib/locales';
 import { useClickOutside } from '../../lib/use-click-outside';
 
 /**
- * Language switcher shell (TDD.md §13 step 19.7 follow-up). Only `en` exists in
- * `AVAILABLE_LOCALES` today, so this renders one checked item — the point is that the switch
- * itself, the cookie plumbing, and `i18n/request.ts` reading it are all real and working, so a
- * second locale later is a data file, not a rewrite.
+ * Language switcher: writes the `NEXT_LOCALE` cookie that `i18n/request.ts` reads, then refreshes
+ * so server components re-render in the new locale. Options come from `AVAILABLE_LOCALES`, so a
+ * new locale is a data entry plus a catalog, not a code change here.
  */
 export function LocaleSwitcher(): ReactElement {
   const t = useTranslations('common.language');
@@ -21,18 +21,51 @@ export function LocaleSwitcher(): ReactElement {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useClickOutside(containerRef, () => setOpen(false));
 
+  function closeAndRestoreFocus(): void {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }
+
   function selectLocale(code: string): void {
     setLocaleCookie(code);
-    setOpen(false);
+    closeAndRestoreFocus();
     router.refresh();
+  }
+
+  // Focus moves into the menu when it opens (checked item first), so arrows and Escape act on it.
+  useEffect(() => {
+    if (open) menuRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
+  }, [open]);
+
+  function handleMenuKeyDown(event: KeyboardEvent<HTMLUListElement>): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeAndRestoreFocus();
+      return;
+    }
+    if (event.key === 'Tab') {
+      setOpen(false);
+      return;
+    }
+    const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+    if (step === 0) return;
+    event.preventDefault();
+    const items = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitemradio"]'),
+    );
+    const index = items.indexOf(document.activeElement as HTMLElement);
+    items[(index + step + items.length) % items.length]?.focus();
   }
 
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -45,8 +78,10 @@ export function LocaleSwitcher(): ReactElement {
 
       {open && (
         <ul
+          ref={menuRef}
           role="menu"
           aria-label={t('label')}
+          onKeyDown={handleMenuKeyDown}
           className="absolute right-0 z-40 mt-1 w-40 rounded-control border border-border bg-surface-raised py-1 shadow-popover"
         >
           {AVAILABLE_LOCALES.map((option) => (
@@ -59,7 +94,9 @@ export function LocaleSwitcher(): ReactElement {
                 className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-body text-text hover:bg-surface"
               >
                 {option.label}
-                {option.code === locale && <Check className="h-4 w-4 text-accent-text" aria-hidden="true" />}
+                {option.code === locale && (
+                  <Check className="h-4 w-4 text-accent-text" aria-hidden="true" />
+                )}
               </button>
             </li>
           ))}

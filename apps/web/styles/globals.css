@@ -25,6 +25,8 @@
 }
 
 @theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
   /* Semantic colors. Components use ONLY these, never raw palette steps, so a theme is a value
      swap in the `.dark` block below. Light values here;
      tests/unit/lib/theme-contrast.test.ts asserts every text/UI pair meets WCAG AA in both. */
@@ -187,6 +189,7 @@
 }
 
 body {
+  font-family: var(--font-sans);
   min-height: 100dvh;
   background-color: var(--color-surface);
   color: var(--color-text);
