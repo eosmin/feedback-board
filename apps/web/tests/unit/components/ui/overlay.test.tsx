@@ -99,6 +99,36 @@ describe.each(PRIMITIVES)('%s', (_name, Primitive) => {
     expect(document.activeElement).toBe(document.body.querySelector('input'));
   });
 
+  it('returns focus to the element that opened it once closed', async () => {
+    function render(open: boolean): void {
+      act(() => {
+        root.render(
+          <>
+            <button type="button" id="opener">
+              open
+            </button>
+            <Primitive open={open} onClose={vi.fn()} title="Panel title" closeLabel="Close panel">
+              <input aria-label="name" />
+            </Primitive>
+          </>,
+        );
+      });
+    }
+
+    render(false);
+    const opener = document.getElementById('opener') as HTMLButtonElement;
+    opener.focus();
+    render(true);
+    expect(document.activeElement).not.toBe(opener);
+
+    render(false);
+    // Radix restores focus on a timer after unmount.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(document.activeElement).toBe(opener);
+  });
+
   it('hides the background from assistive technology while open', () => {
     renderOpen(vi.fn());
     expect(container.getAttribute('aria-hidden')).toBe('true');

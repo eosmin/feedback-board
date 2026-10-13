@@ -37,6 +37,7 @@ export function OrgSwitcher({ currentOrgSlug, currentOrgName, orgs }: OrgSwitche
   const [open, setOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useClickOutside(containerRef, () => setOpen(false));
 
@@ -52,6 +53,7 @@ export function OrgSwitcher({ currentOrgSlug, currentOrgName, orgs }: OrgSwitche
   return (
     <div ref={containerRef} className="relative min-w-0">
       <button
+        ref={triggerRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -117,6 +119,8 @@ export function OrgSwitcher({ currentOrgSlug, currentOrgName, orgs }: OrgSwitche
       <Dialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
+        // The "create new" menu item that opened the dialog unmounts with the menu.
+        fallbackFocusRef={triggerRef}
         title={tCreate('title')}
         closeLabel={tCommon('close')}
       >

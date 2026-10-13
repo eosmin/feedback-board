@@ -91,4 +91,20 @@ describe('OrgPicker', () => {
     expect(container.textContent).toContain('Acme');
     expect(container.textContent).toContain('Umbrella');
   });
+
+  it('keeps the single create button in the header next to the empty state when there are no orgs', () => {
+    act(() => {
+      root.render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <OrgPicker initialOrgs={[]} />
+        </NextIntlClientProvider>,
+      );
+    });
+
+    expect(container.textContent).toContain(messages.dashboard.empty);
+    const triggers = Array.from(container.querySelectorAll('button')).filter(
+      (button) => button.textContent === messages.dashboard.createOrg.trigger,
+    );
+    expect(triggers).toHaveLength(1);
+  });
 });

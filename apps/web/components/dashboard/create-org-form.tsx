@@ -64,6 +64,14 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
     }
   }
 
+  const slugDescribedBy = [
+    'org-slug-help',
+    errors.slug !== undefined ? 'org-slug-error' : null,
+    slugTaken ? 'org-slug-taken' : null,
+  ]
+    .filter((id) => id !== null)
+    .join(' ');
+
   return (
     <form
       onSubmit={(event) => void handleSubmit(onSubmit)(event)}
@@ -73,9 +81,15 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
       <label htmlFor="org-name" className="text-sm font-medium text-text">
         {t('nameLabel')}
       </label>
-      <Input id="org-name" type="text" aria-invalid={errors.name !== undefined} {...register('name')} />
+      <Input
+        id="org-name"
+        type="text"
+        aria-invalid={errors.name !== undefined}
+        aria-describedby={errors.name !== undefined ? 'org-name-error' : undefined}
+        {...register('name')}
+      />
       {errors.name !== undefined && (
-        <p role="alert" className="text-sm text-danger">
+        <p id="org-name-error" role="alert" className="text-sm text-danger">
           {t('nameInvalid')}
         </p>
       )}
@@ -87,16 +101,19 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
         id="org-slug"
         type="text"
         aria-invalid={errors.slug !== undefined || slugTaken}
+        aria-describedby={slugDescribedBy}
         {...register('slug', { onChange: onSlugChange })}
       />
-      <p className="text-sm text-text-muted">{t('slugHelp')}</p>
+      <p id="org-slug-help" className="text-sm text-text-muted">
+        {t('slugHelp')}
+      </p>
       {errors.slug !== undefined && (
-        <p role="alert" className="text-sm text-danger">
+        <p id="org-slug-error" role="alert" className="text-sm text-danger">
           {t('slugInvalid')}
         </p>
       )}
       {slugTaken && (
-        <p role="alert" className="text-sm text-danger">
+        <p id="org-slug-taken" role="alert" className="text-sm text-danger">
           {t('slugReserved')}
         </p>
       )}
@@ -106,7 +123,7 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
         </p>
       )}
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" pending={isSubmitting}>
         {isSubmitting ? t('creating') : t('submit')}
       </Button>
     </form>

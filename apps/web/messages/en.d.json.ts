@@ -90,6 +90,11 @@ declare const messages: {
       "FREE": "Free plan",
       "PRO": "Pro plan"
     },
+    "roles": {
+      "OWNER": "Owner",
+      "ADMIN": "Admin",
+      "MEMBER": "Member"
+    },
     "shell": {
       "backToOrgs": "All organizations",
       "nav": {
@@ -152,7 +157,7 @@ declare const messages: {
       "statusLabel": "Status",
       "share": {
         "trigger": "Share board",
-        "copied": "Copied!",
+        "copyLink": "Copy link",
         "publicLink": "Public board link",
         "memberLink": "Member link (sign-in required)"
       },

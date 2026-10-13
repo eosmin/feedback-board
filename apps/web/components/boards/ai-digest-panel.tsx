@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
 
 import { apiFetch, apiFetchWithHeaders, ApiError } from '../../lib/api-client';
-import { Button, Card } from '../ui';
+import { Button, Card, Skeleton } from '../ui';
 
 /** `null` until the first response, since the quota is only known from the API's own headers
  * (TDD §3.8) — there is no client-side copy of the `@RateLimit` config to read it from upfront. */
@@ -51,6 +51,7 @@ export function AiDigestPanel({ orgSlug, boardSlug }: AiDigestPanelProps): React
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [quota, setQuota] = useState<Quota | null>(null);
+  const [quotaPending, setQuotaPending] = useState(true);
 
   // Shows the budget before the caller has generated anything — a dedicated GET that never
   // counts as an attempt (TDD §3.8), rather than waiting for the first digest's own headers.
@@ -66,6 +67,11 @@ export function AiDigestPanel({ orgSlug, boardSlug }: AiDigestPanelProps): React
       .catch(() => {
         // Best-effort preview — a failed preflight read still lets the Generate button try, and
         // that attempt's own response headers will populate the quota line instead.
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setQuotaPending(false);
+        }
       });
 
     return () => {
@@ -119,16 +125,21 @@ export function AiDigestPanel({ orgSlug, boardSlug }: AiDigestPanelProps): React
         <Sparkles className="h-4 w-4" aria-hidden="true" />
         {isGenerating ? t('generating') : t('submit')}
       </Button>
-      {quota !== null && error === null && (
-        <p className="mt-1.5 text-caption text-text-muted">
-          {exhausted
-            ? t('quotaExhausted')
-            : t('quotaRemaining', {
-                remaining: String(quota.remaining),
-                limit: String(quota.limit),
-              })}
-        </p>
-      )}
+      {/* Height reserved from the first paint: the quota arrives from its own request, and a
+          line that appears late would push everything below it down. */}
+      <div className="mt-1.5 min-h-4">
+        {quota === null && quotaPending && error === null && <Skeleton className="h-4 w-56" />}
+        {quota !== null && error === null && (
+          <p className="text-caption text-text-muted">
+            {exhausted
+              ? t('quotaExhausted')
+              : t('quotaRemaining', {
+                  remaining: String(quota.remaining),
+                  limit: String(quota.limit),
+                })}
+          </p>
+        )}
+      </div>
       {error !== null && (
         <p role="alert" className="mt-2 text-sm text-danger">
           {error}
