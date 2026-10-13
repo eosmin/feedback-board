@@ -3,13 +3,18 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { useRef } from 'react';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode, RefObject } from 'react';
 
 export interface OverlayPanelProps {
   open: boolean;
   onClose: () => void;
   title: string;
   closeLabel: string;
+  /**
+   * Where focus goes on close when the element that opened the panel is gone, e.g. a menu item
+   * that unmounted with its menu. Without it focus falls to `<body>`.
+   */
+  fallbackFocusRef?: RefObject<HTMLElement | null>;
   children: ReactNode;
 }
 
@@ -36,9 +41,13 @@ export function OverlayPanel({
   title,
   closeLabel,
   children,
+  fallbackFocusRef,
   variant,
 }: OverlayPanelInternalProps): ReactElement {
   const contentRef = useRef<HTMLDivElement>(null);
+  // Radix only restores focus to its own `Trigger`, and every caller opens this panel from a
+  // button it controls through `open`, so without this focus falls to `<body>` on close.
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   return (
     <RadixDialog.Root
@@ -57,12 +66,27 @@ export function OverlayPanel({
           aria-describedby={undefined}
           className={CONTENT_CLASSNAME[variant]}
           onOpenAutoFocus={(event) => {
+            // Runs before focus moves into the panel, so this is still the element that opened it.
+            // Safari and touch devices do not focus a button on click: `activeElement` is then
+            // `<body>`, which is no target, so Radix's default is left alone.
+            const opener = document.activeElement;
+            returnFocusRef.current =
+              opener instanceof HTMLElement && opener !== document.body ? opener : null;
             // The close button precedes the content in the DOM, so Radix's default would focus it
             // and a stray Enter would dismiss a form. Start on the first field when there is one.
             const firstField = contentRef.current?.querySelector<HTMLElement>('input, textarea, select');
             if (firstField) {
               event.preventDefault();
               firstField.focus();
+            }
+          }}
+          onCloseAutoFocus={(event) => {
+            const opener = returnFocusRef.current;
+            returnFocusRef.current = null;
+            const target = opener?.isConnected === true ? opener : fallbackFocusRef?.current;
+            if (target?.isConnected === true) {
+              event.preventDefault();
+              target.focus();
             }
           }}
         >
