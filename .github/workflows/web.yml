@@ -79,14 +79,6 @@ jobs:
           title: apps/web coverage
           log: ${{ runner.temp }}/web-cov.log
 
-      # NEXT_PUBLIC_* are inlined at build time; these dummy values only have to be well-formed.
-      - name: Build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
-          NEXT_PUBLIC_API_URL: http://localhost:3001
-        run: pnpm --filter @feedback-board/web build
-
       # Playwright drives the real stack: GoTrue + mailbox for sign-in, apps/api for data.
       - uses: ./.github/actions/supabase-stack
 
@@ -104,10 +96,35 @@ jobs:
           cat "$RUNNER_TEMP/api.log"
           exit 1
 
+      # The browser download is the slow part; the OS libraries it links against live outside the
+      # cache, so a hit still needs install-deps. The cache is saved right after the install, not
+      # in the post step, so a red e2e run does not throw the download away.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./apps/web/package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache/restore@v6
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Playwright browser
+        if: ${{ steps.playwright-cache.outputs.cache-hit != 'true' }}
         run: pnpm --filter @feedback-board/web exec playwright install --with-deps chromium
 
-      # Not counted toward coverage (§14.1). Playwright builds and starts the app itself.
+      - uses: actions/cache/save@v6
+        if: ${{ steps.playwright-cache.outputs.cache-hit != 'true' }}
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+
+      - name: Install Playwright system dependencies
+        if: ${{ steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: pnpm --filter @feedback-board/web exec playwright install-deps chromium
+
+      # Not counted toward coverage (§14.1). Playwright builds (with the real Supabase values, so
+      # this is also the production-build gate) and starts the app itself.
       - name: Playwright e2e
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
@@ -119,10 +136,16 @@ jobs:
         if: ${{ failure() }}
         run: cat "$RUNNER_TEMP/api.log"
 
-      - name: Build Docker image
-        run: >-
-          docker build -f apps/web/Dockerfile -t feedback-board-web:ci
-          --build-arg NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-          --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder
-          --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001
-          .
+  # Independent of the suite above: nothing in the image depends on its output, so it runs in
+  # parallel and the layer cache keeps a dependency-free change to a few seconds.
+  web-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/docker-image
+        with:
+          app: web
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder
+            NEXT_PUBLIC_API_URL=http://localhost:3001

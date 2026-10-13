@@ -1,0 +1,27 @@
+name: Build Docker image
+description: >-
+  Build one app's image with buildx and a per-app GitHub Actions layer cache. Requires the repo
+  to be checked out. The image is only built, never pushed: this is a Dockerfile gate.
+
+inputs:
+  app:
+    description: Directory name under apps/ (also the cache scope and the image name suffix)
+    required: true
+  build-args:
+    description: Newline-separated KEY=VALUE build arguments
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: docker/setup-buildx-action@v4
+
+    - uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: apps/${{ inputs.app }}/Dockerfile
+        tags: feedback-board-${{ inputs.app }}:ci
+        build-args: ${{ inputs.build-args }}
+        cache-from: type=gha,scope=${{ inputs.app }}
+        cache-to: type=gha,scope=${{ inputs.app }},mode=max
