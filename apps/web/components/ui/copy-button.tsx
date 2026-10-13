@@ -11,6 +11,11 @@ export interface CopyButtonProps {
   value: string;
   /** Names what is being copied for screen readers ("Copy signing secret"). */
   label: string;
+  /**
+   * Show the status text instead of only announcing it. The span then takes a full row, so the
+   * parent must be a wrapping flex row; its height is reserved so the text never shifts the layout.
+   */
+  visibleStatus?: boolean;
 }
 
 /**
@@ -18,7 +23,7 @@ export interface CopyButtonProps {
  * must never leave the user believing it was copied when it was not. The caller keeps the value
  * visible as selectable text for the manual fallback.
  */
-export function CopyButton({ value, label }: CopyButtonProps): ReactElement {
+export function CopyButton({ value, label, visibleStatus = false }: CopyButtonProps): ReactElement {
   const t = useTranslations('common.copy');
   const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -62,7 +67,14 @@ export function CopyButton({ value, label }: CopyButtonProps): ReactElement {
         {status === 'idle' && <Copy className="h-4 w-4" aria-hidden="true" />}
       </button>
       {/* Always mounted so the live region exists before its text changes and gets announced. */}
-      <span role="status" className="sr-only">
+      <span
+        role="status"
+        className={
+          visibleStatus
+            ? `min-h-5 basis-full text-caption ${status === 'failed' ? 'text-danger' : 'text-accent-text'}`
+            : 'sr-only'
+        }
+      >
         {status === 'idle' ? '' : t(status)}
       </span>
     </>

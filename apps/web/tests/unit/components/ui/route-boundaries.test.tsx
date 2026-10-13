@@ -75,12 +75,13 @@ describe('StandaloneScreen', () => {
 });
 
 describe('PageSkeleton', () => {
-  it('is a busy status region with a screen-reader label and the requested rows', () => {
+  it('is a busy main with a status label for screen readers and the requested rows', () => {
     render(<PageSkeleton rows={4} />);
 
-    const region = container.querySelector('[role="status"]');
-    expect(region?.getAttribute('aria-busy')).toBe('true');
-    expect(region?.textContent).toBe('Loading…');
+    // A `<main>`, like the real pages, so the global width rule applies and nothing shifts.
+    const main = container.querySelector('main');
+    expect(main?.getAttribute('aria-busy')).toBe('true');
+    expect(container.querySelector('[role="status"]')?.textContent).toBe('Loading…');
     // One header bar plus one placeholder per row.
     expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4 + 1);
   });

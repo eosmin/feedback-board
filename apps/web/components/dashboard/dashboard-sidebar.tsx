@@ -5,6 +5,10 @@ import type { ReactElement } from 'react';
 
 import { Badge, NavLink } from '../ui';
 
+/** Shared with `dashboard-sidebar-skeleton.tsx` so the placeholder has the real sidebar's box. */
+export const SIDEBAR_CLASSNAME =
+  'flex w-full shrink-0 flex-col gap-1 border-b border-border bg-surface-raised p-4 md:sticky md:top-0 md:h-dvh md:w-56 md:self-start md:overflow-y-auto md:border-b-0 md:border-r';
+
 interface DashboardSidebarProps {
   orgSlug: string;
   org: OrgDetail;
@@ -28,7 +32,7 @@ export async function DashboardSidebar({
   return (
     <nav
       aria-label={t('shell.nav.boards')}
-      className="flex w-full shrink-0 flex-col gap-1 border-b border-border bg-surface-raised p-4 md:sticky md:top-0 md:h-dvh md:w-56 md:self-start md:overflow-y-auto md:border-b-0 md:border-r"
+      className={SIDEBAR_CLASSNAME}
     >
       <div className="mb-3 flex min-w-0 items-center justify-between gap-2 px-2">
         <span className="min-w-0 truncate text-title text-text">{org.name}</span>

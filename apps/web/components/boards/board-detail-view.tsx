@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { apiFetch } from '../../lib/api-client';
 import { Button, Dialog, PageHeader } from '../ui';
 import { AiDigestPanel } from './ai-digest-panel';
+import { BoardDetailSkeleton } from './board-detail-skeleton';
 import { CreatePostForm } from './create-post-form';
 import { PostList } from './post-list';
 import { ShareBoardButton } from './share-board-button';
@@ -99,15 +100,20 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
   }
 
   if (loadFailed) {
+    // A `<main>` like the loaded and loading states, so the width rule applies and nothing shifts.
     return (
-      <p role="alert" className="text-sm text-danger">
-        {tCommon('error.generic')}
-      </p>
+      <main>
+        <p role="alert" className="text-sm text-danger">
+          {tCommon('error.generic')}
+        </p>
+      </main>
     );
   }
 
   if (org === null || board === null || posts === null) {
-    return <p className="text-sm text-text-muted">{tCommon('loading')}</p>;
+    // The route's `loading.tsx` ends once this page mounts, but the data is fetched from here, so
+    // keep a skeleton up until it lands instead of a bare line of text on an empty page.
+    return <BoardDetailSkeleton />;
   }
 
   const canManage = org.role === 'OWNER' || org.role === 'ADMIN';

@@ -7,7 +7,7 @@ import { Skeleton } from './skeleton';
 export interface PageSkeletonProps {
   /** Number of list rows under the header. */
   rows?: number;
-  /** The wrapper box; match the page's own `<main>` classes so nothing shifts when data lands. */
+  /** The `<main>` box; match the page's own `<main>` classes so nothing shifts when data lands. */
   className?: string;
 }
 
@@ -23,8 +23,12 @@ export function PageSkeleton({
   const t = useTranslations('common');
 
   return (
-    <div role="status" aria-busy="true" className={className}>
-      <span className="sr-only">{t('loading')}</span>
+    // A `<main>` like the real pages: the global `main` rule centres and caps the width, which a
+    // plain `div` would not get, so the content would shift when the data lands.
+    <main aria-busy="true" className={className}>
+      <span role="status" className="sr-only">
+        {t('loading')}
+      </span>
       <Skeleton className="h-9 w-56" />
       <div className="flex flex-col gap-3">
         {Array.from({ length: rows }, (_, index) => (
@@ -33,6 +37,6 @@ export function PageSkeleton({
           </Card>
         ))}
       </div>
-    </div>
+    </main>
   );
 }
