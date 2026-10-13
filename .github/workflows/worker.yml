@@ -73,5 +73,12 @@ jobs:
       - name: Build
         run: pnpm --filter "@feedback-board/worker..." build
 
-      - name: Build Docker image
-        run: docker build -f apps/worker/Dockerfile -t feedback-board-worker:ci .
+  # Independent of the suite above: nothing in the image depends on its output, so it runs in
+  # parallel and the layer cache keeps a dependency-free change to a few seconds.
+  worker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/docker-image
+        with:
+          app: worker
