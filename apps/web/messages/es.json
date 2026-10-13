@@ -87,6 +87,11 @@
       "FREE": "Plan gratuito",
       "PRO": "Plan Pro"
     },
+    "roles": {
+      "OWNER": "Propietario",
+      "ADMIN": "Administrador",
+      "MEMBER": "Miembro"
+    },
     "shell": {
       "backToOrgs": "Todas las organizaciones",
       "nav": {
@@ -149,7 +154,7 @@
       "statusLabel": "Estado",
       "share": {
         "trigger": "Compartir tablero",
-        "copied": "¡Copiado!",
+        "copyLink": "Copiar enlace",
         "publicLink": "Enlace público del tablero",
         "memberLink": "Enlace para miembros (requiere iniciar sesión)"
       },

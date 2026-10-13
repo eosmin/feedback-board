@@ -32,6 +32,7 @@ export default async function BillingPage({
   await requireUser(`/dashboard/${orgSlug}/billing`);
   const { success } = await searchParams;
   const t = await getTranslations('dashboard.billing');
+  const tPlan = await getTranslations('dashboard.planBadge');
 
   const org = await getOrgDetail(orgSlug);
 
@@ -41,7 +42,7 @@ export default async function BillingPage({
 
   return (
     <main className="flex flex-col gap-6 p-6">
-      <PageHeader title={t('title')} badge={<Badge>{org.plan}</Badge>} />
+      <PageHeader title={t('title')} badge={<Badge>{tPlan(org.plan)}</Badge>} />
       {success === '1' && (
         <p role="status" className="rounded-control border border-success-border bg-success-soft p-3 text-body text-success">
           {t('checkoutSuccess')}

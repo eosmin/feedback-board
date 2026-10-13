@@ -9,7 +9,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BASE_CLASSNAME =
-  'inline-flex h-10 items-center justify-center gap-1.5 rounded-control px-4 py-2 text-body font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-control px-4 py-2 text-body font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50';
 
 const VARIANT_CLASSNAME: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary: 'bg-accent text-accent-fg shadow-surface hover:bg-accent-hover',

@@ -3,11 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import type { ReactElement } from 'react';
 import { z } from 'zod';
 
-import { OrgBoardsOverview } from '../../../components/dashboard/org-boards-overview';
-import { Badge, PageHeader } from '../../../components/ui';
-import { serverApiFetch } from '../../../lib/api-client-server';
-import { getOrgDetail } from '../../../lib/org-detail';
-import { requireUser } from '../../../lib/supabase/require-user';
+import { OrgBoardsOverview } from '../../../../components/dashboard/org-boards-overview';
+import { Badge, PageHeader } from '../../../../components/ui';
+import { serverApiFetch } from '../../../../lib/api-client-server';
+import { getOrgDetail } from '../../../../lib/org-detail';
+import { requireUser } from '../../../../lib/supabase/require-user';
 
 const boardListSchema = z.array(boardSchema);
 
@@ -31,6 +31,7 @@ export default async function OrgOverviewPage({
   const { orgSlug } = await params;
   await requireUser(`/dashboard/${orgSlug}`);
   const t = await getTranslations('dashboard.orgOverview');
+  const tPlan = await getTranslations('dashboard.planBadge');
 
   const [org, boards] = await Promise.all([
     getOrgDetail(orgSlug),
@@ -39,7 +40,7 @@ export default async function OrgOverviewPage({
 
   return (
     <main className="flex flex-col gap-6 p-6">
-      <PageHeader title={org.name} badge={<Badge>{org.plan}</Badge>} />
+      <PageHeader title={org.name} badge={<Badge>{tPlan(org.plan)}</Badge>} />
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-medium text-text">{t('boardsTitle')}</h2>
         <OrgBoardsOverview orgSlug={orgSlug} initialBoards={boards} />

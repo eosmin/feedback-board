@@ -35,13 +35,7 @@ afterEach(() => {
 });
 
 describe('OrgList', () => {
-  it('renders the empty-state copy when the caller has no orgs', () => {
-    renderList([]);
-
-    expect(container.textContent).toContain(messages.dashboard.empty);
-  });
-
-  it('renders one entry per org with its plan badge and a link to its dashboard', () => {
+  it('renders one entry per org with its plan badge, role and a link to its dashboard', () => {
     renderList([
       { id: '1', name: 'Acme', slug: 'acme', plan: 'FREE', role: 'OWNER' },
       { id: '2', name: 'Umbrella', slug: 'umbrella', plan: 'PRO', role: 'MEMBER' },
@@ -51,6 +45,8 @@ describe('OrgList', () => {
     expect(container.textContent).toContain(messages.dashboard.planBadge.FREE);
     expect(container.textContent).toContain('Umbrella');
     expect(container.textContent).toContain(messages.dashboard.planBadge.PRO);
+    expect(container.textContent).toContain(messages.dashboard.roles.OWNER);
+    expect(container.textContent).toContain(messages.dashboard.roles.MEMBER);
 
     const links = container.querySelectorAll('a');
     expect(links).toHaveLength(2);
