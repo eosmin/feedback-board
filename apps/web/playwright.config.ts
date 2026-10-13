@@ -27,6 +27,6 @@ export default defineConfig({
     // the first on `EADDRINUSE` instead of reusing it.
     url: `${process.env.WEB_E2E_BASE_URL ?? 'http://localhost:3000'}/login`,
     reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
+    timeout: 300_000,
   },
 });
