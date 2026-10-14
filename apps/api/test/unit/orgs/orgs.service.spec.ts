@@ -1,4 +1,5 @@
 import { ConflictException } from '@nestjs/common';
+import { Prisma } from '@feedback-board/core';
 import type { PrismaService } from '@feedback-board/core';
 
 import { OrgsService } from '../../../src/orgs/orgs.service';
@@ -51,6 +52,31 @@ function buildTenantPrisma(boardsUsed: number, postsUsed: number): TenantPrismaS
 }
 
 describe('OrgsService', () => {
+  it('answers a slug that is already taken with a 409 CONFLICT, not a server error', async () => {
+    const { admin, createOrg } = buildAdmin();
+    createOrg.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      }),
+    );
+    const service = new OrgsService(admin, buildTenantPrisma(0, 0));
+
+    await expect(service.create('user-1', { name: 'Acme', slug: 'acme' })).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+  });
+
+  it('rethrows any other failure of the create', async () => {
+    const { admin, createOrg } = buildAdmin();
+    createOrg.mockRejectedValue(new Error('connection lost'));
+    const service = new OrgsService(admin, buildTenantPrisma(0, 0));
+
+    await expect(service.create('user-1', { name: 'Acme', slug: 'acme' })).rejects.toThrow(
+      'connection lost',
+    );
+  });
+
   it('creates an org and bootstraps the creator as OWNER, atomically', async () => {
     const { admin, createOrg, createMembership } = buildAdmin();
     const service = new OrgsService(admin, buildTenantPrisma(0, 0));

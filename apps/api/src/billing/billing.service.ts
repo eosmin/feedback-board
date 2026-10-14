@@ -11,6 +11,7 @@ import {
 import type Stripe from 'stripe';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import { isUniqueConstraintViolation } from '../database/unique-violation';
 import type { TenantPrismaService as TenantPrisma } from '../database/tenant-prisma.service';
 
 export const STRIPE_CLIENT = Symbol('STRIPE_CLIENT');
@@ -42,8 +43,6 @@ const STRIPE_STATUS_MAP: Readonly<Record<string, SubscriptionStatus>> = {
 
 /** PAST_DUE keeps PRO while Stripe's retry schedule runs; every other status is FREE. */
 const PRO_STATUSES: ReadonlySet<SubscriptionStatus> = new Set(['ACTIVE', 'TRIALING', 'PAST_DUE']);
-
-const PRISMA_UNIQUE_CONSTRAINT_CODE = 'P2002';
 
 interface SubscriptionSnapshot {
   readonly stripeSubscriptionId: string;
@@ -111,13 +110,6 @@ function toSnapshot(subscription: Stripe.Subscription): SubscriptionSnapshot {
     // On the dahlia API the period lives on the item; the subscription object has none (§2.6.7).
     currentPeriodEnd: new Date(item.current_period_end * 1000),
   };
-}
-
-function isUniqueConstraintViolation(error: unknown): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === PRISMA_UNIQUE_CONSTRAINT_CODE
-  );
 }
 
 /**

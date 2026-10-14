@@ -9,6 +9,7 @@ import {
 } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import { isUniqueConstraintViolation } from '../database/unique-violation';
 import type { CreateOrgDto } from './dto/create-org.dto';
 
 /**
@@ -33,19 +34,29 @@ export class OrgsService {
       throw new ConflictException({ error: 'CONFLICT' });
     }
 
-    const org = await this.admin.client.$transaction(async (tx) => {
-      const created = await tx.org.create({
-        data: { name: dto.name, slug: dto.slug },
+    try {
+      const org = await this.admin.client.$transaction(async (tx) => {
+        const created = await tx.org.create({
+          data: { name: dto.name, slug: dto.slug },
+        });
+
+        await tx.membership.create({
+          data: { userId, orgId: created.id, role: 'OWNER' },
+        });
+
+        return created;
       });
 
-      await tx.membership.create({
-        data: { userId, orgId: created.id, role: 'OWNER' },
-      });
-
-      return created;
-    });
-
-    return { id: org.id, name: org.name, slug: org.slug, plan: org.plan, role: 'OWNER' };
+      return { id: org.id, name: org.name, slug: org.slug, plan: org.plan, role: 'OWNER' };
+    } catch (error) {
+      // `orgs.slug` is unique: a taken slug is the caller's conflict to fix, not a server fault.
+      // The membership row carries the id of the org just created, so it cannot collide: the
+      // only unique constraint that can fire in this transaction is the slug.
+      if (isUniqueConstraintViolation(error)) {
+        throw new ConflictException({ error: 'CONFLICT' });
+      }
+      throw error;
+    }
   }
 
   /** The orgs `userId` is a member of, each carrying that member's own role (TDD §11). */
