@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
+import { usePublishBoardLabel } from '../dashboard/board-breadcrumb-label';
 import { Button, Dialog, PageHeader } from '../ui';
 import { AiDigestPanel } from './ai-digest-panel';
 import { BoardDetailSkeleton } from './board-detail-skeleton';
@@ -50,6 +51,10 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+
+  // The breadcrumb waits for this label. If the board cannot be loaded it would wait forever, so
+  // the slug stands in for the name.
+  usePublishBoardLabel(boardSlug, board?.name ?? (loadFailed ? boardSlug : null));
 
   useEffect(() => {
     let cancelled = false;

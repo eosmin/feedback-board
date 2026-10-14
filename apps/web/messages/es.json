@@ -93,17 +93,22 @@
       "MEMBER": "Miembro"
     },
     "shell": {
-      "backToOrgs": "Todas las organizaciones",
       "nav": {
         "boards": "Tableros",
         "billing": "Facturación",
-        "webhooks": "Webhooks"
+        "webhooks": "Webhooks",
+        "label": "Navegación"
       },
       "signOut": "Cerrar sesión",
       "orgSwitcher": {
         "label": "Cambiar organización",
-        "viewAll": "Ver todas las organizaciones ({count} más)",
-        "createNew": "Crear nueva organización"
+        "createNew": "Crear nueva organización",
+        "allOrgs": "Todas las organizaciones"
+      },
+      "breadcrumb": "Ruta de navegación",
+      "menu": {
+        "open": "Abrir menú",
+        "title": "Menú"
       }
     },
     "createOrg": {
@@ -114,7 +119,7 @@
       "slugLabel": "Slug de URL",
       "slugHelp": "Letras minúsculas, números y guiones. Se usa en la URL pública de tu tablero.",
       "slugInvalid": "Ingresa un slug válido y no reservado.",
-      "slugReserved": "Ese slug está reservado. Elige otro.",
+      "slugReserved": "Ese slug ya está en uso o está reservado. Elige otro.",
       "submit": "Crear organización",
       "creating": "Creando…",
       "error": "No pudimos crear la organización. Intenta de nuevo."
