@@ -1,17 +1,23 @@
-import { publicBoardSchema, publicPostSchema } from '@feedback-board/shared';
-import type { PublicBoard } from '@feedback-board/shared';
-import { notFound } from 'next/navigation';
+import { publicPostSchema } from '@feedback-board/shared';
+import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { z } from 'zod';
 
 import { PublicPostList } from '../../../../components/boards/public-post-list';
 import { PageHeader, PreferencesBar } from '../../../../components/ui';
-import { ApiError, publicApiFetch } from '../../../../lib/api-client';
+import { publicApiFetch } from '../../../../lib/api-client';
+import { getPublicBoard } from '../../../../lib/public-board';
 
 const publicPostListSchema = z.array(publicPostSchema);
 
 interface PublicBoardPageProps {
   params: Promise<{ orgSlug: string; boardSlug: string }>;
+}
+
+export async function generateMetadata({ params }: PublicBoardPageProps): Promise<Metadata> {
+  const { orgSlug, boardSlug } = await params;
+  const board = await getPublicBoard(orgSlug, boardSlug);
+  return { title: board.name };
 }
 
 /**
@@ -24,7 +30,7 @@ export default async function PublicBoardPage({
 }: PublicBoardPageProps): Promise<ReactElement> {
   const { orgSlug, boardSlug } = await params;
 
-  const board = await fetchBoardOrNotFound(orgSlug, boardSlug);
+  const board = await getPublicBoard(orgSlug, boardSlug);
   const posts = await publicApiFetch(`/public/${orgSlug}/${boardSlug}/posts`, publicPostListSchema);
 
   return (
@@ -36,20 +42,4 @@ export default async function PublicBoardPage({
       </main>
     </>
   );
-}
-
-/**
- * A private board, an unknown board and an unknown org are all indistinguishable `404
- * { error: 'NOT_FOUND' }` responses from the API (TDD §11) — this is the one place that 404
- * becomes Next's `notFound()` boundary instead of a rendered error.
- */
-async function fetchBoardOrNotFound(orgSlug: string, boardSlug: string): Promise<PublicBoard> {
-  try {
-    return await publicApiFetch(`/public/${orgSlug}/${boardSlug}`, publicBoardSchema);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      notFound();
-    }
-    throw error;
-  }
 }
