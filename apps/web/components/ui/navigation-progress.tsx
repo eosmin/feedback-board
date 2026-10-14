@@ -1,7 +1,9 @@
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
+
+import { onNavigationStart } from '../../lib/navigation-events';
 
 const INITIAL_PROGRESS = 8;
 const PROGRESS_CEILING = 90;
@@ -9,9 +11,8 @@ const TRICKLE_INTERVAL_MS = 200;
 /** A navigation that never lands (dropped request, superseded click) must not leave the bar stuck. */
 const GIVE_UP_MS = 15_000;
 
-/** Attribute names the stylesheet keys on (`styles/globals.css`): dimming and `cursor: wait`. */
+/** Attribute the stylesheet keys on (`styles/globals.css`): dimmed content and `cursor: progress`. */
 const NAVIGATING_ATTRIBUTE = 'data-navigating';
-const PENDING_LINK_ATTRIBUTE = 'data-nav-pending';
 
 /**
  * The anchor a click navigates through Next's client router, or `null` when the click is anything
@@ -40,10 +41,12 @@ function findSoftNavigationAnchor(event: MouseEvent): HTMLAnchorElement | null {
 
 /**
  * Top-of-page progress bar for App Router navigations. Next 16 exposes no router
- * events, so it starts on the click that the router handled and finishes when the pathname or
- * query string changes. While pending it also marks `<html data-navigating>` (the stylesheet dims
- * `main`, the sidebar stays interactive) and the pressed anchor `data-nav-pending` (the
- * stylesheet gives only that link `cursor: wait`). Mounted once in the root layout.
+ * events, so it starts on the click that the router handled, or on `announceNavigation()` for a
+ * navigation requested by code (`useNavigate`), and finishes when the pathname or query string
+ * changes. While pending it also marks `<html data-navigating>`: the stylesheet dims `main` (the
+ * sidebar stays interactive) and shows `cursor: progress` over the whole page, so the cue survives
+ * moving the pointer off the link and covers navigations that had no link. Mounted once in the
+ * root layout.
  */
 export function NavigationProgress(): ReactElement {
   const pathname = usePathname();
@@ -53,7 +56,6 @@ export function NavigationProgress(): ReactElement {
   const [pending, setPending] = useState(false);
   const [run, setRun] = useState(0);
   const [progress, setProgress] = useState(INITIAL_PROGRESS);
-  const pressedLinkRef = useRef<HTMLAnchorElement | null>(null);
 
   // The route changed: the navigation landed. Adjusting state during render is the documented
   // pattern for state derived from a prop change, and avoids a frame of stale "pending".
@@ -64,23 +66,25 @@ export function NavigationProgress(): ReactElement {
   }
 
   useEffect(() => {
-    function handleClick(event: MouseEvent): void {
-      const anchor = findSoftNavigationAnchor(event);
-      if (anchor === null) return;
-
-      pressedLinkRef.current?.removeAttribute(PENDING_LINK_ATTRIBUTE);
-      anchor.setAttribute(PENDING_LINK_ATTRIBUTE, '');
-      pressedLinkRef.current = anchor;
-
+    function begin(): void {
       setProgress(INITIAL_PROGRESS);
       setRun((current) => current + 1);
       setPending(true);
     }
 
+    function handleClick(event: MouseEvent): void {
+      if (findSoftNavigationAnchor(event) !== null) begin();
+    }
+
     // `window` (not `document`): React's delegated listeners sit on the document, so a bubbling
     // listener on window is guaranteed to run after Next's `Link` has called `preventDefault`.
     window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
+    // Navigations started by code (`useNavigate`) have no anchor to inspect.
+    const stopListening = onNavigationStart(begin);
+    return () => {
+      window.removeEventListener('click', handleClick);
+      stopListening();
+    };
   }, []);
 
   useEffect(() => {
@@ -98,16 +102,6 @@ export function NavigationProgress(): ReactElement {
       document.documentElement.removeAttribute(NAVIGATING_ATTRIBUTE);
     };
   }, [pending, run]);
-
-  // Separate from the effect above, which re-runs on every new click: the pressed link's mark must
-  // survive that re-run and clear only once nothing is pending.
-  useEffect(() => {
-    if (!pending) return;
-    return () => {
-      pressedLinkRef.current?.removeAttribute(PENDING_LINK_ATTRIBUTE);
-      pressedLinkRef.current = null;
-    };
-  }, [pending]);
 
   // Keyed by `run` so each navigation mounts a fresh bar at its starting width instead of
   // animating backwards from the previous one's 100%. Once not pending it snaps to full width and

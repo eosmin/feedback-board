@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 import { useState } from 'react';
 
+import { useNavigate } from '../../lib/use-navigate';
 import { Button, Dialog } from '../ui';
 import { BoardList } from './board-list';
 import { CreateBoardForm } from './create-board-form';
@@ -19,9 +20,8 @@ interface OrgBoardsOverviewProps {
 /**
  * Client island combining the read-only board list with the creation form (TDD §13 step 19.2),
  * mirroring `OrgPicker`'s shape (Step 19.1). The form opens in a `Dialog` instead of sitting
- * inline (§13 step 19.7 follow-up) — a freshly created board is appended locally so the list
- * reflects it immediately, in addition to `router.refresh()` re-fetching the Server Component's
- * data.
+ * inline (§13 step 19.7 follow-up). A freshly created board is opened, not appended to the list:
+ * it is where the user works next.
  */
 export function OrgBoardsOverview({
   orgSlug,
@@ -29,12 +29,13 @@ export function OrgBoardsOverview({
 }: OrgBoardsOverviewProps): ReactElement {
   const t = useTranslations('dashboard.orgOverview.createBoard');
   const tCommon = useTranslations('common');
-  const [boards, setBoards] = useState(initialBoards);
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   function handleCreated(board: Board): void {
-    setBoards((current) => [...current, board]);
-    setDialogOpen(false);
+    // A new board is a place to work in, so open it; the dialog stays up (button pending) until
+    // the board page has rendered.
+    navigate.push(`/dashboard/${orgSlug}/boards/${board.slug}`);
   }
 
   return (
@@ -45,14 +46,18 @@ export function OrgBoardsOverview({
           {t('trigger')}
         </Button>
       </div>
-      <BoardList orgSlug={orgSlug} boards={boards} />
+      <BoardList orgSlug={orgSlug} boards={initialBoards} />
       <Dialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         title={t('title')}
         closeLabel={tCommon('close')}
       >
-        <CreateBoardForm orgSlug={orgSlug} onCreated={handleCreated} />
+        <CreateBoardForm
+          orgSlug={orgSlug}
+          onCreated={handleCreated}
+          navigating={navigate.isPending}
+        />
       </Dialog>
     </div>
   );

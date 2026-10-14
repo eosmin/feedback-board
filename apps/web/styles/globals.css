@@ -105,6 +105,8 @@
   --animate-dialog-out: dialog-out 120ms ease-in;
   --animate-drawer-in: drawer-in 200ms ease-out;
   --animate-drawer-out: drawer-out 150ms ease-in;
+  --animate-nav-drawer-in: nav-drawer-in 200ms ease-out;
+  --animate-nav-drawer-out: nav-drawer-out 150ms ease-in;
   --animate-toast-in: toast-in 180ms ease-out;
   --animate-toast-out: toast-out 120ms ease-in;
 
@@ -125,6 +127,12 @@
   }
   @keyframes drawer-out {
     to { transform: translateX(100%); }
+  }
+  @keyframes nav-drawer-in {
+    from { transform: translateX(-100%); }
+  }
+  @keyframes nav-drawer-out {
+    to { transform: translateX(-100%); }
   }
   @keyframes toast-in {
     from { opacity: 0; transform: translateY(0.5rem); }
@@ -219,16 +227,50 @@ main {
   }
 }
 
+/* Tailwind 4's preflight gives buttons `cursor: default`, so a control reads as clickable only
+   through its colour. Restore the hand the web teaches (the recipe from Tailwind's upgrade
+   guide), plus `not-allowed` where a control cannot be used. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='menuitem'],
+  [role='menuitemradio'],
+  summary,
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  label:has(> input[type='checkbox']:not(:disabled)),
+  label:has(> input[type='radio']:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+
 /* Navigation feedback (`NavigationProgress`): while a client navigation is pending the page
-   content dims, and only the pressed link shows `cursor: wait`. The sidebar is a `nav`, not
-   `main`, so it stays fully interactive. */
+   content dims and the cursor is `progress` on every element, links and buttons included (not
+   `wait`: the sidebar is a `nav`, not `main`, so it stays fully interactive). This block is
+   unlayered on purpose: it must beat the `@layer base` cursors above and Tailwind's
+   `cursor-pointer`/`disabled:cursor-not-allowed` utilities, which are layered. */
 html[data-navigating] main {
   opacity: 0.6;
 }
 
-a[data-nav-pending],
-a[data-nav-pending] * {
-  cursor: wait;
+html[data-navigating],
+html[data-navigating] * {
+  cursor: progress;
+}
+
+/* The entry for the page one is already on is not an action, so it shows no hand, and not the
+   progress cursor either: nothing it could do is pending. */
+a[aria-current='page'],
+html[data-navigating] a[aria-current='page'] {
+  cursor: default;
 }
 
 /* Reduced motion: the bar is a static full-width line for as long as the navigation is pending. */

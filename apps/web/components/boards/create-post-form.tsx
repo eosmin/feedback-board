@@ -13,7 +13,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { apiFetch, ApiError } from '../../lib/api-client';
-import { Button, Input, Textarea } from '../ui';
+import { useRefocusAfterSubmit } from '../../lib/use-refocus-after-submit';
+import { Button, Form, Input, Textarea } from '../ui';
 import { PostLimitUpgradePrompt } from './post-limit-upgrade-prompt';
 
 interface CreatePostFormProps {
@@ -41,11 +42,13 @@ export function CreatePostForm({
   const {
     register,
     handleSubmit,
+    setFocus,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreatePostInput>({
     resolver: zodResolver(createPostSchema),
   });
+  const requestFocus = useRefocusAfterSubmit(setFocus, isSubmitting);
 
   async function onSubmit(values: CreatePostInput): Promise<void> {
     setSubmitError(null);
@@ -64,6 +67,7 @@ export function CreatePostForm({
         return;
       }
       setSubmitError(t('error'));
+      requestFocus('title');
     }
   }
 
@@ -72,9 +76,10 @@ export function CreatePostForm({
   }
 
   return (
-    <form
+    <Form
       onSubmit={(event) => void handleSubmit(onSubmit)(event)}
-      noValidate
+      pending={isSubmitting}
+      onEdit={() => setSubmitError(null)}
       className="flex flex-col gap-3"
     >
       <label htmlFor="post-title" className="text-sm font-medium text-text">
@@ -108,9 +113,9 @@ export function CreatePostForm({
         </p>
       )}
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" pending={isSubmitting}>
         {isSubmitting ? t('creating') : t('submit')}
       </Button>
-    </form>
+    </Form>
   );
 }

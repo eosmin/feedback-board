@@ -14,7 +14,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
-import { Button, Input } from '../ui';
+import { useRefocusAfterSubmit } from '../../lib/use-refocus-after-submit';
+import { Button, Form, Input } from '../ui';
 
 const commentListSchema = z.array(commentSchema);
 
@@ -55,19 +56,27 @@ export function PostComments({ orgSlug, postId }: PostCommentsProps): ReactEleme
   const {
     register,
     handleSubmit,
+    setFocus,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateCommentInput>({
     resolver: zodResolver(createCommentSchema),
   });
+  const requestFocus = useRefocusAfterSubmit(setFocus, isSubmitting);
 
   async function onSubmit(values: CreateCommentInput): Promise<void> {
-    const comment = await apiFetch(`/orgs/${orgSlug}/posts/${postId}/comments`, commentSchema, {
-      method: 'POST',
-      body: values,
-    });
-    setComments((current) => (current === null ? [comment] : [...current, comment]));
-    reset();
+    try {
+      const comment = await apiFetch(`/orgs/${orgSlug}/posts/${postId}/comments`, commentSchema, {
+        method: 'POST',
+        body: values,
+      });
+      setComments((current) => (current === null ? [comment] : [...current, comment]));
+      reset();
+    } finally {
+      // Success or failure, the field was disabled while sending and dropped focus. A failure is
+      // still unhandled (22.11 replaces this composer and adds the error state).
+      requestFocus('body');
+    }
   }
 
   return (
@@ -86,9 +95,9 @@ export function PostComments({ orgSlug, postId }: PostCommentsProps): ReactEleme
           ))}
         </ul>
       )}
-      <form
+      <Form
         onSubmit={(event) => void handleSubmit(onSubmit)(event)}
-        noValidate
+        pending={isSubmitting}
         className="mt-2 flex items-start gap-2"
       >
         <label htmlFor={`comment-body-${postId}`} className="sr-only">
@@ -100,10 +109,10 @@ export function PostComments({ orgSlug, postId }: PostCommentsProps): ReactEleme
           aria-invalid={errors.body !== undefined}
           {...register('body')}
         />
-        <Button type="submit" variant="secondary" disabled={isSubmitting}>
+        <Button type="submit" variant="secondary" pending={isSubmitting}>
           {isSubmitting ? t('submitting') : t('submit')}
         </Button>
-      </form>
+      </Form>
       {errors.body !== undefined && (
         <p role="alert" className="mt-1 text-sm text-danger">
           {t('bodyInvalid')}

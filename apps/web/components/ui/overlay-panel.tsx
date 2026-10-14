@@ -19,7 +19,7 @@ export interface OverlayPanelProps {
 }
 
 interface OverlayPanelInternalProps extends OverlayPanelProps {
-  variant: 'dialog' | 'drawer';
+  variant: 'dialog' | 'drawer' | 'nav';
 }
 
 // Full class names per variant, never built from strings: Tailwind only emits classes it sees.
@@ -29,11 +29,13 @@ const CONTENT_CLASSNAME: Record<OverlayPanelInternalProps['variant'], string> = 
   // Full-screen below `sm`, a right-anchored 28rem panel above it.
   drawer:
     'fixed inset-y-0 right-0 z-50 flex h-dvh w-full flex-col gap-4 overflow-y-auto border-l border-border bg-surface-raised p-6 shadow-modal outline-none sm:max-w-md data-[state=open]:animate-drawer-in data-[state=closed]:animate-drawer-out',
+  // The mobile navigation: a narrow left-anchored panel that leaves a strip of the page visible.
+  nav: 'fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col gap-4 overflow-y-auto border-r border-border bg-surface-raised p-4 shadow-modal outline-none data-[state=open]:animate-nav-drawer-in data-[state=closed]:animate-nav-drawer-out',
 };
 
 /**
- * The one Radix `Dialog` wiring behind both `Dialog` and `Drawer`, so focus trap, `Esc`, inert
- * background and scroll lock live in a single place. The wrappers differ only in `variant`.
+ * The one Radix `Dialog` wiring behind `Dialog`, `Drawer` and `NavDrawer`, so focus trap, `Esc`,
+ * inert background and scroll lock live in a single place. The wrappers differ only in `variant`.
  */
 export function OverlayPanel({
   open,

@@ -1,8 +1,7 @@
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import type { ReactElement } from 'react';
 
-import { Alert } from '../ui';
+import { Alert, Link } from '../ui';
 
 interface WebhookUpgradePromptProps {
   orgSlug: string;

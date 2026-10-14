@@ -12,6 +12,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { NavigationProgress } from '../../../../components/ui';
+import { announceNavigation } from '../../../../lib/navigation-events';
 
 let container: HTMLDivElement;
 let root: Root;
@@ -62,16 +63,25 @@ afterEach(() => {
 });
 
 describe('NavigationProgress', () => {
-  it('marks the page and only the pressed link as pending when the router takes a click', () => {
-    const pressed = addLink('/dashboard/acme');
-    const other = addLink('/dashboard/other');
-
-    click(pressed);
+  it('marks the page as navigating when the router takes a click', () => {
+    click(addLink('/dashboard/acme'));
 
     expect(isNavigating()).toBe(true);
-    expect(pressed.hasAttribute('data-nav-pending')).toBe(true);
-    expect(other.hasAttribute('data-nav-pending')).toBe(false);
     expect(container.querySelector<HTMLElement>('.nav-progress-bar')?.style.opacity).toBe('1');
+  });
+
+  it('starts when code announces a navigation, with no link involved', () => {
+    act(() => {
+      announceNavigation();
+    });
+
+    expect(isNavigating()).toBe(true);
+    expect(container.querySelector<HTMLElement>('.nav-progress-bar')?.style.opacity).toBe('1');
+
+    navigation.pathname = '/dashboard/acme';
+    renderBar();
+
+    expect(isNavigating()).toBe(false);
   });
 
   it('finishes when the pathname changes', () => {
@@ -82,7 +92,6 @@ describe('NavigationProgress', () => {
     renderBar();
 
     expect(isNavigating()).toBe(false);
-    expect(link.hasAttribute('data-nav-pending')).toBe(false);
     expect(container.querySelector<HTMLElement>('.nav-progress-bar')?.style.opacity).toBe('0');
   });
 
@@ -104,18 +113,6 @@ describe('NavigationProgress', () => {
     });
 
     expect(isNavigating()).toBe(false);
-    expect(link.hasAttribute('data-nav-pending')).toBe(false);
-  });
-
-  it('moves the pending mark to the last pressed link', () => {
-    const first = addLink('/dashboard/a');
-    const second = addLink('/dashboard/b');
-
-    click(first);
-    click(second);
-
-    expect(first.hasAttribute('data-nav-pending')).toBe(false);
-    expect(second.hasAttribute('data-nav-pending')).toBe(true);
   });
 
   it.each([

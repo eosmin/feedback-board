@@ -3,21 +3,23 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { boardSchema, createBoardSchema, type Board } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
 
 import { apiFetch, ApiError } from '../../lib/api-client';
+import { useRefocusAfterSubmit } from '../../lib/use-refocus-after-submit';
 import { useSlugAutofill } from '../../lib/use-slug-autofill';
-import { Button, Input } from '../ui';
+import { Button, Form, Input } from '../ui';
 import { PlanLimitUpgradePrompt } from './plan-limit-upgrade-prompt';
 
 interface CreateBoardFormProps {
   orgSlug: string;
-  /** Called after a successful creation, so the parent can refresh its board list. */
+  /** Called after a successful creation; the parent decides where to go next. */
   onCreated: (board: Board) => void;
+  /** The parent is navigating to the new board: keep the submit button pending until it lands. */
+  navigating?: boolean;
 }
 
 /**
@@ -36,16 +38,22 @@ type CreateBoardFormValues = z.input<typeof createBoardSchema>;
  * (TDD §3.9); a `409 CONFLICT` (duplicate board slug within the org) surfaces as a field error,
  * the same pattern `CreateOrgForm` uses for reserved/duplicate org slugs (Step 19.1).
  */
-export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): ReactElement {
+export function CreateBoardForm({
+  orgSlug,
+  onCreated,
+  navigating = false,
+}: CreateBoardFormProps): ReactElement {
   const t = useTranslations('dashboard.orgOverview.createBoard');
-  const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [slugTaken, setSlugTaken] = useState(false);
+  // The slug the server turned down: the error shows only while the field still holds it, so it
+  // goes away on the next keystroke (or an autofill from the name) instead of lingering.
+  const [takenSlug, setTakenSlug] = useState<string | null>(null);
   const [planLimitHit, setPlanLimitHit] = useState(false);
 
   const {
     register,
     handleSubmit,
+    setFocus,
     control,
     setValue,
     formState: { errors, isSubmitting },
@@ -53,33 +61,42 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
     resolver: zodResolver(createBoardSchema),
     defaultValues: { isPublic: true },
   });
+  const requestFocus = useRefocusAfterSubmit(setFocus, isSubmitting);
 
   const nameValue = useWatch({ control, name: 'name' });
+  const slugValue = useWatch({ control, name: 'slug' });
+  const slugTaken = takenSlug !== null && takenSlug === slugValue;
   const { onSlugChange } = useSlugAutofill(nameValue, setValue);
 
   async function onSubmit(values: CreateBoardFormValues): Promise<void> {
     setSubmitError(null);
-    setSlugTaken(false);
+    setTakenSlug(null);
     setPlanLimitHit(false);
 
+    let board: Board;
     try {
-      const board = await apiFetch(`/orgs/${orgSlug}/boards`, boardSchema, {
+      board = await apiFetch(`/orgs/${orgSlug}/boards`, boardSchema, {
         method: 'POST',
         body: values,
       });
-      onCreated(board);
-      router.refresh();
     } catch (error) {
       if (error instanceof ApiError && error.body.error === 'PLAN_LIMIT') {
         setPlanLimitHit(true);
         return;
       }
       if (error instanceof ApiError && error.body.error === 'CONFLICT') {
-        setSlugTaken(true);
+        setTakenSlug(values.slug);
+        requestFocus('slug');
         return;
       }
       setSubmitError(t('error'));
+      requestFocus('name');
+      return;
     }
+
+    // Outside the `try`: the board exists now, so a failure in the parent's handler must not read
+    // as "could not create".
+    onCreated(board);
   }
 
   if (planLimitHit) {
@@ -87,9 +104,10 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
   }
 
   return (
-    <form
+    <Form
       onSubmit={(event) => void handleSubmit(onSubmit)(event)}
-      noValidate
+      pending={isSubmitting || navigating}
+      onEdit={() => setSubmitError(null)}
       className="flex flex-col gap-3"
     >
       <label htmlFor="board-name" className="text-sm font-medium text-text">
@@ -139,9 +157,9 @@ export function CreateBoardForm({ orgSlug, onCreated }: CreateBoardFormProps): R
         </p>
       )}
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? t('creating') : t('submit')}
+      <Button type="submit" pending={isSubmitting || navigating}>
+        {isSubmitting || navigating ? t('creating') : t('submit')}
       </Button>
-    </form>
+    </Form>
   );
 }

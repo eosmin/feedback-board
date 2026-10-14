@@ -10,7 +10,8 @@ import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
-import { Button, Input } from '../ui';
+import { useRefocusAfterSubmit } from '../../lib/use-refocus-after-submit';
+import { Button, Form, Input } from '../ui';
 
 interface CreateWebhookFormProps {
   orgSlug: string;
@@ -40,11 +41,13 @@ export function CreateWebhookForm({ orgSlug, onCreated }: CreateWebhookFormProps
   const {
     register,
     handleSubmit,
+    setFocus,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateWebhookFormValues>({
     resolver: zodResolver(createWebhookSchema),
   });
+  const requestFocus = useRefocusAfterSubmit(setFocus, isSubmitting);
 
   async function onSubmit(values: CreateWebhookFormValues): Promise<void> {
     setSubmitError(null);
@@ -58,13 +61,15 @@ export function CreateWebhookForm({ orgSlug, onCreated }: CreateWebhookFormProps
       reset();
     } catch {
       setSubmitError(t('error'));
+      requestFocus('targetUrl');
     }
   }
 
   return (
-    <form
+    <Form
       onSubmit={(event) => void handleSubmit(onSubmit)(event)}
-      noValidate
+      pending={isSubmitting}
+      onEdit={() => setSubmitError(null)}
       className="flex flex-col gap-3"
     >
       <label htmlFor="webhook-target-url" className="text-sm font-medium text-text">
@@ -112,9 +117,9 @@ export function CreateWebhookForm({ orgSlug, onCreated }: CreateWebhookFormProps
         </p>
       )}
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" pending={isSubmitting}>
         {isSubmitting ? t('creating') : t('submit')}
       </Button>
-    </form>
+    </Form>
   );
 }

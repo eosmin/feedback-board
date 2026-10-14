@@ -65,7 +65,7 @@ describe('CreateOrgForm', () => {
     expect(container.textContent).toContain(messages.dashboard.createOrg.submit);
   });
 
-  it('calls onCreated and refreshes the router on a successful creation', async () => {
+  it('calls onCreated on a successful creation and leaves navigation to the parent', async () => {
     const created = {
       id: '1',
       name: 'Acme',
@@ -94,7 +94,6 @@ describe('CreateOrgForm', () => {
       expect.objectContaining({ method: 'POST', body: { name: 'Acme', slug: 'acme' } }),
     );
     expect(onCreated).toHaveBeenCalledWith(created);
-    expect(refreshMock).toHaveBeenCalled();
   });
 
   it('shows a duplicate-slug field error on a CONFLICT response, not a generic failure', async () => {
@@ -137,5 +136,94 @@ describe('CreateOrgForm', () => {
     });
 
     expect(container.textContent).toContain(messages.dashboard.createOrg.error);
+  });
+
+  it('disables every field while the request is in flight and refocuses the slug on a conflict', async () => {
+    let reject: (reason: unknown) => void = () => undefined;
+    mockApiFetch.mockReturnValue(
+      new Promise((_resolve, rejectPromise) => {
+        reject = rejectPromise;
+      }),
+    );
+    renderForm();
+
+    const nameInput = container.querySelector('#org-name') as HTMLInputElement;
+    const slugInput = container.querySelector('#org-slug') as HTMLInputElement;
+    const form = container.querySelector('form') as HTMLFormElement;
+
+    await act(async () => {
+      setInputValue(nameInput, 'Acme');
+      setInputValue(slugInput, 'acme');
+      form.requestSubmit();
+      await Promise.resolve();
+    });
+
+    expect(form.querySelector('fieldset')?.disabled).toBe(true);
+    expect(nameInput.matches(':disabled')).toBe(true);
+    expect(slugInput.matches(':disabled')).toBe(true);
+
+    await act(async () => {
+      reject(new ApiError(409, { error: 'CONFLICT' }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(form.querySelector('fieldset')?.disabled).toBe(false);
+    // react-hook-form's `setFocus` focuses on a timeout.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(document.activeElement).toBe(slugInput);
+  });
+
+  it('clears the slug-taken error as soon as the slug is edited', async () => {
+    mockApiFetch.mockRejectedValue(new ApiError(409, { error: 'CONFLICT' }));
+    renderForm();
+
+    const nameInput = container.querySelector('#org-name') as HTMLInputElement;
+    const slugInput = container.querySelector('#org-slug') as HTMLInputElement;
+    const form = container.querySelector('form') as HTMLFormElement;
+
+    await act(async () => {
+      setInputValue(nameInput, 'Acme');
+      setInputValue(slugInput, 'taken-slug');
+      form.requestSubmit();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain(messages.dashboard.createOrg.slugReserved);
+
+    await act(async () => {
+      setInputValue(slugInput, 'taken-slug-2');
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).not.toContain(messages.dashboard.createOrg.slugReserved);
+    expect(slugInput.getAttribute('aria-invalid')).toBe('false');
+  });
+
+  it('clears the generic error as soon as a field is edited', async () => {
+    mockApiFetch.mockRejectedValue(new ApiError(500, { error: 'INTERNAL_ERROR' }));
+    renderForm();
+
+    const nameInput = container.querySelector('#org-name') as HTMLInputElement;
+    const slugInput = container.querySelector('#org-slug') as HTMLInputElement;
+    const form = container.querySelector('form') as HTMLFormElement;
+
+    await act(async () => {
+      setInputValue(nameInput, 'Acme');
+      setInputValue(slugInput, 'acme');
+      form.requestSubmit();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain(messages.dashboard.createOrg.error);
+
+    await act(async () => {
+      setInputValue(slugInput, 'acme-2');
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).not.toContain(messages.dashboard.createOrg.error);
   });
 });
