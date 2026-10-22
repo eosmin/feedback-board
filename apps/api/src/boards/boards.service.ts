@@ -5,12 +5,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AiService, Prisma } from '@feedback-board/core';
+import { AiService } from '@feedback-board/core';
 import type { AiService as Ai, DigestPostInput } from '@feedback-board/core';
 import { ERROR_CODES } from '@feedback-board/shared';
 import type { AiDigestQuota, Board, BoardDetail, BoardDigest } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import { isUniqueConstraintViolation } from '../database/unique-violation';
 import { buildRateLimitKey } from '../orgs/guards/org-rate-limit.guard';
 import { RateLimitStore } from '../queue/rate-limit.store';
 import type { CreateBoardDto } from './dto/create-board.dto';
@@ -31,24 +32,10 @@ export const AI_DIGEST_RATE_LIMIT = { limit: 5, ttlMs: 3_600_000, route: 'ai-dig
 const AI_DIGEST_RATE_LIMIT_ROUTE = AI_DIGEST_RATE_LIMIT.route;
 
 /**
- * Prisma's error code for a violated `@@unique` (here, `@@unique([orgId, slug])` on `Board`,
- * TDD §10) — checked by code rather than by message text, which is not part of Prisma's stable
- * API surface.
- */
-const PRISMA_UNIQUE_CONSTRAINT_CODE = 'P2002';
-
-/**
  * The digest only ever summarizes feedback still in play (TDD §3.8) — `DONE`/`CLOSED` posts are
  * resolved and would only dilute the prompt with items the team has already acted on.
  */
 const DIGEST_STATUSES = ['OPEN', 'PLANNED', 'IN_PROGRESS'] as const;
-
-function isUniqueConstraintViolation(error: unknown): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === PRISMA_UNIQUE_CONSTRAINT_CODE
-  );
-}
 
 /**
  * All data access goes through `TenantPrismaService` (TDD §3.2, §3.3) — `runAs`/`run` only set
