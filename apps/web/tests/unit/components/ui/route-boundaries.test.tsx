@@ -7,7 +7,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
-import { NotFoundState, PageSkeleton, RouteError, StandaloneScreen } from '../../../../components/ui';
+import {
+  NotFoundState,
+  PageSkeleton,
+  RouteError,
+  StandaloneScreen,
+} from '../../../../components/ui';
 import messages from '../../../../messages/en.json';
 
 let container: HTMLDivElement;

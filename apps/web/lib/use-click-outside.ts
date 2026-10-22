@@ -10,7 +10,10 @@ import { useEffect, useRef } from 'react';
  * re-attach the global `pointerdown` listener on every render of the caller's parent, not just
  * when `ref` changes.
  */
-export function useClickOutside(ref: RefObject<HTMLElement | null>, onOutsideClick: () => void): void {
+export function useClickOutside(
+  ref: RefObject<HTMLElement | null>,
+  onOutsideClick: () => void,
+): void {
   const callbackRef = useRef(onOutsideClick);
 
   useEffect(() => {

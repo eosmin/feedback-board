@@ -123,7 +123,11 @@ describe('AiDigestPanel', () => {
 
   it('shows the rate-limit copy for a 429 RATE_LIMITED response, not the generic error', async () => {
     mockApiFetchWithHeaders.mockRejectedValue(
-      new ApiError(429, { error: 'RATE_LIMITED' }, new Headers({ 'X-RateLimit-Remaining': '0', 'X-RateLimit-Limit': '5' })),
+      new ApiError(
+        429,
+        { error: 'RATE_LIMITED' },
+        new Headers({ 'X-RateLimit-Remaining': '0', 'X-RateLimit-Limit': '5' }),
+      ),
     );
 
     act(() => {

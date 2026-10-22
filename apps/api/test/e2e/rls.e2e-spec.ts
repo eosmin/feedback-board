@@ -225,7 +225,11 @@ describe('row-level security (e2e)', () => {
       ORDER BY tablename
     `;
 
-    expect(rows.map((row) => row.tablename)).toEqual(['_prisma_migrations', 'stripe_events', 'users']);
+    expect(rows.map((row) => row.tablename)).toEqual([
+      '_prisma_migrations',
+      'stripe_events',
+      'users',
+    ]);
     for (const row of rows) {
       expect([...row.roles].sort()).toEqual(['anon', 'authenticated']);
       expect(row.cmd).toBe('ALL');

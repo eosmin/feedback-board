@@ -39,7 +39,11 @@ function render(webhooksAvailable: boolean): void {
   act(() => {
     root.render(
       <NextIntlClientProvider locale="en" messages={messages}>
-        <WebhooksManager orgSlug="acme" initialWebhooks={[]} webhooksAvailable={webhooksAvailable} />
+        <WebhooksManager
+          orgSlug="acme"
+          initialWebhooks={[]}
+          webhooksAvailable={webhooksAvailable}
+        />
       </NextIntlClientProvider>,
     );
   });

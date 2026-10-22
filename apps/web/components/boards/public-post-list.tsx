@@ -31,7 +31,9 @@ export function PublicPostList({ posts }: PublicPostListProps): ReactElement {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <PostStatusBadge status={post.status} />
             <PostClassificationBadge category={post.aiCategory} priority={post.aiPriority} />
-            <span className="text-xs text-text-muted">{t('voteCount', { count: post.voteCount })}</span>
+            <span className="text-xs text-text-muted">
+              {t('voteCount', { count: post.voteCount })}
+            </span>
           </div>
         </Card>
       ))}

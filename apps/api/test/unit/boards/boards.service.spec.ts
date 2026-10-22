@@ -59,7 +59,11 @@ describe('BoardsService', () => {
       isPublic: true,
       createdAt: CREATED_AT,
     });
-    const service = new BoardsService(buildTenantPrisma({ create }), buildAiService(jest.fn()), buildRateLimitStore().store);
+    const service = new BoardsService(
+      buildTenantPrisma({ create }),
+      buildAiService(jest.fn()),
+      buildRateLimitStore().store,
+    );
     const dto: CreateBoardDto = { name: 'Roadmap', slug: 'roadmap' };
 
     const result = await service.create(ORG_ID, dto);
@@ -88,7 +92,11 @@ describe('BoardsService', () => {
       isPublic: true,
       createdAt: CREATED_AT,
     });
-    const service = new BoardsService(buildTenantPrisma({ create }), buildAiService(jest.fn()), buildRateLimitStore().store);
+    const service = new BoardsService(
+      buildTenantPrisma({ create }),
+      buildAiService(jest.fn()),
+      buildRateLimitStore().store,
+    );
 
     await service.create(ORG_ID, { name: 'Roadmap', slug: 'roadmap' });
 
@@ -104,7 +112,11 @@ describe('BoardsService', () => {
         clientVersion: '7.0.0',
       }),
     );
-    const service = new BoardsService(buildTenantPrisma({ create }), buildAiService(jest.fn()), buildRateLimitStore().store);
+    const service = new BoardsService(
+      buildTenantPrisma({ create }),
+      buildAiService(jest.fn()),
+      buildRateLimitStore().store,
+    );
 
     await expect(
       service.create(ORG_ID, { name: 'Roadmap', slug: 'roadmap' }),
@@ -113,7 +125,11 @@ describe('BoardsService', () => {
 
   it('rethrows an unrelated database error unchanged', async () => {
     const create = jest.fn().mockRejectedValue(new Error('connection reset'));
-    const service = new BoardsService(buildTenantPrisma({ create }), buildAiService(jest.fn()), buildRateLimitStore().store);
+    const service = new BoardsService(
+      buildTenantPrisma({ create }),
+      buildAiService(jest.fn()),
+      buildRateLimitStore().store,
+    );
 
     await expect(service.create(ORG_ID, { name: 'Roadmap', slug: 'roadmap' })).rejects.toThrow(
       'connection reset',
@@ -131,7 +147,11 @@ describe('BoardsService', () => {
         createdAt: CREATED_AT,
       },
     ]);
-    const service = new BoardsService(buildTenantPrisma({ findMany }), buildAiService(jest.fn()), buildRateLimitStore().store);
+    const service = new BoardsService(
+      buildTenantPrisma({ findMany }),
+      buildAiService(jest.fn()),
+      buildRateLimitStore().store,
+    );
 
     const result = await service.list();
 
@@ -181,7 +201,11 @@ describe('BoardsService', () => {
 
   it('throws 404 NOT_FOUND when the board slug does not resolve within the tenant', async () => {
     const findFirst = jest.fn().mockResolvedValue(null);
-    const service = new BoardsService(buildTenantPrisma({ findFirst }), buildAiService(jest.fn()), buildRateLimitStore().store);
+    const service = new BoardsService(
+      buildTenantPrisma({ findFirst }),
+      buildAiService(jest.fn()),
+      buildRateLimitStore().store,
+    );
 
     await expect(service.getDetail('missing')).rejects.toBeInstanceOf(NotFoundException);
   });
@@ -235,7 +259,9 @@ describe('BoardsService', () => {
         buildRateLimitStore().store,
       );
 
-      await expect(service.generateDigest(ORG_ID, 'missing')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.generateDigest(ORG_ID, 'missing')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('throws DIGEST_NO_POSTS instead of calling the model, and refunds the rate-limit hit', async () => {
@@ -249,7 +275,9 @@ describe('BoardsService', () => {
         rateLimitStore,
       );
 
-      await expect(service.generateDigest(ORG_ID, 'roadmap')).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.generateDigest(ORG_ID, 'roadmap')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
       expect(generateDigest).not.toHaveBeenCalled();
       // OrgRateLimitGuard already counted this attempt before the service could see there were no
       // posts — a no-op must not cost part of the org's hourly AI-digest budget (TDD §3.8).
@@ -259,7 +287,13 @@ describe('BoardsService', () => {
     it('propagates a model failure instead of swallowing it — unlike classification, the digest is user-visible', async () => {
       const findFirst = jest.fn().mockResolvedValue({ id: BOARD_ID });
       const postFindMany = jest.fn().mockResolvedValue([
-        { title: 'Dark mode', body: 'Please add it', voteCount: 5, aiCategory: null, aiPriority: null },
+        {
+          title: 'Dark mode',
+          body: 'Please add it',
+          voteCount: 5,
+          aiCategory: null,
+          aiPriority: null,
+        },
       ]);
       const generateDigest = jest.fn().mockRejectedValue(new Error('model unavailable'));
       const service = new BoardsService(
@@ -275,11 +309,7 @@ describe('BoardsService', () => {
   describe('getDigestQuota', () => {
     it('reads the current count via peek (never hit) and reports remaining against the limit', async () => {
       const { store, peek } = buildRateLimitStore(2);
-      const service = new BoardsService(
-        buildTenantPrisma({}),
-        buildAiService(jest.fn()),
-        store,
-      );
+      const service = new BoardsService(buildTenantPrisma({}), buildAiService(jest.fn()), store);
 
       const result = await service.getDigestQuota(ORG_ID);
 
@@ -289,11 +319,7 @@ describe('BoardsService', () => {
 
     it('clamps remaining at 0 rather than going negative when count exceeds the limit', async () => {
       const { store } = buildRateLimitStore(9);
-      const service = new BoardsService(
-        buildTenantPrisma({}),
-        buildAiService(jest.fn()),
-        store,
-      );
+      const service = new BoardsService(buildTenantPrisma({}), buildAiService(jest.fn()), store);
 
       const result = await service.getDigestQuota(ORG_ID);
 

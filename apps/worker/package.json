@@ -11,6 +11,8 @@
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
+    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{ts,tsx,js,mjs,cjs,css}\"",
+    "format:check": "prettier --check --ignore-path ../../.prettierignore \"**/*.{ts,tsx,js,mjs,cjs,css}\"",
     "test": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest",
     "test:cov": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest --coverage"
   },

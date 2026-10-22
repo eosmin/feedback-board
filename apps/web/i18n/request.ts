@@ -1,7 +1,12 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies, headers } from 'next/headers';
 
-import { AVAILABLE_LOCALES, DEFAULT_LOCALE, LOCALE_COOKIE_NAME, isSupportedLocale } from '../lib/locales';
+import {
+  AVAILABLE_LOCALES,
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE_NAME,
+  isSupportedLocale,
+} from '../lib/locales';
 
 /**
  * No `[locale]` segment and no next-intl middleware (TDD §2.6.13): this project's root dynamic
@@ -40,7 +45,10 @@ async function resolveFromBrowser(): Promise<string | undefined> {
     .split(',')
     .map((entry) => {
       const [tag, qValue] = entry.trim().split(';q=');
-      return { tag: tag?.split('-')[0]?.toLowerCase(), quality: qValue === undefined ? 1 : Number(qValue) };
+      return {
+        tag: tag?.split('-')[0]?.toLowerCase(),
+        quality: qValue === undefined ? 1 : Number(qValue),
+      };
     })
     .filter((entry): entry is { tag: string; quality: number } => entry.tag !== undefined)
     .sort((a, b) => b.quality - a.quality);

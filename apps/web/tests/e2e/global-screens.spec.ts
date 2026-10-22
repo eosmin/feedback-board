@@ -16,7 +16,9 @@ test('a failed magic-link callback returns to login with an explanation', async 
   await page.goto('/auth/callback');
 
   await expect(page).toHaveURL(/\/login\?error=callback_failed/);
-  await expect(page.getByRole('alert').filter({ hasText: "Sign-in link didn't work" })).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: "Sign-in link didn't work" }),
+  ).toBeVisible();
   await expect(page.getByLabel('Email address')).toBeVisible();
 });
 

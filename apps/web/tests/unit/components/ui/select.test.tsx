@@ -30,7 +30,9 @@ const OPTIONS = [
 describe('Select', () => {
   it('exposes an accessible combobox showing the selected label', () => {
     act(() => {
-      root.render(<Select value="DONE" onValueChange={vi.fn()} options={OPTIONS} aria-label="Status" />);
+      root.render(
+        <Select value="DONE" onValueChange={vi.fn()} options={OPTIONS} aria-label="Status" />,
+      );
     });
     const trigger = container.querySelector('[role="combobox"]') as HTMLElement;
     expect(trigger.getAttribute('aria-label')).toBe('Status');
@@ -39,7 +41,15 @@ describe('Select', () => {
 
   it('does not open while disabled', () => {
     act(() => {
-      root.render(<Select value="OPEN" onValueChange={vi.fn()} options={OPTIONS} aria-label="Status" disabled />);
+      root.render(
+        <Select
+          value="OPEN"
+          onValueChange={vi.fn()}
+          options={OPTIONS}
+          aria-label="Status"
+          disabled
+        />,
+      );
     });
     const trigger = container.querySelector('[role="combobox"]') as HTMLButtonElement;
     expect(trigger.disabled).toBe(true);

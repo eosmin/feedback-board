@@ -17,7 +17,10 @@ export function WebhookUpgradePrompt({ orgSlug }: WebhookUpgradePromptProps): Re
 
   return (
     <Alert title={t('title')} description={t('description')}>
-      <Link href={`/dashboard/${orgSlug}/billing`} className="font-medium text-accent-text underline">
+      <Link
+        href={`/dashboard/${orgSlug}/billing`}
+        className="font-medium text-accent-text underline"
+      >
         {t('cta')}
       </Link>
     </Alert>

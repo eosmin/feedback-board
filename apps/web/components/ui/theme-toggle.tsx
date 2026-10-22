@@ -17,7 +17,11 @@ export function ThemeToggle(): ReactElement {
   const t = useTranslations('common.theme');
   // `null` on the server and during hydration: the real theme is only known in the browser, and
   // guessing one would show the wrong icon and label to a dark-mode user until hydration ends.
-  const theme = useSyncExternalStore<ThemeChoice | null>(subscribeTheme, readCurrentTheme, () => null);
+  const theme = useSyncExternalStore<ThemeChoice | null>(
+    subscribeTheme,
+    readCurrentTheme,
+    () => null,
+  );
   const next = theme === 'dark' ? 'light' : 'dark';
   const Icon = theme === 'dark' ? Sun : Moon;
   const label = theme === null ? t('label') : t(next === 'dark' ? 'switchToDark' : 'switchToLight');
@@ -31,7 +35,11 @@ export function ThemeToggle(): ReactElement {
       onClick={() => applyTheme(next)}
       className="flex h-11 w-11 items-center justify-center rounded-control text-text-muted md:h-auto md:w-auto md:p-2 transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
     >
-      {theme === null ? <span className="block h-4 w-4" /> : <Icon className="h-4 w-4" aria-hidden="true" />}
+      {theme === null ? (
+        <span className="block h-4 w-4" />
+      ) : (
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      )}
     </button>
   );
 }

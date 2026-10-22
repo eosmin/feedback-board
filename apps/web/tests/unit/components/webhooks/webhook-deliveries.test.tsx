@@ -78,7 +78,10 @@ describe('WebhookDeliveries', () => {
       await Promise.resolve();
     });
 
-    expect(mockApiFetch).toHaveBeenCalledWith('/orgs/acme/webhooks/1/deliveries', expect.anything());
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      '/orgs/acme/webhooks/1/deliveries',
+      expect.anything(),
+    );
     expect(container.textContent).toContain('200');
     expect(container.textContent).toContain(t.noResponse);
   });

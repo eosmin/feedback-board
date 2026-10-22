@@ -82,7 +82,9 @@ describe.each(PRIMITIVES)('%s', (_name, Primitive) => {
     const last = Array.from(dialog.querySelectorAll('button')).pop() as HTMLButtonElement;
     last.focus();
     act(() => {
-      last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+      last.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
+      );
     });
     expect(dialog.contains(document.activeElement)).toBe(true);
     expect(document.activeElement).not.toBe(document.body);

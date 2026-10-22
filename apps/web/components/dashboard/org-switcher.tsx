@@ -28,7 +28,11 @@ interface OrgSwitcherProps {
  * than a second copy; on success it navigates straight to the new org instead of appending to a
  * local list, since this component (unlike `OrgPicker`) is not the org list's owner.
  */
-export function OrgSwitcher({ currentOrgSlug, currentOrgName, orgs }: OrgSwitcherProps): ReactElement {
+export function OrgSwitcher({
+  currentOrgSlug,
+  currentOrgName,
+  orgs,
+}: OrgSwitcherProps): ReactElement {
   const t = useTranslations('dashboard.shell.orgSwitcher');
   const tCommon = useTranslations('common');
   const tCreate = useTranslations('dashboard.createOrg');

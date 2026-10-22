@@ -17,7 +17,9 @@ function buildContext(request: Partial<AuthenticatedRequest>): ExecutionContext 
   } as unknown as ExecutionContext;
 }
 
-function buildReflector(options: { limit: number; ttlMs: number; route?: string } | undefined): Reflector {
+function buildReflector(
+  options: { limit: number; ttlMs: number; route?: string } | undefined,
+): Reflector {
   return { getAllAndOverride: () => options } as unknown as Reflector;
 }
 
@@ -63,9 +65,9 @@ describe('OrgRateLimitHeaderInterceptor', () => {
     );
     const next: CallHandler = { handle: () => throwError(() => new Error('DIGEST_NO_POSTS')) };
 
-    await expect(interceptor.intercept(buildContext({ orgId: ORG_ID }), next).toPromise()).rejects.toThrow(
-      'DIGEST_NO_POSTS',
-    );
+    await expect(
+      interceptor.intercept(buildContext({ orgId: ORG_ID }), next).toPromise(),
+    ).rejects.toThrow('DIGEST_NO_POSTS');
 
     expect(setHeader).toHaveBeenCalledWith(FAKE_RESPONSE, 'X-RateLimit-Remaining', '1');
   });
@@ -73,7 +75,11 @@ describe('OrgRateLimitHeaderInterceptor', () => {
   it('passes through untouched when the route carries no @RateLimit metadata', async () => {
     const { store } = buildStore(0);
     const { adapterHost, setHeader } = buildAdapterHost();
-    const interceptor = new OrgRateLimitHeaderInterceptor(buildReflector(undefined), store, adapterHost);
+    const interceptor = new OrgRateLimitHeaderInterceptor(
+      buildReflector(undefined),
+      store,
+      adapterHost,
+    );
     const next: CallHandler = { handle: () => of('ok') };
 
     await interceptor.intercept(buildContext({}), next).toPromise();

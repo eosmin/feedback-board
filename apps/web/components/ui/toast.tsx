@@ -69,7 +69,9 @@ export function ToastProvider({ children }: { children: ReactNode }): ReactEleme
             ) : (
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             )}
-            <RadixToast.Description className="flex-1 text-body">{item.message}</RadixToast.Description>
+            <RadixToast.Description className="flex-1 text-body">
+              {item.message}
+            </RadixToast.Description>
             <RadixToast.Close
               aria-label={t('close')}
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-control hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"

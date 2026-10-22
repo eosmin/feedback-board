@@ -76,7 +76,8 @@ export function OverlayPanel({
               opener instanceof HTMLElement && opener !== document.body ? opener : null;
             // The close button precedes the content in the DOM, so Radix's default would focus it
             // and a stray Enter would dismiss a form. Start on the first field when there is one.
-            const firstField = contentRef.current?.querySelector<HTMLElement>('input, textarea, select');
+            const firstField =
+              contentRef.current?.querySelector<HTMLElement>('input, textarea, select');
             if (firstField) {
               event.preventDefault();
               firstField.focus();
