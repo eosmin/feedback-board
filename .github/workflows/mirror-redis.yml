@@ -1,0 +1,68 @@
+name: mirror-redis
+
+# The api, worker and web workflows start Redis as a service container. They used to pull it from
+# public.ecr.aws, which rate-limits anonymous pulls and shares the runners' IPs with everyone, so
+# jobs died in "Initialize containers" with `Data limit exceeded` before running a single step.
+#
+# This workflow copies the image to GitHub's own registry once a month, and the three workflows
+# pull it from there. The layers stream through the runner without being unpacked or stored (about
+# half a minute for the whole multi-arch image) and the multi-arch index is kept. Checked locally
+# against a throwaway registry: every platform copies, the result is an index carrying the source
+# annotation, and it pulls and runs. Its digest differs from upstream's because of that annotation.
+#
+# First run (manual, once): Actions > mirror-redis > Run workflow. Then make the package public so
+# the CI jobs can pull it without credentials: github.com/users/<owner>/packages/container/redis/settings
+# > Danger Zone > Change visibility > Public.
+#
+# The mirror only moves when this workflow runs, so a patched `8-alpine` upstream reaches CI at the
+# next scheduled copy (or a manual run), not immediately.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '17 5 1 * *'
+
+# No checkout happens here, so the only permission needed is to publish the package.
+permissions:
+  packages: write
+
+concurrency:
+  group: mirror-redis
+  cancel-in-progress: false
+
+env:
+  SOURCE: public.ecr.aws/docker/library/redis:8-alpine
+  TARGET: ghcr.io/eosmin/redis:8-alpine
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Log in to ghcr.io
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The source is the registry that rate-limits, so a copy can hit the same wall: retry with a
+      # growing pause instead of failing the whole month on one bad minute. Worst case is 5 minutes
+      # of pauses (30 + 60 + 90 + 120 s) plus five attempts, about 8 minutes in all: inside the 15
+      # minute timeout.
+      - name: Copy the image
+        run: |
+          attempts=5
+          for attempt in $(seq 1 "$attempts"); do
+            if docker buildx imagetools create \
+              --annotation "index:org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+              --tag "$TARGET" "$SOURCE"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt "$attempts" ]; then
+              echo "Attempt ${attempt} failed; waiting $((attempt * 30))s"
+              sleep $((attempt * 30))
+            fi
+          done
+          echo "::error::Could not copy $SOURCE to $TARGET after ${attempts} attempts"
+          exit 1
+
+      - name: Show what is now in the mirror
+        run: docker buildx imagetools inspect "$TARGET"
