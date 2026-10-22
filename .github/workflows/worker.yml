@@ -54,6 +54,7 @@ jobs:
       - name: Lint
         run: |
           pnpm --filter @feedback-board/worker lint
+          pnpm --filter @feedback-board/worker format:check
           pnpm check:deprecations
 
       - name: Typecheck

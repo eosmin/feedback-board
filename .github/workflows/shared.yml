@@ -43,6 +43,7 @@ jobs:
       - name: Lint
         run: |
           pnpm --filter @feedback-board/shared --filter @feedback-board/core lint
+          pnpm --filter @feedback-board/shared --filter @feedback-board/core format:check
           pnpm check:deprecations
 
       - name: Typecheck

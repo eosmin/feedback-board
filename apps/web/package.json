@@ -11,6 +11,8 @@
     "start": "next start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
+    "format": "prettier --write --ignore-path ../../.prettierignore \"**/*.{ts,tsx,js,mjs,cjs,css}\"",
+    "format:check": "prettier --check --ignore-path ../../.prettierignore \"**/*.{ts,tsx,js,mjs,cjs,css}\"",
     "test": "VITE_CONFIG_NATIVE_IGNORE_WARNING=true vitest run",
     "test:cov": "VITE_CONFIG_NATIVE_IGNORE_WARNING=true vitest run --coverage",
     "test:e2e": "playwright test"
