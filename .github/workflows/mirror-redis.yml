@@ -1,0 +1,61 @@
+name: mirror-redis
+
+# The api, worker and web workflows start Redis as a service container. They used to pull it from
+# public.ecr.aws, which rate-limits anonymous pulls and shares the runners' IPs with everyone, so
+# jobs died in "Initialize containers" with `Data limit exceeded` before running a single step.
+#
+# This workflow copies the image to GitHub's own registry once a month, and the three workflows
+# pull it from there. A registry-to-registry copy: no layer is downloaded to the runner, and the
+# multi-arch manifest is kept as it is.
+#
+# First run (manual, once): Actions > mirror-redis > Run workflow. Then make the package public so
+# the CI jobs can pull it without credentials: github.com/users/<owner>/packages/container/redis/settings
+# > Danger Zone > Change visibility > Public.
+#
+# The mirror only moves when this workflow runs, so a patched `8-alpine` upstream reaches CI at the
+# next scheduled copy (or a manual run), not immediately.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '17 5 1 * *'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: mirror-redis
+  cancel-in-progress: false
+
+env:
+  SOURCE: public.ecr.aws/docker/library/redis:8-alpine
+  TARGET: ghcr.io/eosmin/redis:8-alpine
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Log in to ghcr.io
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The source is the registry that rate-limits, so a copy can hit the same wall: retry with a
+      # growing pause instead of failing the whole month on one bad minute.
+      - name: Copy the image
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if docker buildx imagetools create \
+              --annotation "index:org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+              --tag "$TARGET" "$SOURCE"; then
+              exit 0
+            fi
+            echo "Attempt ${attempt} failed; waiting $((attempt * 30))s"
+            sleep $((attempt * 30))
+          done
+          echo "::error::Could not copy $SOURCE to $TARGET"
+          exit 1
+
+      - name: Show what is now in the mirror
+        run: docker buildx imagetools inspect "$TARGET"
