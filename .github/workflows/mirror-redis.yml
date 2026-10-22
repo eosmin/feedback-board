@@ -10,6 +10,11 @@ name: mirror-redis
 # against a throwaway registry: every platform copies, the result is an index carrying the source
 # annotation, and it pulls and runs. Its digest differs from upstream's because of that annotation.
 #
+# The first real run failed with `429 Too Many Requests` on the very first request to
+# public.ecr.aws: the copy depended on the registry it exists to avoid. So the source is a list,
+# tried in order, and the first registry that answers wins. All three serve the same official
+# image: the index digest is identical on each, and it is printed in the log of every run.
+#
 # First run (manual, once): Actions > mirror-redis > Run workflow. Then make the package public so
 # the CI jobs can pull it without credentials: github.com/users/<owner>/packages/container/redis/settings
 # > Danger Zone > Change visibility > Public.
@@ -30,7 +35,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SOURCE: public.ecr.aws/docker/library/redis:8-alpine
+  # Least rate-limited first: Google's cache of Docker Hub's official images, then Docker Hub, then
+  # the ECR copy that was failing.
+  SOURCES: >-
+    mirror.gcr.io/library/redis:8-alpine
+    docker.io/library/redis:8-alpine
+    public.ecr.aws/docker/library/redis:8-alpine
   TARGET: ghcr.io/eosmin/redis:8-alpine
 
 jobs:
@@ -43,25 +53,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # The source is the registry that rate-limits, so a copy can hit the same wall: retry with a
-      # growing pause instead of failing the whole month on one bad minute. Worst case is 5 minutes
-      # of pauses (30 + 60 + 90 + 120 s) plus five attempts, about 8 minutes in all: inside the 15
-      # minute timeout.
+      # Two tries per source with a short pause, then the next source. A rate limit lasts hours, so
+      # waiting on one registry is worse than moving to another. Worst case: six attempts and
+      # three pauses of 30 s, well inside the 15 minute timeout.
       - name: Copy the image
         run: |
-          attempts=5
-          for attempt in $(seq 1 "$attempts"); do
-            if docker buildx imagetools create \
-              --annotation "index:org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
-              --tag "$TARGET" "$SOURCE"; then
-              exit 0
-            fi
-            if [ "$attempt" -lt "$attempts" ]; then
-              echo "Attempt ${attempt} failed; waiting $((attempt * 30))s"
-              sleep $((attempt * 30))
-            fi
+          for source in $SOURCES; do
+            for attempt in 1 2; do
+              echo "::group::${source} (attempt ${attempt})"
+              if docker buildx imagetools create \
+                --annotation "index:org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+                --tag "$TARGET" "$source"; then
+                echo "::endgroup::"
+                echo "Copied from ${source}"
+                echo "Source index digest: $(docker buildx imagetools inspect "$source" | awk '/^Digest:/{print $2; exit}')"
+                exit 0
+              fi
+              echo "::endgroup::"
+              if [ "$attempt" -lt 2 ]; then sleep 30; fi
+            done
+            echo "::warning::Could not copy from ${source}; trying the next source"
           done
-          echo "::error::Could not copy $SOURCE to $TARGET after ${attempts} attempts"
+          echo "::error::Could not copy to $TARGET from any source: $SOURCES"
           exit 1
 
       - name: Show what is now in the mirror
