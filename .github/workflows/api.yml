@@ -39,7 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       redis:
-        image: public.ecr.aws/docker/library/redis:8-alpine
+        # Copied by mirror-redis.yml: public.ecr.aws rate-limits pulls from shared runner IPs.
+        image: ghcr.io/eosmin/redis:8-alpine
         ports: ['6379:6379']
         options: >-
           --health-cmd "redis-cli ping"

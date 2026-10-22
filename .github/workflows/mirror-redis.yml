@@ -13,7 +13,8 @@ name: mirror-redis
 # The first real run failed with `429 Too Many Requests` on the very first request to
 # public.ecr.aws: the copy depended on the registry it exists to avoid. So the source is a list,
 # tried in order, and the first registry that answers wins. All three serve the same official
-# image: the index digest is identical on each, and it is printed in the log of every run.
+# image: the index digest is identical on each, and it is printed in the log of every run. The
+# second run copied from Docker Hub after mirror.gcr.io lacked a layer.
 #
 # First run (manual, once): Actions > mirror-redis > Run workflow. Then make the package public so
 # the CI jobs can pull it without credentials: github.com/users/<owner>/packages/container/redis/settings
@@ -35,11 +36,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Least rate-limited first: Google's cache of Docker Hub's official images, then Docker Hub, then
-  # the ECR copy that was failing.
+  # Docker Hub first: it is the one that copied from a GitHub runner. mirror.gcr.io only caches what
+  # someone already pulled, so it can lack layers (`content ... not found`) and cost a minute of
+  # retries. public.ecr.aws goes last: it is the one that answered 429.
   SOURCES: >-
-    mirror.gcr.io/library/redis:8-alpine
     docker.io/library/redis:8-alpine
+    mirror.gcr.io/library/redis:8-alpine
     public.ecr.aws/docker/library/redis:8-alpine
   TARGET: ghcr.io/eosmin/redis:8-alpine
 
