@@ -1,9 +1,9 @@
 import { FileQuestion } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import type { ReactElement } from 'react';
 
 import { buttonClassName } from './button';
+import { Link } from './link';
 
 /** The body of every `not-found.tsx`; the way back is `/`, which hands off to the org picker or to sign-in. */
 export function NotFoundState(): ReactElement {

@@ -6,8 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const refreshMock = vi.fn();
+const pushMock = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh: refreshMock }),
+  useRouter: () => ({ refresh: refreshMock, push: pushMock }),
 }));
 
 vi.mock('../../../../lib/api-client', async () => {
@@ -39,10 +40,11 @@ afterEach(() => {
   container.remove();
   vi.restoreAllMocks();
   refreshMock.mockClear();
+  pushMock.mockClear();
 });
 
 describe('OrgBoardsOverview', () => {
-  it('appends a newly created board to the list without waiting for a reload', async () => {
+  it('opens a newly created board instead of staying on the list', async () => {
     const created = {
       id: '2',
       orgId: 'org-1',
@@ -99,7 +101,6 @@ describe('OrgBoardsOverview', () => {
       await Promise.resolve();
     });
 
-    expect(container.textContent).toContain('Feature Requests');
-    expect(container.textContent).toContain('Bugs');
+    expect(pushMock).toHaveBeenCalledWith('/dashboard/acme/boards/bugs');
   });
 });

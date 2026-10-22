@@ -6,8 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const refreshMock = vi.fn();
+const pushMock = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh: refreshMock }),
+  useRouter: () => ({ refresh: refreshMock, push: pushMock }),
 }));
 
 vi.mock('../../../../lib/api-client', async () => {
@@ -39,10 +40,11 @@ afterEach(() => {
   container.remove();
   vi.restoreAllMocks();
   refreshMock.mockClear();
+  pushMock.mockClear();
 });
 
 describe('OrgPicker', () => {
-  it('appends a newly created org to the list without waiting for a reload (Done when, TDD §13 step 19.1)', async () => {
+  it('opens a newly created org instead of staying on the list', async () => {
     const created = {
       id: '2',
       name: 'Umbrella',
@@ -88,8 +90,7 @@ describe('OrgPicker', () => {
       await Promise.resolve();
     });
 
-    expect(container.textContent).toContain('Acme');
-    expect(container.textContent).toContain('Umbrella');
+    expect(pushMock).toHaveBeenCalledWith('/dashboard/umbrella');
   });
 
   it('keeps the single create button in the header next to the empty state when there are no orgs', () => {

@@ -63,4 +63,24 @@ describe('OrgSwitcher', () => {
     expect(document.body.querySelector('[role="dialog"]')).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
+
+  it('always offers "All organizations", even with few orgs', () => {
+    act(() => {
+      root.render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <OrgSwitcher
+            currentOrgSlug="acme"
+            currentOrgName="Acme"
+            orgs={[{ id: '1', name: 'Acme', slug: 'acme', plan: 'FREE', role: 'OWNER' }]}
+          />
+        </NextIntlClientProvider>,
+      );
+    });
+    act(() => {
+      (container.querySelector('button[aria-haspopup="menu"]') as HTMLButtonElement).click();
+    });
+
+    const link = container.querySelector('a[href="/dashboard"]');
+    expect(link?.textContent).toBe(messages.dashboard.shell.orgSwitcher.allOrgs);
+  });
 });

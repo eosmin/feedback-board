@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { OrgBoardsOverview } from '../../../../components/dashboard/org-boards-overview';
 import { Badge, PageHeader } from '../../../../components/ui';
 import { serverApiFetch } from '../../../../lib/api-client-server';
-import { getOrgDetail } from '../../../../lib/org-detail';
+import { getOrgDetail, rethrowNoAccessAsNotFound } from '../../../../lib/org-detail';
 import { requireUser } from '../../../../lib/supabase/require-user';
 
 const boardListSchema = z.array(boardSchema);
@@ -22,8 +22,9 @@ interface OrgOverviewPageProps {
  * 19.2). `requireUser()` guards the page the same way Step 19.1's `/dashboard` does — there is
  * no middleware in this project (TDD §2.6.13), so every authenticated page checks itself.
  * Membership itself is enforced by `OrgGuard` on the API side: an org the caller does not
- * belong to answers `403 FORBIDDEN` from `serverApiFetch`, which this page lets propagate to
- * Next's error boundary rather than special-casing it (TDD §11).
+ * belong to answers `403 FORBIDDEN` from `serverApiFetch`, which `rethrowNoAccessAsNotFound`
+ * turns into the not-found screen: an org one cannot open reads the same as one that does not
+ * exist (TDD §11).
  */
 export default async function OrgOverviewPage({
   params,
@@ -35,7 +36,7 @@ export default async function OrgOverviewPage({
 
   const [org, boards] = await Promise.all([
     getOrgDetail(orgSlug),
-    serverApiFetch(`/orgs/${orgSlug}/boards`, boardListSchema),
+    serverApiFetch(`/orgs/${orgSlug}/boards`, boardListSchema).catch(rethrowNoAccessAsNotFound),
   ]);
 
   return (

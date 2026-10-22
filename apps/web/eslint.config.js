@@ -22,6 +22,31 @@ module.exports = defineConfig(
     },
   },
   {
+    files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['lib/use-navigate.ts', 'components/ui/link.tsx', 'tests/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'next/navigation',
+              importNames: ['useRouter'],
+              message:
+                'Navigate through `useNavigate()` (lib/use-navigate.ts): it starts the global progress bar and exposes isPending.',
+            },
+            {
+              name: 'next/link',
+              importNames: ['default'],
+              message:
+                'Use `Link` from components/ui: next/link prefetches, which leaves a blank content area before the skeleton.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['*.config.js', '*.config.mjs', '*.config.ts'],
     languageOptions: {
       parserOptions: {

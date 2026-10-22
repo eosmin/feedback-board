@@ -2,13 +2,13 @@
 
 import { Check, Globe } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { AVAILABLE_LOCALES, setLocaleCookie } from '../../lib/locales';
 import { useClickOutside } from '../../lib/use-click-outside';
+import { useNavigate } from '../../lib/use-navigate';
 
 /**
  * Language switcher: writes the `NEXT_LOCALE` cookie that `i18n/request.ts` reads, then refreshes
@@ -18,7 +18,7 @@ import { useClickOutside } from '../../lib/use-click-outside';
 export function LocaleSwitcher(): ReactElement {
   const t = useTranslations('common.language');
   const locale = useLocale();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
@@ -34,7 +34,7 @@ export function LocaleSwitcher(): ReactElement {
   function selectLocale(code: string): void {
     setLocaleCookie(code);
     closeAndRestoreFocus();
-    router.refresh();
+    navigate.refresh();
   }
 
   // Focus moves into the menu when it opens (checked item first), so arrows and Escape act on it.
@@ -71,7 +71,7 @@ export function LocaleSwitcher(): ReactElement {
         aria-expanded={open}
         aria-label={t('label')}
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-1.5 rounded-control p-2 text-body text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-control text-body text-text-muted md:h-auto md:w-auto md:p-2 transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         <Globe className="h-4 w-4" aria-hidden="true" />
       </button>

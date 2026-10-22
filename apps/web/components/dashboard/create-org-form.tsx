@@ -8,18 +8,20 @@ import {
   type OrgSummary,
 } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 
 import { apiFetch, ApiError } from '../../lib/api-client';
+import { useRefocusAfterSubmit } from '../../lib/use-refocus-after-submit';
 import { useSlugAutofill } from '../../lib/use-slug-autofill';
-import { Button, Input } from '../ui';
+import { Button, Form, Input } from '../ui';
 
 interface CreateOrgFormProps {
-  /** Called after a successful creation, so the parent can refresh its org list. */
+  /** Called after a successful creation; the parent decides where to go next. */
   onCreated: (org: OrgSummary) => void;
+  /** The parent is navigating to the new org: keep the submit button pending until it lands. */
+  navigating?: boolean;
 }
 
 /**
@@ -28,40 +30,51 @@ interface CreateOrgFormProps {
  * CONFLICT` for a reserved or duplicate slug surfaces here as a field error on `slug`, never a
  * generic failure (TDD §7.8, §12).
  */
-export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
+export function CreateOrgForm({ onCreated, navigating = false }: CreateOrgFormProps): ReactElement {
   const t = useTranslations('dashboard.createOrg');
-  const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [slugTaken, setSlugTaken] = useState(false);
+  // The slug the server turned down: the error shows only while the field still holds it, so it
+  // goes away on the next keystroke (or an autofill from the name) instead of lingering.
+  const [takenSlug, setTakenSlug] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    setFocus,
     control,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateOrgInput>({
     resolver: zodResolver(createOrgSchema),
   });
+  const requestFocus = useRefocusAfterSubmit(setFocus, isSubmitting);
 
   const nameValue = useWatch({ control, name: 'name' });
+  const slugValue = useWatch({ control, name: 'slug' });
+  const slugTaken = takenSlug !== null && takenSlug === slugValue;
   const { onSlugChange } = useSlugAutofill(nameValue, setValue);
 
   async function onSubmit(values: CreateOrgInput): Promise<void> {
     setSubmitError(null);
-    setSlugTaken(false);
+    setTakenSlug(null);
 
+    let org: OrgSummary;
     try {
-      const org = await apiFetch('/orgs', orgSummarySchema, { method: 'POST', body: values });
-      onCreated(org);
-      router.refresh();
+      org = await apiFetch('/orgs', orgSummarySchema, { method: 'POST', body: values });
     } catch (error) {
       if (error instanceof ApiError && error.body.error === 'CONFLICT') {
-        setSlugTaken(true);
+        setTakenSlug(values.slug);
+        requestFocus('slug');
         return;
       }
       setSubmitError(t('error'));
+      requestFocus('name');
+      return;
     }
+
+    // Outside the `try`: the org exists now, so a failure in the parent's handler must not read
+    // as "could not create".
+    onCreated(org);
   }
 
   const slugDescribedBy = [
@@ -73,9 +86,10 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
     .join(' ');
 
   return (
-    <form
+    <Form
       onSubmit={(event) => void handleSubmit(onSubmit)(event)}
-      noValidate
+      pending={isSubmitting || navigating}
+      onEdit={() => setSubmitError(null)}
       className="flex flex-col gap-3"
     >
       <label htmlFor="org-name" className="text-sm font-medium text-text">
@@ -123,9 +137,9 @@ export function CreateOrgForm({ onCreated }: CreateOrgFormProps): ReactElement {
         </p>
       )}
 
-      <Button type="submit" pending={isSubmitting}>
-        {isSubmitting ? t('creating') : t('submit')}
+      <Button type="submit" pending={isSubmitting || navigating}>
+        {isSubmitting || navigating ? t('creating') : t('submit')}
       </Button>
-    </form>
+    </Form>
   );
 }

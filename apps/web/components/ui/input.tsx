@@ -4,7 +4,7 @@ import { forwardRef, useCallback, useLayoutEffect, useRef } from 'react';
 import type { InputHTMLAttributes, KeyboardEvent, Ref, TextareaHTMLAttributes } from 'react';
 
 const FIELD_CLASSNAME =
-  'w-full rounded-control border border-border-strong bg-surface-raised px-3 py-2 text-body text-text transition-colors placeholder:text-text-subtle focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus aria-invalid:border-danger aria-invalid:focus:border-danger aria-invalid:focus:ring-danger';
+  'w-full rounded-control border border-border-strong bg-surface-raised px-3 py-2 text-body text-text transition-colors placeholder:text-text-subtle focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus aria-invalid:border-danger aria-invalid:focus:border-danger aria-invalid:focus:ring-danger disabled:border-border disabled:bg-surface-sunken disabled:text-text-muted disabled:placeholder:text-transparent';
 
 /**
  * `forwardRef` is required here, not cosmetic: every caller spreads `react-hook-form`'s

@@ -1,9 +1,8 @@
 import type { Board } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import type { ReactElement } from 'react';
 
-import { Badge, Card, EmptyState } from '../ui';
+import { Badge, Card, EmptyState, Link } from '../ui';
 
 interface BoardListProps {
   orgSlug: string;

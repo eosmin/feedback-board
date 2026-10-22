@@ -19,3 +19,14 @@ test('a failed magic-link callback returns to login with an explanation', async 
   await expect(page.getByRole('alert').filter({ hasText: "Sign-in link didn't work" })).toBeVisible();
   await expect(page.getByLabel('Email address')).toBeVisible();
 });
+
+/**
+ * A crawler must get a real 404, not a streamed 200 with `noindex`: the public board route has no
+ * `loading.tsx` on purpose, because a `loading.tsx` starts streaming before the board is resolved.
+ */
+test('an unknown public board answers a real HTTP 404', async ({ page }) => {
+  const response = await page.goto('/no-such-org/no-such-board');
+
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+});

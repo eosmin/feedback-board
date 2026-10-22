@@ -66,7 +66,7 @@ describe('CreateBoardForm', () => {
     expect(container.textContent).toContain(t.submit);
   });
 
-  it('calls onCreated and refreshes the router on a successful creation', async () => {
+  it('calls onCreated on a successful creation and leaves navigation to the parent', async () => {
     const created = {
       id: '1',
       orgId: 'org-1',
@@ -96,7 +96,6 @@ describe('CreateBoardForm', () => {
       expect.objectContaining({ method: 'POST' }),
     );
     expect(onCreated).toHaveBeenCalledWith(created);
-    expect(refreshMock).toHaveBeenCalled();
   });
 
   it('renders the upgrade prompt instead of a generic error on a PLAN_LIMIT response (Done when, TDD §13 step 19.2)', async () => {

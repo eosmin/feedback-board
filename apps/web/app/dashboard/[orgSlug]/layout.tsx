@@ -1,12 +1,15 @@
 import { orgSummarySchema } from '@feedback-board/shared';
+import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
 import { z } from 'zod';
 
+import { BoardLabelProvider } from '../../../components/dashboard/board-breadcrumb-label';
 import { DashboardHeader } from '../../../components/dashboard/dashboard-header';
-import { DashboardSidebar } from '../../../components/dashboard/dashboard-sidebar';
+import { DashboardSidebar, OrgNavContent } from '../../../components/dashboard/dashboard-sidebar';
 import { DashboardSidebarSkeleton } from '../../../components/dashboard/dashboard-sidebar-skeleton';
-import { OrgSwitcher } from '../../../components/dashboard/org-switcher';
+import { MobileNav } from '../../../components/dashboard/mobile-nav';
+import { OrgBreadcrumb } from '../../../components/dashboard/org-breadcrumb';
 import { Skeleton } from '../../../components/ui';
 import { serverApiFetch } from '../../../lib/api-client-server';
 import { getOrgDetail } from '../../../lib/org-detail';
@@ -19,17 +22,37 @@ interface DashboardOrgLayoutProps {
   params: Promise<{ orgSlug: string }>;
 }
 
+/**
+ * The org's name as the default tab title for every page below. A page that sets its own `title`
+ * replaces it, and the root layout's template appends the app name either way. Metadata streams
+ * after the frame for a browser, so awaiting the org here does not hold the shell back.
+ */
+export async function generateMetadata({ params }: DashboardOrgLayoutProps): Promise<Metadata> {
+  const { orgSlug } = await params;
+  const org = await getOrgDetail(orgSlug);
+  return { title: org.name };
+}
+
 async function OrgSidebar({ orgSlug }: { orgSlug: string }): Promise<ReactElement> {
   const org = await getOrgDetail(orgSlug);
   return <DashboardSidebar orgSlug={orgSlug} org={org} />;
 }
 
-async function OrgSwitcherSlot({ orgSlug }: { orgSlug: string }): Promise<ReactElement> {
+async function OrgMobileNav({ orgSlug }: { orgSlug: string }): Promise<ReactElement> {
+  const org = await getOrgDetail(orgSlug);
+  return (
+    <MobileNav>
+      <OrgNavContent orgSlug={orgSlug} org={org} />
+    </MobileNav>
+  );
+}
+
+async function OrgBreadcrumbSlot({ orgSlug }: { orgSlug: string }): Promise<ReactElement> {
   const [org, orgs] = await Promise.all([
     getOrgDetail(orgSlug),
     serverApiFetch('/orgs', orgSummaryListSchema),
   ]);
-  return <OrgSwitcher currentOrgSlug={orgSlug} currentOrgName={org.name} orgs={orgs} />;
+  return <OrgBreadcrumb orgSlug={orgSlug} orgName={org.name} orgs={orgs} />;
 }
 
 /**
@@ -40,10 +63,10 @@ async function OrgSwitcherSlot({ orgSlug }: { orgSlug: string }): Promise<ReactE
  * Membership itself is still enforced by `OrgGuard` on the API side (§11): a caller without
  * access to `orgSlug` gets a `403` from the org fetch, which propagates to Next's error boundary.
  *
- * The layout itself never waits on the org data: the frame renders at once and only the sidebar
- * and the switcher, which need it, sit in their own `Suspense`. A layout that awaited the fetch
- * would hold the whole shell behind a fallback chosen by whichever route was prefetched, which
- * could be the wrong one when navigating in from outside an org.
+ * The layout itself never waits on the org data: the frame renders at once and only the sidebar,
+ * the menu button and the breadcrumb, which need it, sit in their own `Suspense`. A layout that
+ * awaited the fetch would hold the whole shell behind a fallback chosen by whichever route was
+ * prefetched, which could be the wrong one when navigating in from outside an org.
  */
 export default async function DashboardOrgLayout({
   children,
@@ -53,18 +76,25 @@ export default async function DashboardOrgLayout({
   await requireUser(`/dashboard/${orgSlug}`);
 
   return (
-    <div className="flex min-h-dvh flex-col md:flex-row">
-      <Suspense fallback={<DashboardSidebarSkeleton />}>
-        <OrgSidebar orgSlug={orgSlug} />
-      </Suspense>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <DashboardHeader>
-          <Suspense fallback={<Skeleton className="h-9 w-40" />}>
-            <OrgSwitcherSlot orgSlug={orgSlug} />
-          </Suspense>
-        </DashboardHeader>
-        <div className="flex-1">{children}</div>
+    <BoardLabelProvider>
+      <div className="flex min-h-dvh flex-col md:flex-row">
+        <Suspense fallback={<DashboardSidebarSkeleton />}>
+          <OrgSidebar orgSlug={orgSlug} />
+        </Suspense>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <DashboardHeader>
+            <div className="flex min-w-0 items-center gap-1">
+              <Suspense fallback={<Skeleton className="h-11 w-11 md:hidden" />}>
+                <OrgMobileNav orgSlug={orgSlug} />
+              </Suspense>
+              <Suspense fallback={<Skeleton className="h-9 w-40" />}>
+                <OrgBreadcrumbSlot orgSlug={orgSlug} />
+              </Suspense>
+            </div>
+          </DashboardHeader>
+          <div className="flex-1">{children}</div>
+        </div>
       </div>
-    </div>
+    </BoardLabelProvider>
   );
 }

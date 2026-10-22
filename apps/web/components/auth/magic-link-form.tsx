@@ -9,7 +9,8 @@ import { useEffect, useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { createSupabaseBrowserClient } from '../../lib/supabase/client';
-import { Alert, Button, Input } from '../ui';
+import { useRefocusAfterSubmit } from '../../lib/use-refocus-after-submit';
+import { Alert, Button, Form, Input } from '../ui';
 
 /** Seconds before "Resend" re-enables; keeps a double-click from burning Supabase's per-address email rate limit. */
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -41,11 +42,13 @@ export function MagicLinkForm({
   const {
     register,
     handleSubmit,
+    setFocus,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<MagicLinkRequestInput>({
     resolver: zodResolver(magicLinkRequestSchema),
   });
+  const requestFocus = useRefocusAfterSubmit(setFocus, isSubmitting);
 
   useEffect(() => {
     if (cooldown <= 0) {
@@ -70,6 +73,7 @@ export function MagicLinkForm({
 
     if (error) {
       setSubmitError(t('error'));
+      requestFocus('email');
       return false;
     }
 
@@ -135,9 +139,10 @@ export function MagicLinkForm({
   const fieldError = errors.email !== undefined ? t('emailInvalid') : submitError;
 
   return (
-    <form
+    <Form
       onSubmit={(event) => void handleSubmit(onSubmit)(event)}
-      noValidate
+      pending={isSubmitting}
+      onEdit={() => setSubmitError(null)}
       className="flex flex-col gap-3"
     >
       {showCallbackError && (
@@ -170,6 +175,6 @@ export function MagicLinkForm({
       <Button type="submit" pending={isSubmitting}>
         {isSubmitting ? t('sending') : t('submit')}
       </Button>
-    </form>
+    </Form>
   );
 }

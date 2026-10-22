@@ -1,9 +1,8 @@
 import type { OrgSummary } from '@feedback-board/shared';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import type { ReactElement } from 'react';
 
-import { Badge, Card } from '../ui';
+import { Badge, Card, Link } from '../ui';
 
 /** Shared with `app/dashboard/(picker)/loading.tsx` so the skeleton grid cannot drift from the real one. */
 export const ORG_GRID_CLASSNAME = 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3';

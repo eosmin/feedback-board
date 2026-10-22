@@ -29,7 +29,7 @@ export function ThemeToggle(): ReactElement {
       title={label}
       disabled={theme === null}
       onClick={() => applyTheme(next)}
-      className="rounded-control p-2 text-text-muted transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      className="flex h-11 w-11 items-center justify-center rounded-control text-text-muted md:h-auto md:w-auto md:p-2 transition-colors hover:bg-surface-sunken hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
     >
       {theme === null ? <span className="block h-4 w-4" /> : <Icon className="h-4 w-4" aria-hidden="true" />}
     </button>

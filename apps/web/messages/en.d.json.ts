@@ -96,17 +96,22 @@ declare const messages: {
       "MEMBER": "Member"
     },
     "shell": {
-      "backToOrgs": "All organizations",
       "nav": {
         "boards": "Boards",
         "billing": "Billing",
-        "webhooks": "Webhooks"
+        "webhooks": "Webhooks",
+        "label": "Navigation"
       },
       "signOut": "Sign out",
       "orgSwitcher": {
         "label": "Switch organization",
-        "viewAll": "View all organizations ({count} more)",
-        "createNew": "Create new organization"
+        "createNew": "Create new organization",
+        "allOrgs": "All organizations"
+      },
+      "breadcrumb": "Breadcrumb",
+      "menu": {
+        "open": "Open menu",
+        "title": "Menu"
       }
     },
     "createOrg": {
@@ -117,7 +122,7 @@ declare const messages: {
       "slugLabel": "URL slug",
       "slugHelp": "Lowercase letters, numbers and hyphens. Used in your board's public URL.",
       "slugInvalid": "Enter a valid, non-reserved slug.",
-      "slugReserved": "That slug is reserved. Choose another one.",
+      "slugReserved": "That slug is taken or reserved. Choose another one.",
       "submit": "Create organization",
       "creating": "Creating…",
       "error": "We could not create the organization. Please try again."
