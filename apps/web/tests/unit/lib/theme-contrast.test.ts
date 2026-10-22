@@ -26,7 +26,8 @@ function readTokens(block: string): Map<string, string> {
   for (const match of block.matchAll(/--color-([a-z0-9-]+):\s*([^;]+);/g)) {
     const value = match[2]?.trim() ?? '';
     const oklch = /^oklch\(([^)]+)\)$/.exec(value);
-    if (oklch === null) throw new Error(`--color-${match[1]} is not a plain oklch() value: ${value}`);
+    if (oklch === null)
+      throw new Error(`--color-${match[1]} is not a plain oklch() value: ${value}`);
     tokens.set(match[1] ?? '', oklch[1] ?? '');
   }
   return tokens;
@@ -38,11 +39,7 @@ const DARK = new Map([...LIGHT, ...readTokens(blockBody('.dark {'))]);
 
 /** oklch -> linear sRGB (Ottosson's OKLab matrices), alpha ignored: opaque tokens only. */
 function toLinearRgb(oklch: string): Rgb {
-  const [l = 0, c = 0, h = 0] = oklch
-    .split('/')[0]!
-    .trim()
-    .split(/\s+/)
-    .map(Number);
+  const [l = 0, c = 0, h = 0] = oklch.split('/')[0]!.trim().split(/\s+/).map(Number);
   const hr = (h * Math.PI) / 180;
   const a = c * Math.cos(hr);
   const b = c * Math.sin(hr);

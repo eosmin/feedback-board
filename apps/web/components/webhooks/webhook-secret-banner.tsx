@@ -21,7 +21,9 @@ export function WebhookSecretBanner({ secret, onDismiss }: WebhookSecretBannerPr
   return (
     <Alert title={t('title')} description={t('description')}>
       <div className="mb-2 flex items-center gap-2">
-        <code className="min-w-0 flex-1 break-all rounded bg-surface-raised px-2 py-1 text-body text-text">{secret}</code>
+        <code className="min-w-0 flex-1 break-all rounded bg-surface-raised px-2 py-1 text-body text-text">
+          {secret}
+        </code>
         <CopyButton value={secret} label={t('copy')} />
       </div>
       <Button variant="secondary" onClick={onDismiss}>

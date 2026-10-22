@@ -60,7 +60,10 @@ describe('Textarea', () => {
       );
     });
 
-    keyDown(container.querySelector('textarea') as HTMLTextAreaElement, { key: 'Enter', metaKey: true });
+    keyDown(container.querySelector('textarea') as HTMLTextAreaElement, {
+      key: 'Enter',
+      metaKey: true,
+    });
     expect(onSubmit).not.toHaveBeenCalled();
   });
 

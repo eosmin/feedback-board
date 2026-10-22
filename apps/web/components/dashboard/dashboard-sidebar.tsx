@@ -67,7 +67,10 @@ export async function OrgNavContent({ orgSlug, org }: OrgNavContentProps): Promi
 }
 
 /** The desktop sidebar (TDD.md §13 step 19.7 follow-up — a real layout shell, not per-page markup). */
-export async function DashboardSidebar({ orgSlug, org }: OrgNavContentProps): Promise<ReactElement> {
+export async function DashboardSidebar({
+  orgSlug,
+  org,
+}: OrgNavContentProps): Promise<ReactElement> {
   const t = await getTranslations('dashboard');
 
   return (

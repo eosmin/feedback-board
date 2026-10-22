@@ -46,7 +46,11 @@ describe('RateLimitStore', () => {
       await store.release('ratelimit:ai-digest:org-1');
 
       expect(evalMock).toHaveBeenCalledTimes(1);
-      expect(evalMock).toHaveBeenCalledWith(expect.stringContaining('DECR'), 1, 'ratelimit:ai-digest:org-1');
+      expect(evalMock).toHaveBeenCalledWith(
+        expect.stringContaining('DECR'),
+        1,
+        'ratelimit:ai-digest:org-1',
+      );
       expect(evalMock.mock.calls[0]?.[0]).toContain('KEEPTTL');
     });
   });

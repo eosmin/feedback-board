@@ -73,7 +73,9 @@ describe('CopyButton', () => {
 
   it('keeps the status screen-reader only by default and shows it with `visibleStatus`', () => {
     renderButton();
-    expect((container.querySelector('[role="status"]') as HTMLElement).className).toContain('sr-only');
+    expect((container.querySelector('[role="status"]') as HTMLElement).className).toContain(
+      'sr-only',
+    );
 
     renderButton(true);
     expect((container.querySelector('[role="status"]') as HTMLElement).className).not.toContain(

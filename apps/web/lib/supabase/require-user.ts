@@ -22,7 +22,9 @@ export async function requireUser(currentPath?: string): Promise<{
   const user = await getOptionalUser();
 
   if (user === null) {
-    redirect(currentPath === undefined ? '/login' : `/login?next=${encodeURIComponent(currentPath)}`);
+    redirect(
+      currentPath === undefined ? '/login' : `/login?next=${encodeURIComponent(currentPath)}`,
+    );
   }
 
   return user;
@@ -34,16 +36,18 @@ export async function requireUser(currentPath?: string): Promise<{
  * `requireUser()` on the same request — share one Supabase `getUser()` round trip instead of
  * each making its own.
  */
-export const getOptionalUser = cache(async (): Promise<{ id: string; email: string | undefined } | null> => {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+export const getOptionalUser = cache(
+  async (): Promise<{ id: string; email: string | undefined } | null> => {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  if (error || user === null) {
-    return null;
-  }
+    if (error || user === null) {
+      return null;
+    }
 
-  return { id: user.id, email: user.email };
-});
+    return { id: user.id, email: user.email };
+  },
+);

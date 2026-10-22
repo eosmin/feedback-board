@@ -26,8 +26,7 @@ const APP_NAMES: Record<'en' | 'es', string> = { en: en.common.appName, es: es.c
  */
 export default function GlobalError({ retry }: { retry: () => void }): ReactElement {
   const locale = useSyncExternalStore(subscribeLocale, getClientLocale, () => DEFAULT_LOCALE) as
-    | 'en'
-    | 'es'; // `getClientLocale` only returns codes from `AVAILABLE_LOCALES`
+    'en' | 'es'; // `getClientLocale` only returns codes from `AVAILABLE_LOCALES`
 
   return (
     <html lang={locale} className={inter.variable} suppressHydrationWarning>

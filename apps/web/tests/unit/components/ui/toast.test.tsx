@@ -79,7 +79,9 @@ describe('Toast', () => {
     click('ok');
     click('bad');
 
-    expect(document.body.querySelector(`[aria-label^="${messages.common.toast.region}"]`)).not.toBeNull();
+    expect(
+      document.body.querySelector(`[aria-label^="${messages.common.toast.region}"]`),
+    ).not.toBeNull();
     expect(document.body.textContent).toContain('Saved');
     expect(document.body.textContent).toContain('Failed');
   });
@@ -87,7 +89,9 @@ describe('Toast', () => {
   it('dismisses a toast from its close button', () => {
     renderTree();
     click('ok');
-    const close = document.body.querySelector(`[aria-label="${messages.common.close}"]`) as HTMLButtonElement;
+    const close = document.body.querySelector(
+      `[aria-label="${messages.common.close}"]`,
+    ) as HTMLButtonElement;
     act(() => {
       close.click();
     });

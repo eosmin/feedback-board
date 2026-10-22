@@ -1,6 +1,13 @@
 import { test } from '@playwright/test';
 
-import { createBoard, createOrg, createPost, signInViaMagicLink, uniqueSlug, voteOnPost } from './helpers';
+import {
+  createBoard,
+  createOrg,
+  createPost,
+  signInViaMagicLink,
+  uniqueSlug,
+  voteOnPost,
+} from './helpers';
 
 /**
  * Golden path A (TDD §14, §14.1, Step 19.6): sign in → create org → create board → create post →
