@@ -1,6 +1,6 @@
 'use client';
 
-import type { Board } from '@feedback-board/shared';
+import type { Board, BoardSummary, OrgDetail } from '@feedback-board/shared';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
@@ -9,12 +9,16 @@ import { useState } from 'react';
 import { useNavigate } from '../../lib/use-navigate';
 import { Button, Dialog } from '../ui';
 import { BoardList } from './board-list';
+import { BoardsUsage } from './boards-usage';
 import { CreateBoardForm } from './create-board-form';
+import { PlanLimitUpgradePrompt } from './plan-limit-upgrade-prompt';
 
 interface OrgBoardsOverviewProps {
   orgSlug: string;
   /** The boards fetched server-side by the parent Server Component (TDD §12). */
-  initialBoards: Board[];
+  initialBoards: BoardSummary[];
+  /** Boards used against the plan's cap, from the org detail. */
+  usage: OrgDetail['usage']['boards'];
 }
 
 /**
@@ -26,11 +30,15 @@ interface OrgBoardsOverviewProps {
 export function OrgBoardsOverview({
   orgSlug,
   initialBoards,
+  usage,
 }: OrgBoardsOverviewProps): ReactElement {
   const t = useTranslations('dashboard.orgOverview.createBoard');
   const tCommon = useTranslations('common');
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
+  // At the cap the form could only be refused, so the dialog opens on the upgrade prompt instead.
+  // The API still enforces the cap; the form keeps handling its `PLAN_LIMIT` for a stale count.
+  const atCap = usage.cap !== null && usage.used >= usage.cap;
 
   function handleCreated(board: Board): void {
     // A new board is a place to work in, so open it; the dialog stays up (button pending) until
@@ -39,8 +47,9 @@ export function OrgBoardsOverview({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex justify-end">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BoardsUsage usage={usage} />
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="h-4 w-4" aria-hidden="true" />
           {t('trigger')}
@@ -53,11 +62,15 @@ export function OrgBoardsOverview({
         title={t('title')}
         closeLabel={tCommon('close')}
       >
-        <CreateBoardForm
-          orgSlug={orgSlug}
-          onCreated={handleCreated}
-          navigating={navigate.isPending}
-        />
+        {atCap ? (
+          <PlanLimitUpgradePrompt orgSlug={orgSlug} />
+        ) : (
+          <CreateBoardForm
+            orgSlug={orgSlug}
+            onCreated={handleCreated}
+            navigating={navigate.isPending}
+          />
+        )}
       </Dialog>
     </div>
   );

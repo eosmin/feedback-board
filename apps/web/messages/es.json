@@ -127,6 +127,13 @@
     "orgOverview": {
       "boardsTitle": "Tableros",
       "boardsEmpty": "Todavía no hay tableros. Crea uno para comenzar.",
+      "postCount": "{count, plural, =0 {Sin publicaciones} one {# publicación} other {# publicaciones}}",
+      "lastActivity": "Última publicación {date}",
+      "noActivity": "Aún sin publicaciones",
+      "usage": {
+        "capped": "{used, number} de {cap, number} tableros usados",
+        "unlimited": "{used, plural, one {# tablero} other {# tableros}} · sin límite"
+      },
       "visibility": {
         "public": "Público",
         "private": "Privado"

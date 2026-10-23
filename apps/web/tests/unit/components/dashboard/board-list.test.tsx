@@ -50,6 +50,8 @@ describe('BoardList', () => {
         slug: 'feature-requests',
         isPublic: true,
         createdAt: '2026-01-01T00:00:00.000Z',
+        postCount: 3,
+        lastPostAt: '2026-03-05T23:30:00.000Z',
       },
       {
         id: '2',
@@ -58,6 +60,8 @@ describe('BoardList', () => {
         slug: 'internal-bugs',
         isPublic: false,
         createdAt: '2026-01-01T00:00:00.000Z',
+        postCount: 0,
+        lastPostAt: null,
       },
     ]);
 
@@ -65,6 +69,11 @@ describe('BoardList', () => {
     expect(container.textContent).toContain(messages.dashboard.orgOverview.visibility.public);
     expect(container.textContent).toContain('Internal Bugs');
     expect(container.textContent).toContain(messages.dashboard.orgOverview.visibility.private);
+
+    // The count and the newest post's date (rendered in UTC, so the late-evening time keeps its day).
+    expect(container.textContent).toContain('3 posts');
+    expect(container.textContent).toContain('Last post Mar 5, 2026');
+    expect(container.textContent).toContain(messages.dashboard.orgOverview.noActivity);
 
     const links = container.querySelectorAll('a');
     expect(links).toHaveLength(2);

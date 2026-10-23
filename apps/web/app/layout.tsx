@@ -6,12 +6,13 @@ import { Suspense, type ReactElement, type ReactNode } from 'react';
 import { NavigationProgress, ToastProvider } from '../components/ui';
 import { inter } from '../lib/fonts';
 import { THEME_INIT_SCRIPT } from '../lib/theme';
+import { titleTemplate } from '../lib/title-template';
 import '../styles/globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common');
   return {
-    title: { default: t('appName'), template: `%s · ${t('appName')}` },
+    title: { default: t('appName'), template: titleTemplate(t('appName')) },
     description: t('appDescription'),
   };
 }

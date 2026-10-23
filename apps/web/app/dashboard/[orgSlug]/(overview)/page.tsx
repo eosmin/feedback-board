@@ -1,4 +1,5 @@
-import { boardSchema } from '@feedback-board/shared';
+import { boardSummarySchema } from '@feedback-board/shared';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type { ReactElement } from 'react';
 import { z } from 'zod';
@@ -9,10 +10,16 @@ import { serverApiFetch } from '../../../../lib/api-client-server';
 import { getOrgDetail, rethrowNoAccessAsNotFound } from '../../../../lib/org-detail';
 import { requireUser } from '../../../../lib/supabase/require-user';
 
-const boardListSchema = z.array(boardSchema);
+const boardListSchema = z.array(boardSummarySchema);
 
 interface OrgOverviewPageProps {
   params: Promise<{ orgSlug: string }>;
+}
+
+/** The tab reads "Boards · FeedbackBoard"; the layout's org name stays the fallback elsewhere. */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('dashboard.orgOverview');
+  return { title: t('boardsTitle') };
 }
 
 /**
@@ -41,11 +48,8 @@ export default async function OrgOverviewPage({
 
   return (
     <main className="flex flex-col gap-6 p-6">
-      <PageHeader title={org.name} badge={<Badge>{tPlan(org.plan)}</Badge>} />
-      <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium text-text">{t('boardsTitle')}</h2>
-        <OrgBoardsOverview orgSlug={orgSlug} initialBoards={boards} />
-      </div>
+      <PageHeader title={t('boardsTitle')} badge={<Badge>{tPlan(org.plan)}</Badge>} />
+      <OrgBoardsOverview orgSlug={orgSlug} initialBoards={boards} usage={org.usage.boards} />
     </main>
   );
 }
