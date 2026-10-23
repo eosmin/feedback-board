@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['tests/unit/**/*.test.{ts,tsx}'],
+    // `vi.restoreAllMocks()` only restores `vi.spyOn` spies: it keeps a `vi.fn()`'s calls and queued
+    // `mockResolvedValueOnce` values, which would leak into the next test.
+    mockReset: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

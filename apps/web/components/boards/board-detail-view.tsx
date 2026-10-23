@@ -2,11 +2,11 @@
 
 import {
   boardDetailSchema,
+  boardPostSchema,
   orgDetailSchema,
-  postSchema,
   type BoardDetail,
+  type BoardPost,
   type OrgDetail,
-  type Post,
 } from '@feedback-board/shared';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -15,17 +15,22 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 import { apiFetch } from '../../lib/api-client';
+import { NO_FILTERS, applyBoardFilters, hasActiveFilters } from '../../lib/board-filters';
+import type { PostPatch } from '../../lib/post-patch';
+import { useBoardUrlState } from '../../lib/use-board-url-state';
 import { usePublishBoardLabel } from '../dashboard/board-breadcrumb-label';
-import { Button, Dialog, PageHeader } from '../ui';
+import { Button, Dialog, EmptyState, PageHeader, useToast } from '../ui';
 import { AiDigestPanel } from './ai-digest-panel';
 import { BoardDetailSkeleton } from './board-detail-skeleton';
 import { CreatePostForm } from './create-post-form';
+import { PostDrawer } from './post-drawer';
+import { PostFilters } from './post-filters';
 import { PostList } from './post-list';
 import { ShareBoardButton } from './share-board-button';
 
-const postListSchema = z.array(postSchema);
+const postListSchema = z.array(boardPostSchema);
 
-function fetchPosts(orgSlug: string, boardSlug: string): Promise<Post[]> {
+function fetchPosts(orgSlug: string, boardSlug: string): Promise<BoardPost[]> {
   return apiFetch(`/orgs/${orgSlug}/boards/${boardSlug}/posts`, postListSchema);
 }
 
@@ -35,20 +40,26 @@ interface BoardDetailViewProps {
 }
 
 /**
- * The interactive admin board view (TDD §12, §13 step 19.3): create post, vote, comment, change
- * status. A Client Component end to end, unlike the org overview and billing pages — §12's route
- * table marks this one "Client Component (interactive voting/comments)" because every action here
- * is interactive, leaving no meaningful server-rendered read to split into a parent Server
- * Component. Data is therefore fetched client-side on mount rather than passed down as props.
- * `org.role` (from `GET /orgs/:orgSlug`, TDD §11) decides whether "Generate AI Summary" renders —
- * presentation only, the route's own `@Roles('OWNER', 'ADMIN')` guard is the real enforcement.
+ * The interactive admin board view (TDD §12, §13 step 19.3, step 22.11): a dense, filterable post
+ * list and a drawer with the full post, its comments and (for OWNER/ADMIN) the status control. A
+ * Client Component end to end, unlike the org overview and billing pages — §12's route table marks
+ * this one "Client Component (interactive voting/comments)" because every action here is
+ * interactive, leaving no meaningful server-rendered read to split into a parent Server Component.
+ * Data is therefore fetched client-side on mount rather than passed down as props. Search, sort,
+ * filters and the open post live in the URL (`useBoardUrlState`), so a view survives a reload.
+ * `org.role` (from `GET /orgs/:orgSlug`, TDD §11) decides whether the AI summary and the status
+ * select render — presentation only, the routes' own `@Roles('OWNER', 'ADMIN')` guards are the
+ * real enforcement.
  */
 export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): ReactElement {
   const tCommon = useTranslations('common');
+  const t = useTranslations('dashboard.boardDetail');
   const tCreatePost = useTranslations('dashboard.boardDetail.createPost');
+  const { toast } = useToast();
+  const { filters, selectedPostId, setFilters, setSelectedPostId } = useBoardUrlState();
   const [org, setOrg] = useState<OrgDetail | null>(null);
   const [board, setBoard] = useState<BoardDetail | null>(null);
-  const [posts, setPosts] = useState<Post[] | null>(null);
+  const [posts, setPosts] = useState<BoardPost[] | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -87,28 +98,47 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
     };
   }, [orgSlug, boardSlug]);
 
-  function handlePostCreated(post: Post): void {
-    // Show it at once at the top, then reconcile with the server, which owns the ordering.
-    setPosts((current) => (current === null ? [post] : [post, ...current]));
+  /**
+   * A created post is not added by hand: the server owns the order (and the author name and
+   * comment count the row needs), so the list is read again and replaced. The dialog stays up, with
+   * its button pending, until that read lands, so the new row is already in place when it closes.
+   * A new post is open and unclassified, so any status, category or priority filter would hide it:
+   * the filters are cleared (the sort is kept) so the person sees what they just posted.
+   */
+  async function handlePostCreated(): Promise<void> {
+    try {
+      setPosts(await fetchPosts(orgSlug, boardSlug));
+      setFilters(NO_FILTERS);
+      toast(tCreatePost('success'));
+    } catch {
+      toast(tCreatePost('refreshFailed'), 'error');
+    }
     setDialogOpen(false);
-    void fetchPosts(orgSlug, boardSlug)
-      .then(setPosts)
-      .catch(() => {
-        // The optimistic entry stays; the next load reconciles it.
-      });
   }
 
-  function handlePostUpdated(updated: Post): void {
+  function handlePostUpdated(patch: PostPatch): void {
     setPosts((current) =>
-      current === null ? current : current.map((post) => (post.id === updated.id ? updated : post)),
+      current === null
+        ? current
+        : current.map((post) => (post.id === patch.id ? { ...post, ...patch } : post)),
+    );
+  }
+
+  function handleCommentAdded(postId: string): void {
+    setPosts((current) =>
+      current === null
+        ? current
+        : current.map((post) =>
+            post.id === postId ? { ...post, commentCount: post.commentCount + 1 } : post,
+          ),
     );
   }
 
   if (loadFailed) {
-    // A `<main>` like the loaded and loading states, so the width rule applies and nothing shifts.
+    // A `<main>` like the loaded and loading states, so nothing shifts.
     return (
       <main>
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {tCommon('error.generic')}
         </p>
       </main>
@@ -122,6 +152,13 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
   }
 
   const canManage = org.role === 'OWNER' || org.role === 'ADMIN';
+  const visiblePosts = applyBoardFilters(posts, filters);
+  // A `?post=` naming a post that is not on this board opens nothing.
+  const openPost = posts.find((post) => post.id === selectedPostId) ?? null;
+
+  function clearFilters(): void {
+    setFilters(NO_FILTERS);
+  }
 
   return (
     <main>
@@ -138,11 +175,42 @@ export function BoardDetailView({ orgSlug, boardSlug }: BoardDetailViewProps): R
         }
       />
       {canManage && <AiDigestPanel orgSlug={orgSlug} boardSlug={boardSlug} />}
-      <PostList
+      {posts.length === 0 ? (
+        <EmptyState>{t('postsEmpty')}</EmptyState>
+      ) : (
+        <>
+          <PostFilters
+            filters={filters}
+            onChange={setFilters}
+            shown={visiblePosts.length}
+            total={posts.length}
+          />
+          {visiblePosts.length === 0 ? (
+            <div className="flex flex-col items-start gap-3">
+              <EmptyState>{t('noResults')}</EmptyState>
+              {hasActiveFilters(filters) && (
+                <Button variant="secondary" onClick={clearFilters}>
+                  {t('clearFilters')}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <PostList
+              orgSlug={orgSlug}
+              posts={visiblePosts}
+              onOpen={setSelectedPostId}
+              onUpdated={handlePostUpdated}
+            />
+          )}
+        </>
+      )}
+      <PostDrawer
         orgSlug={orgSlug}
-        posts={posts}
+        post={openPost}
         canManage={canManage}
+        onClose={() => setSelectedPostId(null)}
         onUpdated={handlePostUpdated}
+        onCommentAdded={handleCommentAdded}
       />
       <Dialog
         open={dialogOpen}

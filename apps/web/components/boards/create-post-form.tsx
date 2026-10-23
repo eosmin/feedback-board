@@ -20,8 +20,11 @@ import { PostLimitUpgradePrompt } from './post-limit-upgrade-prompt';
 interface CreatePostFormProps {
   orgSlug: string;
   boardSlug: string;
-  /** Called after a successful creation, so the parent can add it to the top of the post list. */
-  onCreated: (post: Post) => void;
+  /**
+   * Called after a successful creation. The form stays pending until it settles, so the parent can
+   * read the list again and have the new post in place before the dialog closes.
+   */
+  onCreated: (post: Post) => void | Promise<void>;
 }
 
 /**
@@ -59,7 +62,7 @@ export function CreatePostForm({
         method: 'POST',
         body: values,
       });
-      onCreated(post);
+      await onCreated(post);
       reset();
     } catch (error) {
       if (error instanceof ApiError && error.body.error === 'PLAN_LIMIT') {

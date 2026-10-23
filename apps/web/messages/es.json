@@ -55,7 +55,7 @@
     }
   },
   "publicBoard": {
-    "empty": "Todavía no se ha publicado ningún comentario.",
+    "empty": "Todavía no se ha publicado ninguna sugerencia.",
     "voteCount": "{count, number} votos",
     "status": {
       "OPEN": "Abierto",
@@ -174,7 +174,7 @@
       }
     },
     "boardDetail": {
-      "postsEmpty": "Todavía no se ha publicado ningún comentario.",
+      "postsEmpty": "Todavía no se ha publicado ninguna sugerencia.",
       "voteButton": "Votar ({count, number})",
       "statusLabel": "Estado",
       "share": {
@@ -184,15 +184,17 @@
         "memberLink": "Enlace para miembros (requiere iniciar sesión)"
       },
       "createPost": {
-        "trigger": "Nuevo comentario",
-        "title": "Compartir comentario",
+        "trigger": "Nueva sugerencia",
+        "title": "Compartir sugerencia",
         "titleLabel": "Título",
         "titleInvalid": "Ingresa un título entre 3 y 200 caracteres.",
         "bodyLabel": "Descripción",
         "bodyInvalid": "Ingresa una descripción.",
-        "submit": "Publicar comentario",
+        "submit": "Publicar sugerencia",
         "creating": "Publicando…",
-        "error": "No pudimos crear el comentario. Intenta de nuevo."
+        "error": "No pudimos crear la sugerencia. Intenta de nuevo.",
+        "success": "Sugerencia publicada.",
+        "refreshFailed": "Tu sugerencia se publicó, pero no pudimos actualizar la lista. Recarga la página."
       },
       "planLimit": {
         "posts": {
@@ -208,7 +210,12 @@
         "bodyLabel": "Agregar un comentario",
         "bodyInvalid": "Ingresa un comentario.",
         "submit": "Comentar",
-        "submitting": "Publicando…"
+        "submitting": "Publicando…",
+        "loadError": "No pudimos cargar los comentarios.",
+        "retry": "Intentar de nuevo",
+        "you": "Tú",
+        "sending": "Enviando…",
+        "submitError": "No pudimos publicar tu comentario. Intenta de nuevo."
       },
       "aiDigest": {
         "title": "Resumen de IA",
@@ -216,9 +223,35 @@
         "generating": "Generando…",
         "error": "No pudimos generar un resumen. Intenta de nuevo.",
         "rateLimited": "Alcanzaste el límite por hora de resúmenes de IA. Intenta más tarde.",
-        "noPosts": "Este tablero todavía no tiene comentarios abiertos, así que no hay nada que resumir.",
+        "noPosts": "Este tablero todavía no tiene sugerencias abiertas, así que no hay nada que resumir.",
         "quotaRemaining": "Te quedan {remaining} de {limit} resúmenes de IA esta hora",
-        "quotaExhausted": "Usaste todos tus resúmenes de IA de esta hora. Intenta más tarde."
+        "quotaExhausted": "Usaste todos tus resúmenes de IA de esta hora. Intenta más tarde.",
+        "showSummary": "Mostrar resumen",
+        "hideSummary": "Ocultar resumen"
+      },
+      "noResults": "Ninguna sugerencia coincide con tu búsqueda o filtros.",
+      "clearFilters": "Borrar filtros",
+      "voteError": "No pudimos registrar tu voto. Intenta de nuevo.",
+      "statusSuccess": "Estado actualizado.",
+      "statusError": "No pudimos actualizar el estado. Intenta de nuevo.",
+      "commentCountLabel": "Comentarios: {count, number}",
+      "meta": "{author} · {date}",
+      "filters": {
+        "region": "Búsqueda y filtros",
+        "search": "Buscar sugerencias",
+        "searchPlaceholder": "Buscar sugerencias",
+        "sortLabel": "Ordenar por",
+        "sort": {
+          "newest": "Más recientes",
+          "votes": "Más votados"
+        },
+        "statusLabel": "Filtrar por estado",
+        "categoryLabel": "Filtrar por categoría",
+        "priorityLabel": "Filtrar por prioridad de IA",
+        "allStatuses": "Todos los estados",
+        "allCategories": "Todas las categorías",
+        "allPriorities": "Todas las prioridades",
+        "results": "Mostrando {shown, number} de {total, number}"
       }
     },
     "billing": {
