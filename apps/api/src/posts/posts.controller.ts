@@ -11,7 +11,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import type { Comment, Post as PostModel, VoteToggleResult } from '@feedback-board/shared';
+import type {
+  BoardPost,
+  Comment,
+  Post as PostModel,
+  VoteToggleResult,
+} from '@feedback-board/shared';
 
 import { OrgGuard } from '../orgs/guards/org.guard';
 import { RolesGuard } from '../orgs/guards/roles.guard';
@@ -77,7 +82,7 @@ export class PostsController {
   async listForBoard(
     @Param('orgSlug') _orgSlug: string,
     @Param('boardSlug') boardSlug: string,
-  ): Promise<PostModel[]> {
+  ): Promise<BoardPost[]> {
     return this.postsService.listForBoard(boardSlug);
   }
 

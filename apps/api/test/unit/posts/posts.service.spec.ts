@@ -184,7 +184,12 @@ describe('PostsService', () => {
 
   it('lists posts for a resolved board, most recent first', async () => {
     const findFirstBoard = jest.fn().mockResolvedValue({ id: BOARD_ID });
-    const findMany = jest.fn().mockResolvedValue([buildPostRow()]);
+    const findMany = jest.fn().mockResolvedValue([
+      buildPostRow({
+        author: { name: 'Ada Lovelace', email: 'ada@example.com' },
+        _count: { comments: 3 },
+      }),
+    ]);
     const { queue: aiQueue } = buildQueue();
     const { queue: webhooksQueue } = buildQueue();
     const service = new PostsService(
@@ -198,8 +203,40 @@ describe('PostsService', () => {
     expect(findMany).toHaveBeenCalledWith({
       where: { boardId: BOARD_ID },
       orderBy: { createdAt: 'desc' },
+      include: {
+        author: { select: { name: true, email: true } },
+        _count: { select: { comments: true } },
+      },
     });
-    expect(result).toEqual([expect.objectContaining({ id: POST_ID, title: 'Add dark mode' })]);
+    expect(result).toEqual([
+      expect.objectContaining({
+        id: POST_ID,
+        title: 'Add dark mode',
+        commentCount: 3,
+        authorName: 'Ada Lovelace',
+      }),
+    ]);
+  });
+
+  it('names an author without a display name by the local part of their email', async () => {
+    const findFirstBoard = jest.fn().mockResolvedValue({ id: BOARD_ID });
+    const findMany = jest.fn().mockResolvedValue([
+      buildPostRow({
+        author: { name: null, email: 'grace.hopper@example.com' },
+        _count: { comments: 0 },
+      }),
+    ]);
+    const { queue: aiQueue } = buildQueue();
+    const { queue: webhooksQueue } = buildQueue();
+    const service = new PostsService(
+      buildTenantPrisma({ findFirstBoard, findMany }),
+      aiQueue,
+      webhooksQueue,
+    );
+
+    const [post] = await service.listForBoard('roadmap');
+
+    expect(post?.authorName).toBe('grace.hopper');
   });
 
   it('returns a single post by id', async () => {
@@ -275,5 +312,25 @@ describe('PostsService', () => {
     await expect(service.updateStatus('missing', { status: 'PLANNED' })).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('falls back to the whole address when the local part is empty', async () => {
+    const findFirstBoard = jest.fn().mockResolvedValue({ id: BOARD_ID });
+    const findMany = jest
+      .fn()
+      .mockResolvedValue([
+        buildPostRow({ author: { name: null, email: '@example.com' }, _count: { comments: 0 } }),
+      ]);
+    const { queue: aiQueue } = buildQueue();
+    const { queue: webhooksQueue } = buildQueue();
+    const service = new PostsService(
+      buildTenantPrisma({ findFirstBoard, findMany }),
+      aiQueue,
+      webhooksQueue,
+    );
+
+    const [post] = await service.listForBoard('roadmap');
+
+    expect(post?.authorName).toBe('@example.com');
   });
 });

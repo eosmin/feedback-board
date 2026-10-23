@@ -86,7 +86,11 @@ describe('posts (e2e)', () => {
 
       expect(listResponse.status).toBe(200);
       expect(listResponse.body).toContainEqual(
-        expect.objectContaining({ id: createResponse.body.id }),
+        expect.objectContaining({
+          id: createResponse.body.id,
+          commentCount: 0,
+          authorName: expect.any(String),
+        }),
       );
     },
     SIGN_IN_TEST_TIMEOUT_MS,

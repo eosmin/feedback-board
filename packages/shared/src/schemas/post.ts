@@ -34,6 +34,19 @@ export const postSchema = z.object({
 
 export type Post = z.infer<typeof postSchema>;
 
+/**
+ * One row of the dashboard board list (`GET /orgs/:orgSlug/boards/:boardSlug/posts`): the post
+ * plus what a dense list shows without a request per row. `authorName` is the author's display
+ * name, falling back to the local part of their email, so a teammate's address is never shown in
+ * full to a plain member.
+ */
+export const boardPostSchema = postSchema.extend({
+  commentCount: z.number().int().nonnegative(),
+  authorName: z.string(),
+});
+
+export type BoardPost = z.infer<typeof boardPostSchema>;
+
 /** The public board list omits the author: `/public/*` is unauthenticated (TDD §11). */
 export const publicPostSchema = postSchema.omit({ authorId: true, orgId: true });
 
