@@ -4,10 +4,8 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
-import { AuthModule } from '../../src/auth/auth.module';
-import { ProfileModule } from '../../src/profile/profile.module';
+import { AppModule } from '../../src/app.module';
 import { bootstrapTestApp } from '../fixtures/bootstrap-test-app';
-import { buildTestModuleMetadata } from '../fixtures/build-test-module-metadata';
 import { closeTestApp } from '../fixtures/close-test-app';
 import { signInAs } from '../fixtures/sign-in';
 
@@ -21,12 +19,7 @@ describe('profile (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    const base = buildTestModuleMetadata();
-    const moduleRef = await Test.createTestingModule({
-      imports: [...base.imports, AuthModule, ProfileModule],
-      providers: base.providers,
-    }).compile();
-
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = await bootstrapTestApp(moduleRef);
   });
 
