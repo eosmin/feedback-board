@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { JOBS, QUEUES, classifyPostJobSchema, deliverWebhookJobSchema } from '@feedback-board/core';
 import { WEBHOOK_EVENT } from '@feedback-board/shared';
 import type { Queue } from 'bullmq';
-import type { Post } from '@feedback-board/shared';
+import type { BoardPost, Post } from '@feedback-board/shared';
 import type { WebhookEvent } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
@@ -18,6 +18,19 @@ const JOB_OPTIONS = {
   // exhausted retries, which would make a permanently-failing delivery silent.
   removeOnFail: false,
 } as const;
+
+/**
+ * A person's name, or the local part of their email when they have not set one, so a teammate's
+ * full address is never shown. A local part that is empty falls back to the whole address rather
+ * than a blank author.
+ */
+function authorDisplayName(author: { name: string | null; email: string }): string {
+  if (author.name !== null) {
+    return author.name;
+  }
+  const localPart = author.email.split('@')[0];
+  return localPart === undefined || localPart === '' ? author.email : localPart;
+}
 
 /**
  * All data access goes through `TenantPrismaService` (TDD §3.2, §3.3). `Post.orgId`/`boardId`/
@@ -83,14 +96,25 @@ export class PostsService {
   }
 
   /** `GET /orgs/:orgSlug/boards/:boardSlug/posts` — admin view, all statuses (TDD §11). */
-  async listForBoard(boardSlug: string): Promise<Post[]> {
+  async listForBoard(boardSlug: string): Promise<BoardPost[]> {
     const boardId = await this.resolveBoardId(boardSlug);
 
     const posts = await this.tenantPrisma.run((tx) =>
-      tx.post.findMany({ where: { boardId }, orderBy: { createdAt: 'desc' } }),
+      tx.post.findMany({
+        where: { boardId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          author: { select: { name: true, email: true } },
+          _count: { select: { comments: true } },
+        },
+      }),
     );
 
-    return posts.map((post) => this.toPost(post));
+    return posts.map((post) => ({
+      ...this.toPost(post),
+      commentCount: post._count.comments,
+      authorName: authorDisplayName(post.author),
+    }));
   }
 
   /** `GET /orgs/:orgSlug/posts/:postId` — single post detail (TDD §11). */

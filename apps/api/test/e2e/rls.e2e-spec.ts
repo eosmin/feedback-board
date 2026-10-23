@@ -238,7 +238,7 @@ describe('row-level security (e2e)', () => {
     }
   });
 
-  it('the tenant app role reads nothing from users: that table is reached only through the admin client', async () => {
+  it('with no app.org_id set the app role reads nothing from users', async () => {
     await createOrgWithMember('users-denied');
 
     const rows = await appClient.client.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -246,6 +246,75 @@ describe('row-level security (e2e)', () => {
     });
 
     expect(rows).toEqual([]);
+  });
+
+  it('inside an org the app role reads only users who wrote a post or a comment there', async () => {
+    const orgA = await createOrgWithMember('users-a');
+    const orgB = await createOrgWithMember('users-b');
+    const commenter = await admin.client.user.create({
+      data: { id: randomUUID(), email: `rls-e2e-${RUN_ID}-commenter@example.com` },
+    });
+    const silent = await admin.client.user.create({
+      data: { id: randomUUID(), email: `rls-e2e-${RUN_ID}-silent@example.com` },
+    });
+    const boardA = await admin.client.board.create({
+      data: { orgId: orgA.orgId, name: 'A', slug: 'users-a-board' },
+    });
+    const boardB = await admin.client.board.create({
+      data: { orgId: orgB.orgId, name: 'B', slug: 'users-b-board' },
+    });
+    const postA = await admin.client.post.create({
+      data: {
+        orgId: orgA.orgId,
+        boardId: boardA.id,
+        authorId: orgA.userId,
+        title: 'Post A',
+        body: 'Body',
+      },
+    });
+    await admin.client.post.create({
+      data: {
+        orgId: orgB.orgId,
+        boardId: boardB.id,
+        authorId: orgB.userId,
+        title: 'Post B',
+        body: 'Body',
+      },
+    });
+    await admin.client.comment.create({
+      data: { orgId: orgA.orgId, postId: postA.id, authorId: commenter.id, body: 'Comment' },
+    });
+
+    const ids = await runner.runAs(orgA.orgId, async (tx) =>
+      (await tx.user.findMany({ select: { id: true } })).map((user) => user.id),
+    );
+
+    expect([...ids].sort()).toEqual([orgA.userId, commenter.id].sort());
+    expect(ids).not.toContain(orgB.userId);
+    expect(ids).not.toContain(silent.id);
+  });
+
+  it('the app role cannot change users, even one it can read', async () => {
+    const org = await createOrgWithMember('users-readonly');
+    const board = await admin.client.board.create({
+      data: { orgId: org.orgId, name: 'RO', slug: 'users-ro-board' },
+    });
+    await admin.client.post.create({
+      data: {
+        orgId: org.orgId,
+        boardId: board.id,
+        authorId: org.userId,
+        title: 'Post',
+        body: 'Body',
+      },
+    });
+
+    const result = await runner.runAs(org.orgId, async (tx) =>
+      tx.user.updateMany({ where: { id: org.userId }, data: { name: 'Renamed' } }),
+    );
+
+    expect(result.count).toBe(0);
+    expect((await admin.client.user.findUnique({ where: { id: org.userId } }))?.name).toBeNull();
   });
 
   it('a query issued with no app.org_id set returns zero rows, not an error', async () => {

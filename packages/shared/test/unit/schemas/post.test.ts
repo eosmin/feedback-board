@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createPostSchema,
+  boardPostSchema,
   postSchema,
   publicPostSchema,
   updatePostStatusSchema,
@@ -111,5 +112,23 @@ describe('publicPostSchema', () => {
     const { authorId: _authorId, orgId: _orgId, title: _title, ...withoutTitle } = post;
 
     expect(publicPostSchema.safeParse(withoutTitle).success).toBe(false);
+  });
+});
+
+describe('boardPostSchema', () => {
+  it('accepts a post with its comment count and author name', () => {
+    const result = boardPostSchema.safeParse({ ...post, commentCount: 2, authorName: 'ada' });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('requires both extra fields', () => {
+    expect(boardPostSchema.safeParse(post).success).toBe(false);
+  });
+
+  it('rejects a negative comment count', () => {
+    const result = boardPostSchema.safeParse({ ...post, commentCount: -1, authorName: 'ada' });
+
+    expect(result.success).toBe(false);
   });
 });
