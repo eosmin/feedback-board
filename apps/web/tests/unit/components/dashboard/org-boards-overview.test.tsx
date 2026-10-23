@@ -68,8 +68,11 @@ describe('OrgBoardsOverview', () => {
                 slug: 'feature-requests',
                 isPublic: true,
                 createdAt: '2026-01-01T00:00:00.000Z',
+                postCount: 0,
+                lastPostAt: null,
               },
             ]}
+            usage={{ used: 1, cap: 5 }}
           />
         </NextIntlClientProvider>,
       );
@@ -102,5 +105,30 @@ describe('OrgBoardsOverview', () => {
     });
 
     expect(pushMock).toHaveBeenCalledWith('/dashboard/acme/boards/bugs');
+  });
+
+  it('shows the upgrade prompt instead of the form when the plan cap is reached', () => {
+    act(() => {
+      root.render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <OrgBoardsOverview orgSlug="acme" initialBoards={[]} usage={{ used: 1, cap: 1 }} />
+        </NextIntlClientProvider>,
+      );
+    });
+
+    const trigger = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === messages.dashboard.orgOverview.createBoard.trigger,
+    ) as HTMLButtonElement;
+    act(() => {
+      trigger.click();
+    });
+
+    expect(document.querySelector('#board-name')).toBeNull();
+    expect(document.body.textContent).toContain(
+      messages.dashboard.orgOverview.planLimit.boards.title,
+    );
+    expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe(
+      '1',
+    );
   });
 });

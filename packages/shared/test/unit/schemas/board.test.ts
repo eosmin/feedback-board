@@ -4,6 +4,7 @@ import {
   boardDetailSchema,
   boardDigestSchema,
   boardSchema,
+  boardSummarySchema,
   createBoardSchema,
   publicBoardSchema,
 } from '../../../src/schemas/board';
@@ -73,6 +74,34 @@ describe('boardSchema', () => {
   it('requires a post count on the detail shape', () => {
     expect(boardDetailSchema.safeParse(board).success).toBe(false);
     expect(boardDetailSchema.safeParse({ ...board, postCount: 0 }).success).toBe(true);
+  });
+});
+
+describe('boardSummarySchema', () => {
+  const board = {
+    id: UUID,
+    orgId: UUID,
+    name: 'Roadmap',
+    slug: 'roadmap',
+    isPublic: true,
+    createdAt: CREATED_AT,
+  };
+
+  it('accepts a board with no posts yet', () => {
+    expect(boardSummarySchema.safeParse({ ...board, postCount: 0, lastPostAt: null }).success).toBe(
+      true,
+    );
+  });
+
+  it('accepts the time of the newest post', () => {
+    expect(
+      boardSummarySchema.safeParse({ ...board, postCount: 2, lastPostAt: CREATED_AT }).success,
+    ).toBe(true);
+  });
+
+  it('requires both the count and the last post time', () => {
+    expect(boardSummarySchema.safeParse({ ...board, postCount: 2 }).success).toBe(false);
+    expect(boardSummarySchema.safeParse({ ...board, lastPostAt: null }).success).toBe(false);
   });
 });
 

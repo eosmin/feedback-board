@@ -23,6 +23,18 @@ export const boardSchema = z.object({
 
 export type Board = z.infer<typeof boardSchema>;
 
+/**
+ * One entry of `GET /orgs/:orgSlug/boards`: the board plus what the overview card shows.
+ * `lastPostAt` is the newest post's creation time (`null` for a board with no posts); posts carry
+ * no `updatedAt`, so a vote or comment does not move it.
+ */
+export const boardSummarySchema = boardSchema.extend({
+  postCount: z.number().int().nonnegative(),
+  lastPostAt: z.iso.datetime().nullable(),
+});
+
+export type BoardSummary = z.infer<typeof boardSummarySchema>;
+
 /** `GET /orgs/:orgSlug/boards/:boardSlug` — metadata plus the counts the board page renders. */
 export const boardDetailSchema = boardSchema.extend({
   postCount: z.number().int().nonnegative(),

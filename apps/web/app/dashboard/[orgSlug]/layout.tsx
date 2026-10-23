@@ -1,5 +1,6 @@
 import { orgSummarySchema } from '@feedback-board/shared';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
 import { z } from 'zod';
@@ -14,6 +15,7 @@ import { Skeleton } from '../../../components/ui';
 import { serverApiFetch } from '../../../lib/api-client-server';
 import { getOrgDetail } from '../../../lib/org-detail';
 import { requireUser } from '../../../lib/supabase/require-user';
+import { titleTemplate } from '../../../lib/title-template';
 
 const orgSummaryListSchema = z.array(orgSummarySchema);
 
@@ -24,13 +26,14 @@ interface DashboardOrgLayoutProps {
 
 /**
  * The org's name as the default tab title for every page below. A page that sets its own `title`
- * replaces it, and the root layout's template appends the app name either way. Metadata streams
- * after the frame for a browser, so awaiting the org here does not hold the shell back.
+ * replaces it, and the template (restated here, see `titleTemplate`) appends the app name either
+ * way. Metadata streams after the frame for a browser, so awaiting the org here does not hold the
+ * shell back.
  */
 export async function generateMetadata({ params }: DashboardOrgLayoutProps): Promise<Metadata> {
   const { orgSlug } = await params;
-  const org = await getOrgDetail(orgSlug);
-  return { title: org.name };
+  const [org, t] = await Promise.all([getOrgDetail(orgSlug), getTranslations('common')]);
+  return { title: { default: org.name, template: titleTemplate(t('appName')) } };
 }
 
 async function OrgSidebar({ orgSlug }: { orgSlug: string }): Promise<ReactElement> {

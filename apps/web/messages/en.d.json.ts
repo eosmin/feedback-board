@@ -130,6 +130,13 @@ declare const messages: {
     "orgOverview": {
       "boardsTitle": "Boards",
       "boardsEmpty": "No boards yet. Create one to get started.",
+      "postCount": "{count, plural, =0 {No posts} one {# post} other {# posts}}",
+      "lastActivity": "Last post {date}",
+      "noActivity": "No posts yet",
+      "usage": {
+        "capped": "{used, number} of {cap, number} boards used",
+        "unlimited": "{used, plural, one {# board} other {# boards}} · no limit"
+      },
       "visibility": {
         "public": "Public",
         "private": "Private"

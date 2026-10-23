@@ -136,7 +136,8 @@ describe('BoardsService', () => {
     );
   });
 
-  it('lists boards for the request tenant', async () => {
+  it('lists boards for the request tenant with their post count and newest post', async () => {
+    const newest = new Date('2026-09-09T08:00:00.000Z');
     const findMany = jest.fn().mockResolvedValue([
       {
         id: BOARD_ID,
@@ -145,6 +146,18 @@ describe('BoardsService', () => {
         slug: 'roadmap',
         isPublic: true,
         createdAt: CREATED_AT,
+        _count: { posts: 4 },
+        posts: [{ createdAt: newest }],
+      },
+      {
+        id: 'board-2',
+        orgId: ORG_ID,
+        name: 'Ideas',
+        slug: 'ideas',
+        isPublic: false,
+        createdAt: CREATED_AT,
+        _count: { posts: 0 },
+        posts: [],
       },
     ]);
     const service = new BoardsService(
@@ -155,7 +168,13 @@ describe('BoardsService', () => {
 
     const result = await service.list();
 
-    expect(findMany).toHaveBeenCalledWith({ orderBy: { createdAt: 'asc' } });
+    expect(findMany).toHaveBeenCalledWith({
+      orderBy: { createdAt: 'asc' },
+      include: {
+        _count: { select: { posts: true } },
+        posts: { select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
     expect(result).toEqual([
       {
         id: BOARD_ID,
@@ -164,6 +183,18 @@ describe('BoardsService', () => {
         slug: 'roadmap',
         isPublic: true,
         createdAt: CREATED_AT.toISOString(),
+        postCount: 4,
+        lastPostAt: newest.toISOString(),
+      },
+      {
+        id: 'board-2',
+        orgId: ORG_ID,
+        name: 'Ideas',
+        slug: 'ideas',
+        isPublic: false,
+        createdAt: CREATED_AT.toISOString(),
+        postCount: 0,
+        lastPostAt: null,
       },
     ]);
   });
