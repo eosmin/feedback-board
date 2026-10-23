@@ -13,7 +13,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import type { AiDigestQuota, Board, BoardDetail, BoardDigest } from '@feedback-board/shared';
+import type {
+  AiDigestQuota,
+  Board,
+  BoardDetail,
+  BoardDigest,
+  BoardSummary,
+} from '@feedback-board/shared';
 
 import { OrgGuard } from '../orgs/guards/org.guard';
 import { RolesGuard } from '../orgs/guards/roles.guard';
@@ -61,7 +67,7 @@ export class BoardsController {
   }
 
   @Get()
-  async list(@Param('orgSlug') _orgSlug: string): Promise<Board[]> {
+  async list(@Param('orgSlug') _orgSlug: string): Promise<BoardSummary[]> {
     return this.boardsService.list();
   }
 

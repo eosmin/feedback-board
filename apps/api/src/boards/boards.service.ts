@@ -8,7 +8,13 @@ import {
 import { AiService } from '@feedback-board/core';
 import type { AiService as Ai, DigestPostInput } from '@feedback-board/core';
 import { ERROR_CODES } from '@feedback-board/shared';
-import type { AiDigestQuota, Board, BoardDetail, BoardDigest } from '@feedback-board/shared';
+import type {
+  AiDigestQuota,
+  Board,
+  BoardDetail,
+  BoardDigest,
+  BoardSummary,
+} from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
 import { isUniqueConstraintViolation } from '../database/unique-violation';
@@ -81,10 +87,20 @@ export class BoardsService {
     }
   }
 
-  /** `GET /orgs/:orgSlug/boards` — membership-gated, no plan check (TDD §11). */
-  async list(): Promise<Board[]> {
+  /**
+   * `GET /orgs/:orgSlug/boards` — membership-gated, no plan check (TDD §11). One query carries the
+   * overview's numbers: the relation count and the newest post's creation time, so the page never
+   * fans out a request per board.
+   */
+  async list(): Promise<BoardSummary[]> {
     const boards = await this.tenantPrisma.run((tx) =>
-      tx.board.findMany({ orderBy: { createdAt: 'asc' } }),
+      tx.board.findMany({
+        orderBy: { createdAt: 'asc' },
+        include: {
+          _count: { select: { posts: true } },
+          posts: { select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 },
+        },
+      }),
     );
 
     return boards.map((board) => ({
@@ -94,6 +110,8 @@ export class BoardsService {
       slug: board.slug,
       isPublic: board.isPublic,
       createdAt: board.createdAt.toISOString(),
+      postCount: board._count.posts,
+      lastPostAt: board.posts[0]?.createdAt.toISOString() ?? null,
     }));
   }
 
