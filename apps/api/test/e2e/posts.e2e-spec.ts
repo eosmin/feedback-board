@@ -252,15 +252,25 @@ describe('posts (e2e)', () => {
         .send({ body: 'Great idea!' });
 
       expect(createCommentResponse.status).toBe(201);
-      expect(createCommentResponse.body).toMatchObject({ postId, body: 'Great idea!' });
+      expect(createCommentResponse.body).toMatchObject({
+        postId,
+        body: 'Great idea!',
+        authorName: expect.any(String),
+      });
 
       const listResponse = await request(app.getHttpServer())
         .get(`/orgs/${orgSlugValue}/posts/${postId}/comments`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(listResponse.status).toBe(200);
+      // The full address must never reach the client, only a name or its local part.
+      expect(createCommentResponse.body.authorName).not.toContain('@');
       expect(listResponse.body).toContainEqual(
-        expect.objectContaining({ id: createCommentResponse.body.id, body: 'Great idea!' }),
+        expect.objectContaining({
+          id: createCommentResponse.body.id,
+          body: 'Great idea!',
+          authorName: createCommentResponse.body.authorName,
+        }),
       );
     },
     SIGN_IN_TEST_TIMEOUT_MS,

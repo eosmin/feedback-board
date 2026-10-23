@@ -12,6 +12,9 @@ export const commentSchema = z.object({
   orgId: z.uuid(),
   authorId: z.uuid(),
   body: z.string(),
+  // The author's display name, falling back to the local part of their email (never the full
+  // address), the same rule as `boardPostSchema.authorName`.
+  authorName: z.string(),
   createdAt: z.iso.datetime(),
 });
 

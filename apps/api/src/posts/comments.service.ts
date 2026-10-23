@@ -3,7 +3,10 @@ import type { Comment } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
 import { assertPostExists } from './assert-post-exists';
+import { AUTHOR_SELECT, authorDisplayName } from './author-display-name';
 import type { CreateCommentDto } from './dto/create-comment.dto';
+
+const AUTHOR_INCLUDE = { author: { select: AUTHOR_SELECT } } as const;
 
 /**
  * `GET`/`POST /orgs/:orgSlug/posts/:postId/comments` (TDD §11), membership-gated by the
@@ -27,6 +30,7 @@ export class CommentsService {
 
       const comment = await tx.comment.create({
         data: { orgId, postId, authorId, body: dto.body },
+        include: AUTHOR_INCLUDE,
       });
 
       return this.toComment(comment);
@@ -41,6 +45,7 @@ export class CommentsService {
       const comments = await tx.comment.findMany({
         where: { postId },
         orderBy: { createdAt: 'asc' },
+        include: AUTHOR_INCLUDE,
       });
 
       return comments.map((comment) => this.toComment(comment));
@@ -54,6 +59,7 @@ export class CommentsService {
     authorId: string;
     body: string;
     createdAt: Date;
+    author: { name: string | null; email: string };
   }): Comment {
     return {
       id: comment.id,
@@ -61,6 +67,7 @@ export class CommentsService {
       orgId: comment.orgId,
       authorId: comment.authorId,
       body: comment.body,
+      authorName: authorDisplayName(comment.author),
       createdAt: comment.createdAt.toISOString(),
     };
   }

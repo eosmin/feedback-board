@@ -7,6 +7,7 @@ import type { BoardPost, Post } from '@feedback-board/shared';
 import type { WebhookEvent } from '@feedback-board/shared';
 
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import { AUTHOR_SELECT, authorDisplayName } from './author-display-name';
 import type { CreatePostDto } from './dto/create-post.dto';
 import type { UpdatePostStatusDto } from './dto/update-post-status.dto';
 
@@ -18,19 +19,6 @@ const JOB_OPTIONS = {
   // exhausted retries, which would make a permanently-failing delivery silent.
   removeOnFail: false,
 } as const;
-
-/**
- * A person's name, or the local part of their email when they have not set one, so a teammate's
- * full address is never shown. A local part that is empty falls back to the whole address rather
- * than a blank author.
- */
-function authorDisplayName(author: { name: string | null; email: string }): string {
-  if (author.name !== null) {
-    return author.name;
-  }
-  const localPart = author.email.split('@')[0];
-  return localPart === undefined || localPart === '' ? author.email : localPart;
-}
 
 /**
  * All data access goes through `TenantPrismaService` (TDD §3.2, §3.3). `Post.orgId`/`boardId`/
@@ -104,7 +92,7 @@ export class PostsService {
         where: { boardId },
         orderBy: { createdAt: 'desc' },
         include: {
-          author: { select: { name: true, email: true } },
+          author: { select: AUTHOR_SELECT },
           _count: { select: { comments: true } },
         },
       }),

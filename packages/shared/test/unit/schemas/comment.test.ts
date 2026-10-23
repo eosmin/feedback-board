@@ -32,6 +32,7 @@ describe('commentSchema', () => {
     orgId: UUID,
     authorId: UUID,
     body: 'Agreed.',
+    authorName: 'Ada Lovelace',
     createdAt: CREATED_AT,
   };
 
@@ -43,6 +44,12 @@ describe('commentSchema', () => {
     const { authorId: _authorId, ...withoutAuthor } = comment;
 
     expect(commentSchema.safeParse(withoutAuthor).success).toBe(false);
+  });
+
+  it('rejects a missing author name', () => {
+    const { authorName: _authorName, ...withoutName } = comment;
+
+    expect(commentSchema.safeParse(withoutName).success).toBe(false);
   });
 
   it('rejects a non-ISO timestamp', () => {
