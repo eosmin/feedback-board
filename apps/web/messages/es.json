@@ -109,6 +109,19 @@
       "menu": {
         "open": "Abrir menú",
         "title": "Menú"
+      },
+      "profile": {
+        "trigger": "Cuenta",
+        "title": "Tu cuenta",
+        "loadError": "No pudimos cargar tu cuenta. Inténtalo de nuevo.",
+        "emailLabel": "Correo",
+        "nameLabel": "Nombre visible",
+        "nameHelp": "Se muestra junto a tus publicaciones. Si no la defines, se usa el inicio de tu correo.",
+        "nameInvalid": "Escribe un nombre de entre 1 y 80 caracteres.",
+        "submit": "Guardar",
+        "saving": "Guardando…",
+        "saved": "Nombre guardado",
+        "error": "No pudimos guardar tu nombre. Inténtalo de nuevo."
       }
     },
     "createOrg": {

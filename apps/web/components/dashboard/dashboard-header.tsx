@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 
 import { LocaleSwitcher, ThemeToggle } from '../ui';
+import { ProfileButton } from './profile-button';
 import { SignOutButton } from './sign-out-button';
 
 interface DashboardHeaderProps {
@@ -9,7 +10,7 @@ interface DashboardHeaderProps {
 }
 
 /**
- * The account bar shared by the org picker and the org layout, so theme, language and sign out
+ * The account bar shared by the org picker and the org layout, so account, theme, language and sign out
  * are reachable from every authenticated page and can't drift apart between the two.
  */
 export function DashboardHeader({ children }: DashboardHeaderProps): ReactElement {
@@ -17,6 +18,7 @@ export function DashboardHeader({ children }: DashboardHeaderProps): ReactElemen
     <header className="flex items-center justify-between gap-2 border-b border-border bg-surface-raised px-4 py-2">
       <div className="min-w-0">{children}</div>
       <div className="flex items-center gap-1">
+        <ProfileButton />
         <ThemeToggle />
         <LocaleSwitcher />
         <SignOutButton />

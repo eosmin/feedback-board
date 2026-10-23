@@ -109,6 +109,19 @@
       "menu": {
         "open": "Open menu",
         "title": "Menu"
+      },
+      "profile": {
+        "trigger": "Account",
+        "title": "Your account",
+        "loadError": "We could not load your account. Please try again.",
+        "emailLabel": "Email",
+        "nameLabel": "Display name",
+        "nameHelp": "Shown next to your posts. Without one, the start of your email is used.",
+        "nameInvalid": "Enter a name between 1 and 80 characters.",
+        "submit": "Save",
+        "saving": "Saving…",
+        "saved": "Display name saved",
+        "error": "We could not save your name. Please try again."
       }
     },
     "createOrg": {

@@ -7,6 +7,7 @@ export * from './constants/subscription-statuses';
 export * from './constants/webhook-events';
 
 export * from './schemas/auth';
+export * from './schemas/profile';
 export * from './schemas/org';
 export * from './schemas/board';
 export * from './schemas/post';
