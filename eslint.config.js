@@ -72,7 +72,7 @@ module.exports = defineConfig(
   },
 
   {
-    // TDD §3.2 — PrismaService is the admin client and has exactly five callers. Anything
+    // TDD §3.2 — PrismaService is the admin client and has exactly six callers. Anything
     // outside the files that own those callers must go through TenantPrismaService.
     //
     // The globs here are deliberately basePath-independent (`**/src/**` rather than
@@ -89,7 +89,7 @@ module.exports = defineConfig(
             {
               group: ['**/database/prisma.service', '**/database/prisma.service.js'],
               message:
-                'PrismaService bypasses RLS and has exactly five callers (TDD §3.2). Use TenantPrismaService.',
+                'PrismaService bypasses RLS and has exactly six callers (TDD §3.2). Use TenantPrismaService.',
             },
           ],
         },
@@ -97,7 +97,7 @@ module.exports = defineConfig(
     },
   },
   {
-    // The five callers of §3.2, and nothing else. The two org collection routes are named
+    // The six callers of §3.2, and nothing else. The two org collection routes are named
     // file-by-file rather than as `orgs/**`: caller 4 is only POST /orgs and GET /orgs, so
     // widening this to the whole module would hand the admin client to every tenant-scoped
     // service that later lands beside them. Likewise caller 3 is org.guard.ts alone — neither
@@ -106,7 +106,7 @@ module.exports = defineConfig(
     //
     // `src/index.ts` is also exempt, package-wide: it is each package's public barrel, and
     // re-exporting `PrismaService` from `packages/core`'s barrel is not itself a sixth caller —
-    // it only makes the class importable as `@feedback-board/core`. The five-caller boundary is
+    // it only makes the class importable as `@feedback-board/core`. The six-caller boundary is
     // still enforced where it matters: at each *consumer* of that export, none of which is a
     // package or app entry point, so every import of `PrismaService` from outside this list
     // still trips the restriction. `packages/shared/src/index.ts` never imports it at all, so
@@ -118,6 +118,7 @@ module.exports = defineConfig(
       '**/src/orgs/orgs.service.ts',
       '**/src/orgs/orgs.controller.ts',
       '**/src/orgs/guards/org.guard.ts',
+      '**/src/profile/profile.service.ts',
       '**/src/public/**/*.ts',
       '**/src/index.ts',
     ],

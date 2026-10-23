@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock('../../../../lib/supabase/client', () => ({ createSupabaseBrowserClient: vi.fn() }));
 
+import { ToastProvider } from '../../../../components/ui';
 import PickerLoading from '../../../../app/dashboard/(picker)/loading';
 import en from '../../../../messages/en.json';
 import es from '../../../../messages/es.json';
@@ -40,7 +41,9 @@ describe.each([
     act(() => {
       root.render(
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <PickerLoading />
+          <ToastProvider>
+            <PickerLoading />
+          </ToastProvider>
         </NextIntlClientProvider>,
       );
     });

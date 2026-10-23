@@ -9,6 +9,7 @@ import { ConfigModule } from './config/config.module';
 import { validateEnv } from './config/env.schema';
 import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
+import { ProfileModule } from './profile/profile.module';
 import { OrgsModule } from './orgs/orgs.module';
 import { BoardsModule } from './boards/boards.module';
 import { PostsModule } from './posts/posts.module';
@@ -54,6 +55,7 @@ const env = validateEnv(process.env);
       adminDatabaseUrl: env.ADMIN_DATABASE_URL,
     }),
     AuthModule,
+    ProfileModule,
     OrgsModule,
     BoardsModule,
     PostsModule,
