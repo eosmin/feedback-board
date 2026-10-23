@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 
+import { AUTHOR_SELECT } from '../../../src/posts/author-display-name';
 import { CommentsService } from '../../../src/posts/comments.service';
 import type { TenantPrismaService } from '../../../src/database/tenant-prisma.service';
 import type { CreateCommentDto } from '../../../src/posts/dto/create-comment.dto';
@@ -20,6 +21,7 @@ function buildCommentRow(
     authorId: AUTHOR_ID,
     body: 'Great idea!',
     createdAt: CREATED_AT,
+    author: { name: 'Ada Lovelace', email: 'ada@example.com' },
     ...overrides,
   };
 }
@@ -57,6 +59,7 @@ describe('CommentsService', () => {
     // session variable for RLS visibility, it does not populate insert columns (TDD §3.3).
     expect(create).toHaveBeenCalledWith({
       data: { orgId: ORG_ID, postId: POST_ID, authorId: AUTHOR_ID, body: 'Great idea!' },
+      include: { author: { select: AUTHOR_SELECT } },
     });
     expect(result).toEqual({
       id: COMMENT_ID,
@@ -64,6 +67,7 @@ describe('CommentsService', () => {
       orgId: ORG_ID,
       authorId: AUTHOR_ID,
       body: 'Great idea!',
+      authorName: 'Ada Lovelace',
       createdAt: CREATED_AT.toISOString(),
     });
   });
@@ -87,8 +91,11 @@ describe('CommentsService', () => {
     expect(findMany).toHaveBeenCalledWith({
       where: { postId: POST_ID },
       orderBy: { createdAt: 'asc' },
+      include: { author: { select: AUTHOR_SELECT } },
     });
-    expect(result).toEqual([expect.objectContaining({ id: COMMENT_ID, body: 'Great idea!' })]);
+    expect(result).toEqual([
+      expect.objectContaining({ id: COMMENT_ID, body: 'Great idea!', authorName: 'Ada Lovelace' }),
+    ]);
   });
 
   it('throws 404 NOT_FOUND on listForPost when the post does not resolve within the tenant', async () => {
