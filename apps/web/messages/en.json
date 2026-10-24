@@ -192,7 +192,9 @@
         "bodyInvalid": "Enter a description.",
         "submit": "Post feedback",
         "creating": "Posting…",
-        "error": "We could not create the post. Please try again."
+        "error": "We could not create the post. Please try again.",
+        "success": "Feedback posted.",
+        "refreshFailed": "Your feedback was posted, but the list could not be refreshed. Reload the page."
       },
       "planLimit": {
         "posts": {
@@ -208,7 +210,12 @@
         "bodyLabel": "Add a comment",
         "bodyInvalid": "Enter a comment.",
         "submit": "Comment",
-        "submitting": "Posting…"
+        "submitting": "Posting…",
+        "loadError": "We could not load the comments.",
+        "retry": "Try again",
+        "you": "You",
+        "sending": "Sending…",
+        "submitError": "We could not post your comment. Please try again."
       },
       "aiDigest": {
         "title": "AI summary",
@@ -218,7 +225,33 @@
         "rateLimited": "You've reached the hourly limit for AI summaries. Try again later.",
         "noPosts": "There's no open feedback on this board yet, so there's nothing to summarize.",
         "quotaRemaining": "{remaining} of {limit} AI summaries left this hour",
-        "quotaExhausted": "You've used all your AI summaries for this hour. Try again later."
+        "quotaExhausted": "You've used all your AI summaries for this hour. Try again later.",
+        "showSummary": "Show summary",
+        "hideSummary": "Hide summary"
+      },
+      "noResults": "No feedback matches your search or filters.",
+      "clearFilters": "Clear filters",
+      "voteError": "We could not register your vote. Please try again.",
+      "statusSuccess": "Status updated.",
+      "statusError": "We could not update the status. Please try again.",
+      "commentCountLabel": "Comments: {count, number}",
+      "meta": "{author} · {date}",
+      "filters": {
+        "region": "Search and filters",
+        "search": "Search feedback",
+        "searchPlaceholder": "Search feedback",
+        "sortLabel": "Sort by",
+        "sort": {
+          "newest": "Newest",
+          "votes": "Most voted"
+        },
+        "statusLabel": "Filter by status",
+        "categoryLabel": "Filter by category",
+        "priorityLabel": "Filter by AI priority",
+        "allStatuses": "All statuses",
+        "allCategories": "All categories",
+        "allPriorities": "All priorities",
+        "results": "Showing {shown, number} of {total, number}"
       }
     },
     "billing": {

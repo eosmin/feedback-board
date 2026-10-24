@@ -1,7 +1,5 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import type { Post } from '@feedback-board/shared';
-import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -16,27 +14,24 @@ vi.mock('../../../../lib/api-client', async () => {
 import { VoteButton } from '../../../../components/boards/vote-button';
 import { apiFetch } from '../../../../lib/api-client';
 import messages from '../../../../messages/en.json';
+import { makeBoardPost } from '../../support/board-fixtures';
+import { getButton } from '../../support/dom';
+import { Providers } from '../../support/providers';
 
 const mockApiFetch = vi.mocked(apiFetch);
 
 let container: HTMLDivElement;
 let root: Root;
 
-function makePost(overrides: Partial<Post> = {}): Post {
-  return {
-    id: '11111111-1111-1111-1111-111111111111',
-    boardId: '22222222-2222-2222-2222-222222222222',
-    orgId: '33333333-3333-3333-3333-333333333333',
-    authorId: '44444444-4444-4444-4444-444444444444',
-    title: 'Add dark mode',
-    body: 'Please add a dark theme.',
-    status: 'OPEN',
-    voteCount: 3,
-    aiCategory: null,
-    aiPriority: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    ...overrides,
-  };
+function renderButton(voteCount: number, onUpdated = vi.fn()): ReturnType<typeof vi.fn> {
+  act(() => {
+    root.render(
+      <Providers>
+        <VoteButton orgSlug="acme" post={makeBoardPost({ voteCount })} onUpdated={onUpdated} />
+      </Providers>,
+    );
+  });
+  return onUpdated;
 }
 
 beforeEach(() => {
@@ -54,47 +49,57 @@ afterEach(() => {
 });
 
 describe('VoteButton', () => {
-  it('renders the current vote count from the message catalog', () => {
-    act(() => {
-      root.render(
-        <NextIntlClientProvider locale="en" messages={messages}>
-          <VoteButton orgSlug="acme" post={makePost({ voteCount: 3 })} onUpdated={vi.fn()} />
-        </NextIntlClientProvider>,
-      );
-    });
+  it('shows the count in the chip and the full phrase as its accessible name', () => {
+    renderButton(3);
 
-    expect(container.textContent).toContain('Vote (3)');
+    const button = getButton(container, 'Vote (3)');
+    expect(button.textContent).toBe('3');
   });
 
-  it('toggles the vote and reports the updated post with the new vote count', async () => {
-    mockApiFetch.mockResolvedValue({
-      postId: '11111111-1111-1111-1111-111111111111',
-      voted: true,
-      voteCount: 4,
-    });
-    const onUpdated = vi.fn();
-
-    act(() => {
-      root.render(
-        <NextIntlClientProvider locale="en" messages={messages}>
-          <VoteButton orgSlug="acme" post={makePost({ voteCount: 3 })} onUpdated={onUpdated} />
-        </NextIntlClientProvider>,
-      );
-    });
-
-    const button = container.querySelector('button') as HTMLButtonElement;
+  it('toggles the vote and reports only the new vote count, not the post it was drawn with', async () => {
+    mockApiFetch.mockResolvedValue({ postId: 'p', voted: true, voteCount: 4 });
+    const onUpdated = renderButton(3);
 
     await act(async () => {
-      button.click();
-      await Promise.resolve();
-      await Promise.resolve();
+      getButton(container, 'Vote (3)').click();
     });
 
     expect(mockApiFetch).toHaveBeenCalledWith(
-      '/orgs/acme/posts/11111111-1111-1111-1111-111111111111/votes',
+      '/orgs/acme/posts/11111111-1111-4111-8111-111111111111/votes',
       expect.anything(),
-      expect.objectContaining({ method: 'POST' }),
+      { method: 'POST' },
     );
-    expect(onUpdated).toHaveBeenCalledWith(expect.objectContaining({ voteCount: 4 }));
+    // A patch of `id` and `voteCount` only: the post this button was rendered with may be stale by
+    // the time the response lands, and spreading it would put an old status or title back.
+    expect(onUpdated).toHaveBeenCalledWith({
+      id: '11111111-1111-4111-8111-111111111111',
+      voteCount: 4,
+    });
+  });
+
+  it('is disabled while the request is in flight', async () => {
+    mockApiFetch.mockReturnValue(new Promise(() => {}));
+    renderButton(3);
+
+    await act(async () => {
+      getButton(container, 'Vote (3)').click();
+    });
+
+    const button = getButton(container, 'Vote (3)');
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('says so in a toast when the vote fails, and leaves the count alone', async () => {
+    mockApiFetch.mockRejectedValue(new Error('network down'));
+    const onUpdated = renderButton(3);
+
+    await act(async () => {
+      getButton(container, 'Vote (3)').click();
+    });
+
+    expect(onUpdated).not.toHaveBeenCalled();
+    expect(document.body.textContent).toContain(messages.dashboard.boardDetail.voteError);
+    expect(getButton(container, 'Vote (3)').disabled).toBe(false);
   });
 });

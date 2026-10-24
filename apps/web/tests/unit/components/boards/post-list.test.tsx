@@ -1,7 +1,5 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import type { Post } from '@feedback-board/shared';
-import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -15,37 +13,37 @@ vi.mock('../../../../lib/api-client', async () => {
 
 import { PostList } from '../../../../components/boards/post-list';
 import { apiFetch } from '../../../../lib/api-client';
-import messages from '../../../../messages/en.json';
+import { makeBoardPost } from '../../support/board-fixtures';
+import { getBySelector, getButton } from '../../support/dom';
+import { Providers } from '../../support/providers';
 
 const mockApiFetch = vi.mocked(apiFetch);
 
 let container: HTMLDivElement;
 let root: Root;
 
-function makePost(overrides: Partial<Post> = {}): Post {
-  return {
-    id: '11111111-1111-1111-1111-111111111111',
-    boardId: '22222222-2222-2222-2222-222222222222',
-    orgId: '33333333-3333-3333-3333-333333333333',
-    authorId: '44444444-4444-4444-4444-444444444444',
-    title: 'Add dark mode',
-    body: 'Please add a dark theme.',
-    status: 'OPEN',
-    voteCount: 3,
-    aiCategory: null,
-    aiPriority: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    ...overrides,
-  };
+function renderList(
+  posts = [makeBoardPost()],
+  handlers: { onOpen?: (id: string) => void; onUpdated?: () => void } = {},
+): void {
+  act(() => {
+    root.render(
+      <Providers>
+        <PostList
+          orgSlug="acme"
+          posts={posts}
+          onOpen={handlers.onOpen ?? vi.fn()}
+          onUpdated={handlers.onUpdated ?? vi.fn()}
+        />
+      </Providers>,
+    );
+  });
 }
 
 beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
-  // PostComments fetches on mount for every rendered post — resolve it to an empty list so
-  // these assertions are not entangled with the comment thread's own behavior.
-  mockApiFetch.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -57,54 +55,97 @@ afterEach(() => {
 });
 
 describe('PostList', () => {
-  it('renders the empty-state message when there are no posts', () => {
-    act(() => {
-      root.render(
-        <NextIntlClientProvider locale="en" messages={messages}>
-          <PostList orgSlug="acme" posts={[]} canManage={false} onUpdated={vi.fn()} />
-        </NextIntlClientProvider>,
-      );
-    });
+  it('renders one row per post, each with a heading for its title', () => {
+    renderList([
+      makeBoardPost({ id: 'a', title: 'Add dark mode' }),
+      makeBoardPost({ id: 'b', title: 'Export to CSV' }),
+    ]);
 
-    expect(container.textContent).toBe(messages.dashboard.boardDetail.postsEmpty);
+    expect(container.querySelectorAll('li')).toHaveLength(2);
+    expect(Array.from(container.querySelectorAll('h2')).map((h) => h.textContent)).toEqual([
+      'Add dark mode',
+      'Export to CSV',
+    ]);
   });
 
-  it('renders a status select for a manager and a read-only badge for a plain member', async () => {
-    await act(async () => {
-      root.render(
-        <NextIntlClientProvider locale="en" messages={messages}>
-          <PostList orgSlug="acme" posts={[makePost()]} canManage={true} onUpdated={vi.fn()} />
-        </NextIntlClientProvider>,
-      );
-      await Promise.resolve();
-    });
+  it('shows description, status, author, date and comment count in the row', () => {
+    renderList([
+      makeBoardPost({
+        body: 'Please add a dark theme.',
+        status: 'PLANNED',
+        authorName: 'Ada Lovelace',
+        commentCount: 5,
+        createdAt: '2026-03-04T12:00:00.000Z',
+      }),
+    ]);
 
-    expect(container.querySelector('select')).not.toBeNull();
-
-    act(() => {
-      root.render(
-        <NextIntlClientProvider locale="en" messages={messages}>
-          <PostList orgSlug="acme" posts={[makePost()]} canManage={false} onUpdated={vi.fn()} />
-        </NextIntlClientProvider>,
-      );
-    });
-
-    expect(container.querySelector('select')).toBeNull();
-    expect(container.textContent).toContain(messages.publicBoard.status.OPEN);
+    const text = container.textContent ?? '';
+    expect(text).toContain('Please add a dark theme.');
+    expect(text).toContain('Planned');
+    expect(text).toContain('Ada Lovelace · Mar 4, 2026');
+    expect(getBySelector(container, '[aria-label="Comments: 5"]', HTMLElement).textContent).toBe(
+      '5',
+    );
   });
 
-  it('renders title, body and the vote button for each post', async () => {
-    await act(async () => {
-      root.render(
-        <NextIntlClientProvider locale="en" messages={messages}>
-          <PostList orgSlug="acme" posts={[makePost()]} canManage={false} onUpdated={vi.fn()} />
-        </NextIntlClientProvider>,
-      );
-      await Promise.resolve();
+  it('clamps the description to two lines', () => {
+    renderList();
+
+    expect(getBySelector(container, 'p', HTMLParagraphElement).className).toContain('line-clamp-2');
+  });
+
+  it('shows the AI category and priority badges only when the post is classified', () => {
+    renderList([
+      makeBoardPost({ id: 'a', aiCategory: 'BUG', aiPriority: 'HIGH' }),
+      makeBoardPost({ id: 'b', aiCategory: null, aiPriority: null }),
+    ]);
+
+    const [classified, unclassified] = Array.from(container.querySelectorAll('li'));
+    expect(classified?.textContent).toContain('Bug');
+    expect(classified?.textContent).toContain('High priority');
+    expect(unclassified?.textContent).not.toContain('priority');
+  });
+
+  it('never renders a status control: the row is read-only', () => {
+    renderList();
+
+    expect(container.querySelector('select, [role="combobox"]')).toBeNull();
+  });
+
+  it('opens the post when its title is clicked', () => {
+    const onOpen = vi.fn();
+    renderList([makeBoardPost({ id: 'abc', title: 'Add dark mode' })], { onOpen });
+
+    act(() => {
+      getButton(container, 'Add dark mode').click();
     });
 
-    expect(container.textContent).toContain('Add dark mode');
-    expect(container.textContent).toContain('Please add a dark theme.');
-    expect(container.textContent).toContain('Vote (3)');
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('abc');
+  });
+
+  it('votes from the chip without opening the post', async () => {
+    mockApiFetch.mockResolvedValue({ postId: 'abc', voted: true, voteCount: 4 });
+    const onOpen = vi.fn();
+    const onUpdated = vi.fn();
+    renderList([makeBoardPost({ id: 'abc', voteCount: 3 })], { onOpen, onUpdated });
+
+    await act(async () => {
+      getButton(container, 'Vote (3)').click();
+    });
+
+    expect(onUpdated).toHaveBeenCalledWith({ id: 'abc', voteCount: 4 });
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('keeps the vote chip outside the control that opens the post', () => {
+    // jsdom draws no `::after` overlay, so a click cannot show this; the structure is what keeps
+    // a click on the chip from bubbling into the open handler.
+    renderList([makeBoardPost({ id: 'abc', title: 'Add dark mode', voteCount: 3 })]);
+
+    const open = getButton(container, 'Add dark mode');
+    const vote = getButton(container, 'Vote (3)');
+
+    expect(open.contains(vote)).toBe(false);
+    expect(vote.contains(open)).toBe(false);
   });
 });

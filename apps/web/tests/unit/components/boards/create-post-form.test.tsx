@@ -15,6 +15,7 @@ vi.mock('../../../../lib/api-client', async () => {
 import { CreatePostForm } from '../../../../components/boards/create-post-form';
 import { apiFetch, ApiError } from '../../../../lib/api-client';
 import messages from '../../../../messages/en.json';
+import { getBySelector, typeInto } from '../../support/dom';
 
 const mockApiFetch = vi.mocked(apiFetch);
 
@@ -32,9 +33,17 @@ function renderForm(onCreated = vi.fn()): typeof onCreated {
   return onCreated;
 }
 
-function setInputValue(input: HTMLInputElement | HTMLTextAreaElement, value: string): void {
-  Object.defineProperty(input, 'value', { value, configurable: true });
-  input.dispatchEvent(new Event('input', { bubbles: true }));
+/** Fills both fields and submits. react-hook-form validates through an async resolver, so wait a macrotask. */
+async function fillAndSubmit(): Promise<void> {
+  await act(async () => {
+    typeInto(getBySelector(container, '#post-title', HTMLInputElement), 'Add dark mode');
+    typeInto(
+      getBySelector(container, '#post-body', HTMLTextAreaElement),
+      'Please add a dark theme.',
+    );
+    getBySelector(container, 'form', HTMLFormElement).requestSubmit();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 }
 
 beforeEach(() => {
@@ -77,17 +86,7 @@ describe('CreatePostForm', () => {
     mockApiFetch.mockResolvedValue(created);
     const onCreated = renderForm();
 
-    const titleInput = container.querySelector('#post-title') as HTMLInputElement;
-    const bodyInput = container.querySelector('#post-body') as HTMLTextAreaElement;
-    const form = container.querySelector('form') as HTMLFormElement;
-
-    await act(async () => {
-      setInputValue(titleInput, 'Add dark mode');
-      setInputValue(bodyInput, 'Please add a dark theme.');
-      form.requestSubmit();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
+    await fillAndSubmit();
 
     expect(mockApiFetch).toHaveBeenCalledWith(
       '/orgs/acme/boards/feature-requests/posts',
@@ -95,6 +94,62 @@ describe('CreatePostForm', () => {
       expect.objectContaining({ method: 'POST' }),
     );
     expect(onCreated).toHaveBeenCalledWith(created);
+    expect(getBySelector(container, '#post-title', HTMLInputElement).value).toBe('');
+    expect(getBySelector(container, '#post-body', HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('stays inert until onCreated settles, so the parent can read the list first', async () => {
+    mockApiFetch.mockResolvedValue({
+      id: '1',
+      boardId: 'board-1',
+      orgId: 'org-1',
+      authorId: 'user-1',
+      title: 'Add dark mode',
+      body: 'Please add a dark theme.',
+      status: 'OPEN' as const,
+      voteCount: 0,
+      aiCategory: null,
+      aiPriority: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    let finish: () => void = () => {};
+    const onCreated = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    act(() => {
+      root.render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+          <CreatePostForm orgSlug="acme" boardSlug="feature-requests" onCreated={onCreated} />
+        </NextIntlClientProvider>,
+      );
+    });
+
+    await act(async () => {
+      typeInto(getBySelector(container, '#post-title', HTMLInputElement), 'Add dark mode');
+      typeInto(
+        getBySelector(container, '#post-body', HTMLTextAreaElement),
+        'Please add a dark theme.',
+      );
+      getBySelector(container, 'form', HTMLFormElement).requestSubmit();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onCreated).toHaveBeenCalledTimes(1);
+    expect(getBySelector(container, 'fieldset', HTMLFieldSetElement).disabled).toBe(true);
+    expect(getBySelector(container, 'form', HTMLFormElement).getAttribute('aria-busy')).toBe(
+      'true',
+    );
+
+    await act(async () => {
+      finish();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(getBySelector(container, 'fieldset', HTMLFieldSetElement).disabled).toBe(false);
   });
 
   it('renders the upgrade prompt instead of a generic error on a PLAN_LIMIT response (TDD §3.9)', async () => {
@@ -103,17 +158,7 @@ describe('CreatePostForm', () => {
     );
     renderForm();
 
-    const titleInput = container.querySelector('#post-title') as HTMLInputElement;
-    const bodyInput = container.querySelector('#post-body') as HTMLTextAreaElement;
-    const form = container.querySelector('form') as HTMLFormElement;
-
-    await act(async () => {
-      setInputValue(titleInput, 'Add dark mode');
-      setInputValue(bodyInput, 'Please add a dark theme.');
-      form.requestSubmit();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
+    await fillAndSubmit();
 
     const planLimitMessages = messages.dashboard.boardDetail.planLimit.posts;
     expect(container.textContent).toContain(planLimitMessages.title);
@@ -125,17 +170,7 @@ describe('CreatePostForm', () => {
     mockApiFetch.mockRejectedValue(new ApiError(500, { error: 'INTERNAL_ERROR' }));
     renderForm();
 
-    const titleInput = container.querySelector('#post-title') as HTMLInputElement;
-    const bodyInput = container.querySelector('#post-body') as HTMLTextAreaElement;
-    const form = container.querySelector('form') as HTMLFormElement;
-
-    await act(async () => {
-      setInputValue(titleInput, 'Add dark mode');
-      setInputValue(bodyInput, 'Please add a dark theme.');
-      form.requestSubmit();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
+    await fillAndSubmit();
 
     expect(container.textContent).toContain(messages.dashboard.boardDetail.createPost.error);
   });
